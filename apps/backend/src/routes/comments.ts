@@ -1,13 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import {
-  comments,
-  members,
-  organizations,
-  participations,
-  users,
-} from '../db/schema.js';
+import { comments, members, organizations, participations, users } from '../db/schema.js';
 import type { AppVariables } from '../middleware/auth.js';
 import {
   canComment,
@@ -35,25 +29,25 @@ const commentWithAuthorSchema = z.object({
 });
 
 const listCommentsRoute = createRoute({
-  method: "get",
-  path: "/participations/{id}/comments",
+  method: 'get',
+  path: '/participations/{id}/comments',
   request: {
     params: z.object({ id: z.string().uuid() }),
   },
   responses: {
     200: {
-      description: "コメント一覧",
+      description: 'コメント一覧',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ data: z.array(commentWithAuthorSchema) }),
         },
       },
     },
     403: {
-      description: "権限なし",
+      description: '権限なし',
       content: {
-        "application/json": {
-          schema: z.object({ error: z.literal("Forbidden") }),
+        'application/json': {
+          schema: z.object({ error: z.literal('Forbidden') }),
         },
       },
     },
@@ -63,16 +57,12 @@ const listCommentsRoute = createRoute({
 export const commentRoutes = new OpenAPIHono<{ Variables: AppVariables }>();
 
 commentRoutes.openapi(listCommentsRoute, async (c) => {
-  const user = c.get("currentUser");
-  const participationId = c.req.param("id");
+  const user = c.get('currentUser');
+  const participationId = c.req.param('id');
 
-  const canView = await canViewParticipation(
-    user.id,
-    participationId,
-    c.get("organizationId"),
-  );
+  const canView = await canViewParticipation(user.id, participationId, c.get('organizationId'));
   if (!canView) {
-    return c.json({ error: "Forbidden" as const }, 403);
+    return c.json({ error: 'Forbidden' as const }, 403);
   }
 
   const rows = await db
@@ -88,12 +78,7 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
     })
     .from(comments)
     .innerJoin(users, eq(users.id, comments.authorId))
-    .where(
-      and(
-        eq(comments.participationId, participationId),
-        isNull(comments.deletedAt),
-      ),
-    )
+    .where(and(eq(comments.participationId, participationId), isNull(comments.deletedAt)))
     .orderBy(asc(comments.createdAt));
 
   const authorIds = Array.from(new Set(rows.map((row) => row.authorId)));
@@ -107,10 +92,7 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
             joinedAt: members.createdAt,
           })
           .from(members)
-          .innerJoin(
-            organizations,
-            eq(organizations.id, members.organizationId),
-          )
+          .innerJoin(organizations, eq(organizations.id, members.organizationId))
           .where(inArray(members.userId, authorIds))
           .orderBy(asc(members.createdAt))
       : [];
@@ -142,9 +124,9 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
   );
 });
 
-commentRoutes.post("/participations/:id/comments", async (c) => {
-  const user = c.get("currentUser");
-  const participationId = c.req.param("id");
+commentRoutes.post('/participations/:id/comments', async (c) => {
+  const user = c.get('currentUser');
+  const participationId = c.req.param('id');
   const body = bodySchema.safeParse(await c.req.json());
 
   if (!body.success) {
@@ -158,18 +140,18 @@ commentRoutes.post("/participations/:id/comments", async (c) => {
     .limit(1);
 
   if (!participationRows[0]) {
-    return c.json({ error: "Participation not found" }, 404);
+    return c.json({ error: 'Participation not found' }, 404);
   }
 
   const can = await canComment(
     user.id,
     participationRows[0].editionId,
     participationId,
-    c.get("organizationId"),
+    c.get('organizationId'),
   );
 
   if (!can) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: 'Forbidden' }, 403);
   }
 
   const inserted = await db
@@ -185,9 +167,9 @@ commentRoutes.post("/participations/:id/comments", async (c) => {
   return c.json({ data: inserted[0] }, 201);
 });
 
-commentRoutes.put("/comments/:id", async (c) => {
-  const user = c.get("currentUser");
-  const commentId = c.req.param("id");
+commentRoutes.put('/comments/:id', async (c) => {
+  const user = c.get('currentUser');
+  const commentId = c.req.param('id');
   const body = bodySchema.safeParse(await c.req.json());
 
   if (!body.success) {
@@ -196,7 +178,7 @@ commentRoutes.put("/comments/:id", async (c) => {
 
   const can = await canEditComment(user.id, commentId);
   if (!can) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: 'Forbidden' }, 403);
   }
 
   const updated = await db
@@ -206,19 +188,19 @@ commentRoutes.put("/comments/:id", async (c) => {
     .returning();
 
   if (!updated[0]) {
-    return c.json({ error: "Not found" }, 404);
+    return c.json({ error: 'Not found' }, 404);
   }
 
   return c.json({ data: updated[0] });
 });
 
-commentRoutes.delete("/comments/:id", async (c) => {
-  const user = c.get("currentUser");
-  const commentId = c.req.param("id");
+commentRoutes.delete('/comments/:id', async (c) => {
+  const user = c.get('currentUser');
+  const commentId = c.req.param('id');
 
   const can = await canDeleteComment(user.id, commentId);
   if (!can) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: 'Forbidden' }, 403);
   }
 
   await db

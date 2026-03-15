@@ -11,16 +11,12 @@ const schema = z.object({
   year: z.number().int(),
   name: z.string().min(1),
   description: z.string().optional(),
-  sharingStatus: z
-    .enum(["draft", "accepting", "sharing", "closed"])
-    .default("draft"),
-  externalLinks: z
-    .array(z.object({ label: z.string(), url: z.string().url() }))
-    .optional(),
+  sharingStatus: z.enum(['draft', 'accepting', 'sharing', 'closed']).default('draft'),
+  externalLinks: z.array(z.object({ label: z.string(), url: z.string().url() })).optional(),
 });
 
 const statusSchema = z.object({
-  sharingStatus: z.enum(["draft", "accepting", "sharing", "closed"]),
+  sharingStatus: z.enum(['draft', 'accepting', 'sharing', 'closed']),
 });
 
 const rulePresignSchema = z.object({
@@ -53,21 +49,19 @@ const editionSchema = z.object({
       }),
     )
     .nullable(),
-  sharingStatus: z.enum(["draft", "accepting", "sharing", "closed"]),
-  externalLinks: z
-    .array(z.object({ label: z.string(), url: z.string().url() }))
-    .nullable(),
+  sharingStatus: z.enum(['draft', 'accepting', 'sharing', 'closed']),
+  externalLinks: z.array(z.object({ label: z.string(), url: z.string().url() })).nullable(),
   createdAt: z.any(),
   updatedAt: z.any(),
 });
 
 const createEditionRoute = createRoute({
-  method: "post",
-  path: "/editions",
+  method: 'post',
+  path: '/editions',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema,
         },
       },
@@ -75,17 +69,17 @@ const createEditionRoute = createRoute({
   },
   responses: {
     201: {
-      description: "大会開催回作成",
+      description: '大会開催回作成',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ data: editionSchema }),
         },
       },
     },
     400: {
-      description: "不正入力",
+      description: '不正入力',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ error: z.any() }),
         },
       },
@@ -94,13 +88,13 @@ const createEditionRoute = createRoute({
 });
 
 const updateSharingStatusRoute = createRoute({
-  method: "put",
-  path: "/editions/{id}/status",
+  method: 'put',
+  path: '/editions/{id}/status',
   request: {
     params: z.object({ id: z.string().uuid() }),
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: statusSchema,
         },
       },
@@ -108,26 +102,26 @@ const updateSharingStatusRoute = createRoute({
   },
   responses: {
     200: {
-      description: "sharing_status更新",
+      description: 'sharing_status更新',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ data: editionSchema }),
         },
       },
     },
     400: {
-      description: "不正入力",
+      description: '不正入力',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ error: z.any() }),
         },
       },
     },
     404: {
-      description: "未検出",
+      description: '未検出',
       content: {
-        "application/json": {
-          schema: z.object({ error: z.literal("Not found") }),
+        'application/json': {
+          schema: z.object({ error: z.literal('Not found') }),
         },
       },
     },
@@ -159,7 +153,7 @@ adminEditionRoutes.openapi(createEditionRoute, async (c) => {
   return c.json({ data: inserted[0] }, 201);
 });
 
-adminEditionRoutes.put("/editions/:id", async (c) => {
+adminEditionRoutes.put('/editions/:id', async (c) => {
   const body = schema.safeParse(await c.req.json());
   if (!body.success) {
     return c.json({ error: body.error.flatten() }, 400);
@@ -176,20 +170,18 @@ adminEditionRoutes.put("/editions/:id", async (c) => {
       externalLinks: body.data.externalLinks,
       updatedAt: new Date(),
     })
-    .where(eq(competitionEditions.id, c.req.param("id")))
+    .where(eq(competitionEditions.id, c.req.param('id')))
     .returning();
 
   if (!updated[0]) {
-    return c.json({ error: "Not found" }, 404);
+    return c.json({ error: 'Not found' }, 404);
   }
 
   return c.json({ data: updated[0] });
 });
 
-adminEditionRoutes.delete("/editions/:id", async (c) => {
-  await db
-    .delete(competitionEditions)
-    .where(eq(competitionEditions.id, c.req.param("id")));
+adminEditionRoutes.delete('/editions/:id', async (c) => {
+  await db.delete(competitionEditions).where(eq(competitionEditions.id, c.req.param('id')));
   return c.body(null, 204);
 });
 
@@ -202,18 +194,18 @@ adminEditionRoutes.openapi(updateSharingStatusRoute, async (c) => {
   const updated = await db
     .update(competitionEditions)
     .set({ sharingStatus: body.data.sharingStatus, updatedAt: new Date() })
-    .where(eq(competitionEditions.id, c.req.param("id")))
+    .where(eq(competitionEditions.id, c.req.param('id')))
     .returning();
 
   if (!updated[0]) {
-    return c.json({ error: "Not found" as const }, 404);
+    return c.json({ error: 'Not found' as const }, 404);
   }
 
   return c.json({ data: updated[0] }, 200);
 });
 
-adminEditionRoutes.post("/editions/:id/rules/presign", async (c) => {
-  const editionId = c.req.param("id");
+adminEditionRoutes.post('/editions/:id/rules/presign', async (c) => {
+  const editionId = c.req.param('id');
   const body = rulePresignSchema.safeParse(await c.req.json());
   if (!body.success) {
     return c.json({ error: body.error.flatten() }, 400);
@@ -229,8 +221,8 @@ adminEditionRoutes.post("/editions/:id/rules/presign", async (c) => {
   return c.json({ data: result });
 });
 
-adminEditionRoutes.put("/editions/:id/rules", async (c) => {
-  const editionId = c.req.param("id");
+adminEditionRoutes.put('/editions/:id/rules', async (c) => {
+  const editionId = c.req.param('id');
   const body = ruleUpdateSchema.safeParse(await c.req.json());
   if (!body.success) {
     return c.json({ error: body.error.flatten() }, 400);
@@ -243,7 +235,7 @@ adminEditionRoutes.put("/editions/:id/rules", async (c) => {
     .returning();
 
   if (!updated[0]) {
-    return c.json({ error: "Not found" }, 404);
+    return c.json({ error: 'Not found' }, 404);
   }
 
   return c.json({ data: updated[0] });

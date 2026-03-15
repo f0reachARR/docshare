@@ -1,9 +1,5 @@
 import sendgridMail from '@sendgrid/mail';
-import type {
-  EmailService,
-  SendEmailParams,
-  SendEmailResult,
-} from './interface.js';
+import type { EmailService, SendEmailParams, SendEmailResult } from './interface.js';
 
 export class SendGridEmailService implements EmailService {
   constructor(
@@ -24,7 +20,7 @@ export class SendGridEmailService implements EmailService {
 
     return {
       success: res.statusCode >= 200 && res.statusCode < 300,
-      messageId: res.headers["x-message-id"] as string | undefined,
+      messageId: res.headers['x-message-id'] as string | undefined,
     };
   }
 }

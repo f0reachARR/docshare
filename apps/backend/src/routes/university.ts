@@ -8,55 +8,55 @@ import { emailService } from '../services/email/index.js';
 
 const inviteSchema = z.object({
   email: z.string().email(),
-  role: z.enum(["owner", "member"]),
+  role: z.enum(['owner', 'member']),
 });
 
 const updateRoleSchema = z.object({
-  role: z.enum(["owner", "member"]),
+  role: z.enum(['owner', 'member']),
 });
 
 const orgHeaderSchema = z.object({
-  "x-organization-id": z.string(),
+  'x-organization-id': z.string(),
 });
 
 const memberSchema = z.object({
   id: z.string(),
   userId: z.string(),
-  role: z.enum(["owner", "member"]),
+  role: z.enum(['owner', 'member']),
   name: z.string(),
   email: z.string().email(),
 });
 
 const listUniversityMembersRoute = createRoute({
-  method: "get",
-  path: "/university/members",
+  method: 'get',
+  path: '/university/members',
   request: {
     headers: orgHeaderSchema,
   },
   responses: {
     200: {
-      description: "所属メンバー一覧",
+      description: '所属メンバー一覧',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ data: z.array(memberSchema) }),
         },
       },
     },
     400: {
-      description: "組織指定不足",
+      description: '組織指定不足',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({
-            error: z.literal("x-organization-id is required"),
+            error: z.literal('x-organization-id is required'),
           }),
         },
       },
     },
     403: {
-      description: "オーナー限定",
+      description: 'オーナー限定',
       content: {
-        "application/json": {
-          schema: z.object({ error: z.literal("Owner only") }),
+        'application/json': {
+          schema: z.object({ error: z.literal('Owner only') }),
         },
       },
     },
@@ -67,20 +67,20 @@ const invitationSchema = z.object({
   id: z.string(),
   organizationId: z.string(),
   email: z.string().email(),
-  role: z.enum(["owner", "member"]),
+  role: z.enum(['owner', 'member']),
   invitedBy: z.string(),
   expiresAt: z.any(),
   createdAt: z.any(),
 });
 
 const inviteUniversityRoute = createRoute({
-  method: "post",
-  path: "/university/invite",
+  method: 'post',
+  path: '/university/invite',
   request: {
     headers: orgHeaderSchema,
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: inviteSchema,
         },
       },
@@ -88,26 +88,26 @@ const inviteUniversityRoute = createRoute({
   },
   responses: {
     201: {
-      description: "招待作成",
+      description: '招待作成',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ data: invitationSchema }),
         },
       },
     },
     400: {
-      description: "不正入力",
+      description: '不正入力',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ error: z.any() }),
         },
       },
     },
     403: {
-      description: "オーナー限定",
+      description: 'オーナー限定',
       content: {
-        "application/json": {
-          schema: z.object({ error: z.literal("Owner only") }),
+        'application/json': {
+          schema: z.object({ error: z.literal('Owner only') }),
         },
       },
     },
@@ -116,10 +116,7 @@ const inviteUniversityRoute = createRoute({
 
 export const universityRoutes = new OpenAPIHono<{ Variables: AppVariables }>();
 
-const canManageMembers = async (
-  userId: string,
-  organizationId: string,
-): Promise<boolean> => {
+const canManageMembers = async (userId: string, organizationId: string): Promise<boolean> => {
   const adminRows = await db
     .select({ isAdmin: users.isAdmin })
     .from(users)
@@ -132,26 +129,21 @@ const canManageMembers = async (
   const ownerRows = await db
     .select({ role: members.role })
     .from(members)
-    .where(
-      and(
-        eq(members.userId, userId),
-        eq(members.organizationId, organizationId),
-      ),
-    )
+    .where(and(eq(members.userId, userId), eq(members.organizationId, organizationId)))
     .limit(1);
 
-  return ownerRows[0]?.role === "owner";
+  return ownerRows[0]?.role === 'owner';
 };
 
 universityRoutes.openapi(listUniversityMembersRoute, async (c) => {
-  const organizationId = c.get("organizationId");
+  const organizationId = c.get('organizationId');
   if (!organizationId) {
-    return c.json({ error: "x-organization-id is required" as const }, 400);
+    return c.json({ error: 'x-organization-id is required' as const }, 400);
   }
 
-  const user = c.get("currentUser");
+  const user = c.get('currentUser');
   if (!(await canManageMembers(user.id, organizationId))) {
-    return c.json({ error: "Owner only" as const }, 403);
+    return c.json({ error: 'Owner only' as const }, 403);
   }
 
   const rows = await db
@@ -170,19 +162,19 @@ universityRoutes.openapi(listUniversityMembersRoute, async (c) => {
 });
 
 universityRoutes.openapi(inviteUniversityRoute, async (c) => {
-  const organizationId = c.get("organizationId");
+  const organizationId = c.get('organizationId');
   if (!organizationId) {
-    return c.json({ error: "x-organization-id is required" as const }, 400);
+    return c.json({ error: 'x-organization-id is required' as const }, 400);
   }
 
-  const user = c.get("currentUser");
+  const user = c.get('currentUser');
   const body = inviteSchema.safeParse(await c.req.json());
   if (!body.success) {
     return c.json({ error: body.error.flatten() }, 400);
   }
 
   if (!(await canManageMembers(user.id, organizationId))) {
-    return c.json({ error: "Owner only" as const }, 403);
+    return c.json({ error: 'Owner only' as const }, 403);
   }
 
   const inviter = await db
@@ -215,55 +207,51 @@ universityRoutes.openapi(inviteUniversityRoute, async (c) => {
   return c.json({ data: inserted[0] }, 201);
 });
 
-universityRoutes.put("/university/members/:id/role", async (c) => {
-  const organizationId = c.get("organizationId");
+universityRoutes.put('/university/members/:id/role', async (c) => {
+  const organizationId = c.get('organizationId');
   if (!organizationId) {
-    return c.json({ error: "x-organization-id is required" }, 400);
+    return c.json({ error: 'x-organization-id is required' }, 400);
   }
 
-  const user = c.get("currentUser");
-  const memberId = c.req.param("id");
+  const user = c.get('currentUser');
+  const memberId = c.req.param('id');
   const body = updateRoleSchema.safeParse(await c.req.json());
   if (!body.success) {
     return c.json({ error: body.error.flatten() }, 400);
   }
 
   if (!(await canManageMembers(user.id, organizationId))) {
-    return c.json({ error: "Owner only" }, 403);
+    return c.json({ error: 'Owner only' }, 403);
   }
 
   const updated = await db
     .update(members)
     .set({ role: body.data.role })
-    .where(
-      and(eq(members.id, memberId), eq(members.organizationId, organizationId)),
-    )
+    .where(and(eq(members.id, memberId), eq(members.organizationId, organizationId)))
     .returning();
 
   if (!updated[0]) {
-    return c.json({ error: "Not found" }, 404);
+    return c.json({ error: 'Not found' }, 404);
   }
 
   return c.json({ data: updated[0] });
 });
 
-universityRoutes.delete("/university/members/:id", async (c) => {
-  const organizationId = c.get("organizationId");
+universityRoutes.delete('/university/members/:id', async (c) => {
+  const organizationId = c.get('organizationId');
   if (!organizationId) {
-    return c.json({ error: "x-organization-id is required" }, 400);
+    return c.json({ error: 'x-organization-id is required' }, 400);
   }
 
-  const user = c.get("currentUser");
-  const memberId = c.req.param("id");
+  const user = c.get('currentUser');
+  const memberId = c.req.param('id');
 
   if (!(await canManageMembers(user.id, organizationId))) {
-    return c.json({ error: "Owner only" }, 403);
+    return c.json({ error: 'Owner only' }, 403);
   }
 
   await db
     .delete(members)
-    .where(
-      and(eq(members.id, memberId), eq(members.organizationId, organizationId)),
-    );
+    .where(and(eq(members.id, memberId), eq(members.organizationId, organizationId)));
   return c.body(null, 204);
 });

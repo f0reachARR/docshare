@@ -6,7 +6,7 @@ import { env } from './lib/config.js';
 import { emailService } from './services/email/index.js';
 
 export const auth = betterAuth({
-  database: drizzleAdapter(db, { provider: "pg" }),
+  database: drizzleAdapter(db, { provider: 'pg' }),
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
   emailAndPassword: {

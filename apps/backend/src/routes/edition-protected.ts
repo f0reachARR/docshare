@@ -8,8 +8,8 @@ export const editionProtectedRoutes = new OpenAPIHono<{
   Variables: AppVariables;
 }>();
 
-editionProtectedRoutes.get("/editions/:id/templates", async (c) => {
-  const id = c.req.param("id");
+editionProtectedRoutes.get('/editions/:id/templates', async (c) => {
+  const id = c.req.param('id');
   const rows = await db
     .select()
     .from(submissionTemplates)
@@ -19,25 +19,19 @@ editionProtectedRoutes.get("/editions/:id/templates", async (c) => {
   return c.json({ data: rows });
 });
 
-editionProtectedRoutes.get("/editions/:id/my-submissions", async (c) => {
-  const organizationId = c.get("organizationId");
+editionProtectedRoutes.get('/editions/:id/my-submissions', async (c) => {
+  const organizationId = c.get('organizationId');
   if (!organizationId) {
-    return c.json({ error: "x-organization-id is required" }, 400);
+    return c.json({ error: 'x-organization-id is required' }, 400);
   }
 
-  const editionId = c.req.param("id");
+  const editionId = c.req.param('id');
 
   const rows = await db
     .select({ submission: submissions })
     .from(submissions)
-    .innerJoin(
-      participations,
-      eq(participations.id, submissions.participationId),
-    )
-    .innerJoin(
-      submissionTemplates,
-      eq(submissionTemplates.id, submissions.templateId),
-    )
+    .innerJoin(participations, eq(participations.id, submissions.participationId))
+    .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
     .where(
       and(
         eq(submissionTemplates.editionId, editionId),

@@ -54,12 +54,12 @@ const submissionSchema = z.object({
 });
 
 const createSubmissionRoute = createRoute({
-  method: "post",
-  path: "/submissions",
+  method: 'post',
+  path: '/submissions',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: createSubmissionSchema,
         },
       },
@@ -67,25 +67,25 @@ const createSubmissionRoute = createRoute({
   },
   responses: {
     201: {
-      description: "提出作成",
+      description: '提出作成',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ data: submissionSchema }),
         },
       },
     },
     400: {
-      description: "不正入力",
+      description: '不正入力',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ error: z.any() }),
         },
       },
     },
     409: {
-      description: "状態または重複エラー",
+      description: '状態または重複エラー',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ error: z.string() }),
         },
       },
@@ -105,25 +105,25 @@ const editionSubmissionRowSchema = z.object({
 });
 
 const listEditionSubmissionsRoute = createRoute({
-  method: "get",
-  path: "/editions/{id}/submissions",
+  method: 'get',
+  path: '/editions/{id}/submissions',
   request: {
     params: z.object({ id: z.string().uuid() }),
   },
   responses: {
     200: {
-      description: "他大学提出一覧",
+      description: '他大学提出一覧',
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({ data: z.array(editionSubmissionRowSchema) }),
         },
       },
     },
     403: {
-      description: "権限なし",
+      description: '権限なし',
       content: {
-        "application/json": {
-          schema: z.object({ error: z.literal("Forbidden") }),
+        'application/json': {
+          schema: z.object({ error: z.literal('Forbidden') }),
         },
       },
     },
@@ -142,7 +142,7 @@ const assertCanMutateParticipation = async (
 
   const universityIds = await getUserUniversityIds(userId);
   if (universityIds.length === 0) {
-    throw new HTTPException(403, { message: "Forbidden" });
+    throw new HTTPException(403, { message: 'Forbidden' });
   }
 
   const rows = await db
@@ -157,12 +157,12 @@ const assertCanMutateParticipation = async (
     .limit(1);
 
   if (!rows[0]) {
-    throw new HTTPException(403, { message: "Forbidden" });
+    throw new HTTPException(403, { message: 'Forbidden' });
   }
 };
 
 submissionRoutes.openapi(createSubmissionRoute, async (c) => {
-  const user = c.get("currentUser");
+  const user = c.get('currentUser');
   const body = createSubmissionSchema.safeParse(await c.req.json());
   if (!body.success) {
     return c.json({ error: body.error.flatten() }, 400);
@@ -177,10 +177,7 @@ submissionRoutes.openapi(createSubmissionRoute, async (c) => {
       participationId: participations.id,
     })
     .from(submissionTemplates)
-    .innerJoin(
-      competitionEditions,
-      eq(competitionEditions.id, submissionTemplates.editionId),
-    )
+    .innerJoin(competitionEditions, eq(competitionEditions.id, submissionTemplates.editionId))
     .innerJoin(
       participations,
       and(
@@ -192,24 +189,14 @@ submissionRoutes.openapi(createSubmissionRoute, async (c) => {
     .limit(1);
 
   if (!templateParticipationRows[0]) {
-    return c.json({ error: "Template and participation mismatch" }, 400);
+    return c.json({ error: 'Template and participation mismatch' }, 400);
   }
 
-  if (
-    !isSubmissionMutableStatus(
-      templateParticipationRows[0].edition.sharingStatus,
-    )
-  ) {
-    return c.json(
-      { error: "Submissions are not accepted in current sharing_status" },
-      409,
-    );
+  if (!isSubmissionMutableStatus(templateParticipationRows[0].edition.sharingStatus)) {
+    return c.json({ error: 'Submissions are not accepted in current sharing_status' }, 409);
   }
 
-  const validation = validateSubmissionPayload(
-    templateParticipationRows[0].template,
-    body.data,
-  );
+  const validation = validateSubmissionPayload(templateParticipationRows[0].template, body.data);
   if (!validation.ok) {
     return c.json({ error: validation.error }, 400);
   }
@@ -226,10 +213,7 @@ submissionRoutes.openapi(createSubmissionRoute, async (c) => {
     .limit(1);
 
   if (existing[0]) {
-    return c.json(
-      { error: "Already exists for this template and participation" },
-      409,
-    );
+    return c.json({ error: 'Already exists for this template and participation' }, 409);
   }
 
   const inserted = await db
@@ -249,9 +233,9 @@ submissionRoutes.openapi(createSubmissionRoute, async (c) => {
   return c.json({ data: inserted[0] }, 201);
 });
 
-submissionRoutes.put("/submissions/:id", async (c) => {
-  const user = c.get("currentUser");
-  const submissionId = c.req.param("id");
+submissionRoutes.put('/submissions/:id', async (c) => {
+  const user = c.get('currentUser');
+  const submissionId = c.req.param('id');
   const body = updateSubmissionSchema.safeParse(await c.req.json());
   if (!body.success) {
     return c.json({ error: body.error.flatten() }, 400);
@@ -264,7 +248,7 @@ submissionRoutes.put("/submissions/:id", async (c) => {
     .limit(1);
   const existing = existingRows[0];
   if (!existing) {
-    return c.json({ error: "Not found" }, 404);
+    return c.json({ error: 'Not found' }, 404);
   }
 
   await assertCanMutateParticipation(user.id, existing.participationId);
@@ -275,32 +259,20 @@ submissionRoutes.put("/submissions/:id", async (c) => {
       edition: competitionEditions,
     })
     .from(submissions)
-    .innerJoin(
-      submissionTemplates,
-      eq(submissionTemplates.id, submissions.templateId),
-    )
-    .innerJoin(
-      competitionEditions,
-      eq(competitionEditions.id, submissionTemplates.editionId),
-    )
+    .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
+    .innerJoin(competitionEditions, eq(competitionEditions.id, submissionTemplates.editionId))
     .where(eq(submissions.id, submissionId))
     .limit(1);
 
   if (!contextRows[0]) {
-    return c.json({ error: "Not found" }, 404);
+    return c.json({ error: 'Not found' }, 404);
   }
 
   if (!isSubmissionMutableStatus(contextRows[0].edition.sharingStatus)) {
-    return c.json(
-      { error: "Submissions are not accepted in current sharing_status" },
-      409,
-    );
+    return c.json({ error: 'Submissions are not accepted in current sharing_status' }, 409);
   }
 
-  const validation = validateSubmissionPayload(
-    contextRows[0].template,
-    body.data,
-  );
+  const validation = validateSubmissionPayload(contextRows[0].template, body.data);
   if (!validation.ok) {
     return c.json({ error: validation.error }, 400);
   }
@@ -338,17 +310,13 @@ submissionRoutes.put("/submissions/:id", async (c) => {
   return c.json({ data: updated });
 });
 
-submissionRoutes.delete("/submissions/:id", async (c) => {
-  const user = c.get("currentUser");
-  const submissionId = c.req.param("id");
+submissionRoutes.delete('/submissions/:id', async (c) => {
+  const user = c.get('currentUser');
+  const submissionId = c.req.param('id');
 
-  const allowed = await canDeleteSubmission(
-    user.id,
-    submissionId,
-    c.get("organizationId"),
-  );
+  const allowed = await canDeleteSubmission(user.id, submissionId, c.get('organizationId'));
   if (!allowed) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: 'Forbidden' }, 403);
   }
 
   await db.delete(submissions).where(eq(submissions.id, submissionId));
@@ -356,34 +324,28 @@ submissionRoutes.delete("/submissions/:id", async (c) => {
 });
 
 submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
-  const user = c.get("currentUser");
-  const editionId = c.req.param("id");
+  const user = c.get('currentUser');
+  const editionId = c.req.param('id');
 
   const canView = await canViewOtherSubmissions(user.id, editionId);
   if (!canView) {
-    return c.json({ error: "Forbidden" as const }, 403);
+    return c.json({ error: 'Forbidden' as const }, 403);
   }
 
   const rows = await db
     .select({ submission: submissions, participation: participations })
     .from(submissions)
-    .innerJoin(
-      participations,
-      eq(participations.id, submissions.participationId),
-    )
-    .innerJoin(
-      submissionTemplates,
-      eq(submissionTemplates.id, submissions.templateId),
-    )
+    .innerJoin(participations, eq(participations.id, submissions.participationId))
+    .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
     .where(eq(submissionTemplates.editionId, editionId))
     .orderBy(asc(participations.createdAt));
 
   return c.json({ data: rows }, 200);
 });
 
-submissionRoutes.get("/submissions/:id/download", async (c) => {
-  const user = c.get("currentUser");
-  const submissionId = c.req.param("id");
+submissionRoutes.get('/submissions/:id/download', async (c) => {
+  const user = c.get('currentUser');
+  const submissionId = c.req.param('id');
 
   const row = await db
     .select({
@@ -392,48 +354,39 @@ submissionRoutes.get("/submissions/:id/download", async (c) => {
       participationId: participations.id,
     })
     .from(submissions)
-    .innerJoin(
-      participations,
-      eq(participations.id, submissions.participationId),
-    )
-    .innerJoin(
-      submissionTemplates,
-      eq(submissionTemplates.id, submissions.templateId),
-    )
-    .innerJoin(
-      competitionEditions,
-      eq(competitionEditions.id, submissionTemplates.editionId),
-    )
+    .innerJoin(participations, eq(participations.id, submissions.participationId))
+    .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
+    .innerJoin(competitionEditions, eq(competitionEditions.id, submissionTemplates.editionId))
     .where(eq(submissions.id, submissionId))
     .limit(1);
 
   if (!row[0]) {
-    return c.json({ error: "Not found" }, 404);
+    return c.json({ error: 'Not found' }, 404);
   }
 
   const canView = await canViewParticipation(
     user.id,
     row[0].participationId,
-    c.get("organizationId"),
+    c.get('organizationId'),
   );
   if (!canView) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: 'Forbidden' }, 403);
   }
 
   if (!row[0].submission.fileS3Key) {
-    return c.json({ error: "File submission not found" }, 400);
+    return c.json({ error: 'File submission not found' }, 400);
   }
 
   const download = await presignDownload(
-    process.env.S3_BUCKET_SUBMISSIONS ?? "robocon-submissions",
+    process.env.S3_BUCKET_SUBMISSIONS ?? 'robocon-submissions',
     row[0].submission.fileS3Key,
   );
   return c.json({ data: download });
 });
 
-submissionRoutes.get("/submissions/:id/history", async (c) => {
-  const user = c.get("currentUser");
-  const submissionId = c.req.param("id");
+submissionRoutes.get('/submissions/:id/history', async (c) => {
+  const user = c.get('currentUser');
+  const submissionId = c.req.param('id');
 
   const row = await db
     .select({ participationId: submissions.participationId })
@@ -441,16 +394,16 @@ submissionRoutes.get("/submissions/:id/history", async (c) => {
     .where(eq(submissions.id, submissionId))
     .limit(1);
   if (!row[0]) {
-    return c.json({ error: "Not found" }, 404);
+    return c.json({ error: 'Not found' }, 404);
   }
 
   const canView = await canViewParticipation(
     user.id,
     row[0].participationId,
-    c.get("organizationId"),
+    c.get('organizationId'),
   );
   if (!canView) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: 'Forbidden' }, 403);
   }
 
   const histories = await db
@@ -462,9 +415,9 @@ submissionRoutes.get("/submissions/:id/history", async (c) => {
   return c.json({ data: histories });
 });
 
-submissionRoutes.get("/submission-history/:historyId/download", async (c) => {
-  const user = c.get("currentUser");
-  const historyId = c.req.param("historyId");
+submissionRoutes.get('/submission-history/:historyId/download', async (c) => {
+  const user = c.get('currentUser');
+  const historyId = c.req.param('historyId');
 
   const row = await db
     .select({
@@ -472,32 +425,29 @@ submissionRoutes.get("/submission-history/:historyId/download", async (c) => {
       participationId: submissions.participationId,
     })
     .from(submissionHistories)
-    .innerJoin(
-      submissions,
-      eq(submissions.id, submissionHistories.submissionId),
-    )
+    .innerJoin(submissions, eq(submissions.id, submissionHistories.submissionId))
     .where(eq(submissionHistories.id, historyId))
     .limit(1);
 
   if (!row[0]) {
-    return c.json({ error: "Not found" }, 404);
+    return c.json({ error: 'Not found' }, 404);
   }
 
   const canView = await canViewParticipation(
     user.id,
     row[0].participationId,
-    c.get("organizationId"),
+    c.get('organizationId'),
   );
   if (!canView) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: 'Forbidden' }, 403);
   }
 
   if (!row[0].history.fileS3Key) {
-    return c.json({ error: "No file in this history entry" }, 400);
+    return c.json({ error: 'No file in this history entry' }, 400);
   }
 
   const download = await presignDownload(
-    process.env.S3_BUCKET_SUBMISSIONS ?? "robocon-submissions",
+    process.env.S3_BUCKET_SUBMISSIONS ?? 'robocon-submissions',
     row[0].history.fileS3Key,
   );
   return c.json({ data: download });

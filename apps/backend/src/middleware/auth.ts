@@ -22,17 +22,15 @@ type BetterAuthSession = {
 };
 
 const parseSession = (value: unknown): BetterAuthSession | null => {
-  if (typeof value !== "object" || value === null) {
+  if (typeof value !== 'object' || value === null) {
     return null;
   }
 
   return value as BetterAuthSession;
 };
 
-export const getCurrentUser = (
-  c: Context<{ Variables: AppVariables }>,
-): UserContext => {
-  return c.get("currentUser");
+export const getCurrentUser = (c: Context<{ Variables: AppVariables }>): UserContext => {
+  return c.get('currentUser');
 };
 
 export const requireAuth: MiddlewareHandler<{
@@ -47,13 +45,13 @@ export const requireAuth: MiddlewareHandler<{
       }),
     );
   } catch {
-    throw new HTTPException(401, { message: "Unauthorized" });
+    throw new HTTPException(401, { message: 'Unauthorized' });
   }
 
   const userId = session?.user?.id;
 
   if (!userId) {
-    throw new HTTPException(401, { message: "Unauthorized" });
+    throw new HTTPException(401, { message: 'Unauthorized' });
   }
 
   const rows = await db
@@ -68,13 +66,10 @@ export const requireAuth: MiddlewareHandler<{
     .limit(1);
 
   if (!rows[0]) {
-    throw new HTTPException(401, { message: "Unknown user" });
+    throw new HTTPException(401, { message: 'Unknown user' });
   }
 
-  c.set(
-    "sessionActiveOrganizationId",
-    session?.session?.activeOrganizationId ?? null,
-  );
-  c.set("currentUser", rows[0]);
+  c.set('sessionActiveOrganizationId', session?.session?.activeOrganizationId ?? null);
+  c.set('currentUser', rows[0]);
   await next();
 };
