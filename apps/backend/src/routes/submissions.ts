@@ -1,27 +1,27 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
-import { HTTPException } from "hono/http-exception";
-import { db } from "../db";
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { HTTPException } from 'hono/http-exception';
+import { db } from '../db/index.js';
 import {
   competitionEditions,
   participations,
   submissionHistories,
   submissionTemplates,
   submissions,
-} from "../db/schema";
-import type { AppVariables } from "../middleware/auth";
+} from '../db/schema.js';
+import type { AppVariables } from '../middleware/auth.js';
 import {
   canDeleteSubmission,
   canViewOtherSubmissions,
   canViewParticipation,
   getUserUniversityIds,
   isAdmin,
-} from "../services/permissions";
-import { presignDownload } from "../services/storage";
+} from '../services/permissions.js';
+import { presignDownload } from '../services/storage.js';
 import {
   isSubmissionMutableStatus,
   validateSubmissionPayload,
-} from "../services/submission-validation";
+} from '../services/submission-validation.js';
 
 const createSubmissionSchema = z.object({
   templateId: z.string().uuid(),

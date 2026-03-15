@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { ConsoleEmailService } from "./console";
+import { describe, expect, it } from 'vitest';
+import { ConsoleEmailService } from './console.js';
 
 describe("ConsoleEmailService", () => {
   it("returns success", async () => {

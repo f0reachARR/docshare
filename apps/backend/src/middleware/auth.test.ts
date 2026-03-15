@@ -11,7 +11,7 @@ type UserRow = {
 };
 const mockLimit = vi.fn<() => Promise<UserRow[]>>(async () => []);
 
-vi.mock("../auth", () => ({
+vi.mock('../auth.js', () => ({
   auth: {
     api: {
       getSession: mockGetSession,
@@ -19,7 +19,7 @@ vi.mock("../auth", () => ({
   },
 }));
 
-vi.mock("../db", () => ({
+vi.mock('../db/index.js', () => ({
   db: {
     select: vi.fn(() => ({
       from: () => ({
@@ -31,7 +31,7 @@ vi.mock("../db", () => ({
   },
 }));
 
-const { requireAuth } = await import("./auth");
+const { requireAuth } = await import('./auth.js');
 
 type TestContext = {
   req: {

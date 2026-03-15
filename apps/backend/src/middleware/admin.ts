@@ -1,6 +1,6 @@
-import type { MiddlewareHandler } from "hono";
-import { HTTPException } from "hono/http-exception";
-import type { AppVariables } from "./auth";
+import type { MiddlewareHandler } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type { AppVariables } from './auth.js';
 
 export const requireAdmin: MiddlewareHandler<{
   Variables: AppVariables;

@@ -1,10 +1,10 @@
-import { randomUUID } from "node:crypto";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { and, eq } from "drizzle-orm";
-import { db } from "../db";
-import { invitations, members, organizations, users } from "../db/schema";
-import type { AppVariables } from "../middleware/auth";
-import { emailService } from "../services/email";
+import { randomUUID } from 'node:crypto';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { and, eq } from 'drizzle-orm';
+import { db } from '../db/index.js';
+import { invitations, members, organizations, users } from '../db/schema.js';
+import type { AppVariables } from '../middleware/auth.js';
+import { emailService } from '../services/email/index.js';
 
 const inviteSchema = z.object({
   email: z.string().email(),

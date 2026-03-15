@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockLimit = vi.fn<() => Promise<Array<{ id: string }>>>(async () => []);
 
-vi.mock("../db", () => ({
+vi.mock('../db/index.js', () => ({
   db: {
     select: vi.fn(() => ({
       from: () => ({
@@ -16,7 +16,7 @@ vi.mock("../db", () => ({
   },
 }));
 
-const { resolveOrganization } = await import("./organization");
+const { resolveOrganization } = await import('./organization.js');
 
 type TestContext = {
   req: {

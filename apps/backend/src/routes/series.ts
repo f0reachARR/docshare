@@ -1,7 +1,7 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq } from "drizzle-orm";
-import { db } from "../db";
-import { competitionSeries } from "../db/schema";
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
+import { db } from '../db/index.js';
+import { competitionSeries } from '../db/schema.js';
 
 const seriesSchema = z.object({
   id: z.string().uuid(),

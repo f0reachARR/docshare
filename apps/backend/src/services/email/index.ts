@@ -1,7 +1,7 @@
-import { env } from "../../lib/config";
-import { ConsoleEmailService } from "./console";
-import type { EmailService } from "./interface";
-import { SendGridEmailService } from "./sendgrid";
+import { env } from '../../lib/config.js';
+import { ConsoleEmailService } from './console.js';
+import type { EmailService } from './interface.js';
+import { SendGridEmailService } from './sendgrid.js';
 
 export const emailService: EmailService =
   env.EMAIL_PROVIDER === "sendgrid" && env.SENDGRID_API_KEY

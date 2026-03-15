@@ -1,10 +1,10 @@
-import { eq } from "drizzle-orm";
-import type { Context, MiddlewareHandler } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { auth } from "../auth";
-import { db } from "../db";
-import { users } from "../db/schema";
-import type { UserContext } from "../types";
+import { eq } from 'drizzle-orm';
+import type { Context, MiddlewareHandler } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import { auth } from '../auth.js';
+import { db } from '../db/index.js';
+import { users } from '../db/schema.js';
+import type { UserContext } from '../types.js';
 
 export type AppVariables = {
   currentUser: UserContext;

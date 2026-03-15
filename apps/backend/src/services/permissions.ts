@@ -1,5 +1,5 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
-import { db } from "../db";
+import { and, eq, isNull, sql } from 'drizzle-orm';
+import { db } from '../db/index.js';
 import {
   comments,
   competitionEditions,
@@ -7,7 +7,7 @@ import {
   participations,
   submissions,
   users,
-} from "../db/schema";
+} from '../db/schema.js';
 
 export const isAdmin = async (userId: string): Promise<boolean> => {
   const rows = await db

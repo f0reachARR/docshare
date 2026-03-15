@@ -1,9 +1,9 @@
-import sendgridMail from "@sendgrid/mail";
+import sendgridMail from '@sendgrid/mail';
 import type {
   EmailService,
   SendEmailParams,
   SendEmailResult,
-} from "./interface";
+} from './interface.js';
 
 export class SendGridEmailService implements EmailService {
   constructor(

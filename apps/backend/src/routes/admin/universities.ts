@@ -1,10 +1,10 @@
-import { randomUUID } from "node:crypto";
-import { Hono } from "hono";
-import { z } from "zod";
-import { db } from "../../db";
-import { invitations, organizations } from "../../db/schema";
-import type { AppVariables } from "../../middleware/auth";
-import { emailService } from "../../services/email";
+import { randomUUID } from 'node:crypto';
+import { Hono } from 'hono';
+import { z } from 'zod';
+import { db } from '../../db/index.js';
+import { invitations, organizations } from '../../db/schema.js';
+import type { AppVariables } from '../../middleware/auth.js';
+import { emailService } from '../../services/email/index.js';
 
 const createSchema = z.object({
   name: z.string().min(1),

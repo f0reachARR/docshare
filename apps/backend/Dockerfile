@@ -8,4 +8,4 @@ RUN corepack enable && pnpm install --frozen-lockfile=false
 COPY . .
 RUN pnpm --filter backend build
 EXPOSE 8787
-CMD ["node", "apps/backend/dist/index.js"]
+CMD ["pnpm", "--filter", "backend", "start"]

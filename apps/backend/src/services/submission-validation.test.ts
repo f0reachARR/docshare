@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 import {
   isContentTypeConsistent,
   isSubmissionMutableStatus,
   validateSubmissionPayload,
-} from "./submission-validation";
+} from './submission-validation.js';
 
 describe("submission validation", () => {
   it("accepts valid file submission payload", () => {

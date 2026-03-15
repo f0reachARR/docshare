@@ -1,20 +1,20 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { auth } from "./auth";
-import { requireAdmin } from "./middleware/admin";
-import { requireAuth } from "./middleware/auth";
-import { resolveOrganization } from "./middleware/organization";
-import { adminEditionRoutes } from "./routes/admin/editions";
-import { adminParticipationRoutes } from "./routes/admin/participations";
-import { adminSeriesRoutes } from "./routes/admin/series";
-import { adminTemplateRoutes } from "./routes/admin/templates";
-import { adminUniversityRoutes } from "./routes/admin/universities";
-import { commentRoutes } from "./routes/comments";
-import { editionProtectedRoutes } from "./routes/edition-protected";
-import { editionRoutes } from "./routes/editions";
-import { seriesRoutes } from "./routes/series";
-import { submissionRoutes } from "./routes/submissions";
-import { universityRoutes } from "./routes/university";
-import { uploadRoutes } from "./routes/upload";
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { auth } from './auth.js';
+import { requireAdmin } from './middleware/admin.js';
+import { requireAuth } from './middleware/auth.js';
+import { resolveOrganization } from './middleware/organization.js';
+import { adminEditionRoutes } from './routes/admin/editions.js';
+import { adminParticipationRoutes } from './routes/admin/participations.js';
+import { adminSeriesRoutes } from './routes/admin/series.js';
+import { adminTemplateRoutes } from './routes/admin/templates.js';
+import { adminUniversityRoutes } from './routes/admin/universities.js';
+import { commentRoutes } from './routes/comments.js';
+import { editionProtectedRoutes } from './routes/edition-protected.js';
+import { editionRoutes } from './routes/editions.js';
+import { seriesRoutes } from './routes/series.js';
+import { submissionRoutes } from './routes/submissions.js';
+import { universityRoutes } from './routes/university.js';
+import { uploadRoutes } from './routes/upload.js';
 
 const healthRoute = createRoute({
   method: "get",

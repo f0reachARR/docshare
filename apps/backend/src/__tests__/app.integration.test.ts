@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createApp } from "../app";
+import { describe, expect, it } from 'vitest';
+import { createApp } from '../app.js';
 
 describe("app integration", () => {
   it("returns health", async () => {

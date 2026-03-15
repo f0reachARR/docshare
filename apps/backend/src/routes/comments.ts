@@ -1,20 +1,20 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
-import { db } from "../db";
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { db } from '../db/index.js';
 import {
   comments,
   members,
   organizations,
   participations,
   users,
-} from "../db/schema";
-import type { AppVariables } from "../middleware/auth";
+} from '../db/schema.js';
+import type { AppVariables } from '../middleware/auth.js';
 import {
   canComment,
   canDeleteComment,
   canEditComment,
   canViewParticipation,
-} from "../services/permissions";
+} from '../services/permissions.js';
 
 const bodySchema = z.object({
   body: z.string().min(1).max(5000),

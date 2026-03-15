@@ -9,7 +9,7 @@ type UserRow = {
 };
 const mockUserLimit = vi.fn<() => Promise<UserRow[]>>(async () => []);
 
-vi.mock("../auth", () => ({
+vi.mock('../auth.js', () => ({
   auth: {
     api: {
       getSession: mockGetSession,
@@ -18,7 +18,7 @@ vi.mock("../auth", () => ({
   },
 }));
 
-vi.mock("../db", () => ({
+vi.mock('../db/index.js', () => ({
   db: {
     select: vi.fn(() => ({
       from: () => ({
@@ -30,7 +30,7 @@ vi.mock("../db", () => ({
   },
 }));
 
-const { createApp } = await import("../app");
+const { createApp } = await import('../app.js');
 
 describe("app session integration", () => {
   it("セッションなしは認証必須APIで401", async () => {

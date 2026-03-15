@@ -1,9 +1,9 @@
-import { eq } from "drizzle-orm";
-import { Hono } from "hono";
-import { z } from "zod";
-import { db } from "../../db";
-import { submissionTemplates } from "../../db/schema";
-import type { AppVariables } from "../../middleware/auth";
+import { eq } from 'drizzle-orm';
+import { Hono } from 'hono';
+import { z } from 'zod';
+import { db } from '../../db/index.js';
+import { submissionTemplates } from '../../db/schema.js';
+import type { AppVariables } from '../../middleware/auth.js';
 
 const schema = z.object({
   name: z.string().min(1),

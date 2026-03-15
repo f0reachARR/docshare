@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { buildRuleKey, buildVersionedSubmissionKey } from "./storage";
+import { describe, expect, it } from 'vitest';
+import { buildRuleKey, buildVersionedSubmissionKey } from './storage.js';
 
 describe("storage key builders", () => {
   it("builds versioned submission key with v prefix", () => {

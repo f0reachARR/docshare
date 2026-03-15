@@ -1,9 +1,9 @@
-import { and, eq } from "drizzle-orm";
-import type { MiddlewareHandler } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { db } from "../db";
-import { members } from "../db/schema";
-import type { AppVariables } from "./auth";
+import { and, eq } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import { db } from '../db/index.js';
+import { members } from '../db/schema.js';
+import type { AppVariables } from './auth.js';
 
 export const resolveOrganization: MiddlewareHandler<{
   Variables: AppVariables;

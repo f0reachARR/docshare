@@ -2,7 +2,7 @@ import type {
   EmailService,
   SendEmailParams,
   SendEmailResult,
-} from "./interface";
+} from './interface.js';
 
 export class ConsoleEmailService implements EmailService {
   async sendEmail(params: SendEmailParams): Promise<SendEmailResult> {

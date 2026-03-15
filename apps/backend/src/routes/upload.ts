@@ -1,24 +1,24 @@
-import { and, eq } from "drizzle-orm";
-import { Hono } from "hono";
-import { z } from "zod";
-import { db } from "../db";
+import { and, eq } from 'drizzle-orm';
+import { Hono } from 'hono';
+import { z } from 'zod';
+import { db } from '../db/index.js';
 import {
   competitionEditions,
   participations,
   submissionTemplates,
   submissions,
-} from "../db/schema";
-import { env } from "../lib/config";
-import type { AppVariables } from "../middleware/auth";
-import { getUserUniversityIds, isAdmin } from "../services/permissions";
+} from '../db/schema.js';
+import { env } from '../lib/config.js';
+import type { AppVariables } from '../middleware/auth.js';
+import { getUserUniversityIds, isAdmin } from '../services/permissions.js';
 import {
   buildVersionedSubmissionKey,
   presignUploadByKey,
-} from "../services/storage";
+} from '../services/storage.js';
 import {
   isContentTypeConsistent,
   isSubmissionMutableStatus,
-} from "../services/submission-validation";
+} from '../services/submission-validation.js';
 
 const bodySchema = z.object({
   participationId: z.string().uuid(),

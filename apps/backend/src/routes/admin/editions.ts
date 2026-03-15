@@ -1,10 +1,10 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq } from "drizzle-orm";
-import { db } from "../../db";
-import { competitionEditions } from "../../db/schema";
-import { env } from "../../lib/config";
-import type { AppVariables } from "../../middleware/auth";
-import { presignUpload } from "../../services/storage";
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
+import { db } from '../../db/index.js';
+import { competitionEditions } from '../../db/schema.js';
+import { env } from '../../lib/config.js';
+import type { AppVariables } from '../../middleware/auth.js';
+import { presignUpload } from '../../services/storage.js';
 
 const schema = z.object({
   seriesId: z.string().uuid(),

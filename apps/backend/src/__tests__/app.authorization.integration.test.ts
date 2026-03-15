@@ -47,9 +47,9 @@ const mockDb = {
   })),
 };
 
-vi.mock("../db", () => ({ db: mockDb }));
+vi.mock('../db/index.js', () => ({ db: mockDb }));
 
-vi.mock("../middleware/auth", () => ({
+vi.mock('../middleware/auth.js', () => ({
   requireAuth: async (
     c: {
       req: { header: (name: string) => string | undefined };
@@ -73,7 +73,7 @@ vi.mock("../middleware/auth", () => ({
   },
 }));
 
-vi.mock("../middleware/organization", () => ({
+vi.mock('../middleware/organization.js', () => ({
   resolveOrganization: async (
     c: {
       req: { header: (name: string) => string | undefined };
@@ -86,7 +86,7 @@ vi.mock("../middleware/organization", () => ({
   },
 }));
 
-vi.mock("../middleware/admin", () => ({
+vi.mock('../middleware/admin.js', () => ({
   requireAdmin: async (
     c: { get: (key: string) => { isAdmin?: boolean } | undefined },
     next: Next,
@@ -112,7 +112,7 @@ const mockCanViewOtherSubmissions = vi.fn(
   },
 );
 
-vi.mock("../services/permissions", () => ({
+vi.mock('../services/permissions.js', () => ({
   canDeleteSubmission: mockCanDeleteSubmission,
   canViewOtherSubmissions: mockCanViewOtherSubmissions,
   canViewParticipation: vi.fn(async () => true),
@@ -123,7 +123,7 @@ vi.mock("../services/permissions", () => ({
   isAdmin: vi.fn(async (userId: string) => userId === "admin-user"),
 }));
 
-const { createApp } = await import("../app");
+const { createApp } = await import('../app.js');
 
 describe("authorization integration (app.request)", () => {
   beforeEach(() => {

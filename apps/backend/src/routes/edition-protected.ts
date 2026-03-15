@@ -1,8 +1,8 @@
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { and, asc, eq } from "drizzle-orm";
-import { db } from "../db";
-import { participations, submissionTemplates, submissions } from "../db/schema";
-import type { AppVariables } from "../middleware/auth";
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { and, asc, eq } from 'drizzle-orm';
+import { db } from '../db/index.js';
+import { participations, submissionTemplates, submissions } from '../db/schema.js';
+import type { AppVariables } from '../middleware/auth.js';
 
 export const editionProtectedRoutes = new OpenAPIHono<{
   Variables: AppVariables;
