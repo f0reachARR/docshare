@@ -1,6 +1,6 @@
 # ロボコン情報共有サービス 仕様書
 
-**バージョン:** 0.2.0  
+**バージョン:** 0.3.0  
 **最終更新:** 2026-03-15
 
 ---
@@ -24,6 +24,9 @@
 | 認証 | Better Auth | Organization プラグインで大学・招待・ロール管理 |
 | ファイルストレージ | S3互換 (R2, MinIO, AWS S3等) | 署名付きURLでのアップロード/ダウンロード |
 | メール送信 | SendGrid | 抽象化レイヤー経由で差し替え可能に |
+| リンター / フォーマッター | Biome | ESLint + Prettier の代替。高速な統合ツール |
+| 型検査 | tsc (TypeScript Compiler) | `--noEmit` でCI・pre-commitの型チェックに使用 |
+| テスト | Vitest | ユニットテスト・統合テスト。Hono のルートテストにも使用 |
 | デプロイ | Docker Compose | 開発・テスト・本番共通の起点 |
 
 ### 2.1 アーキテクチャ方針
@@ -94,6 +97,86 @@ class ConsoleEmailService implements EmailService {
 ```
 
 開発環境では `ConsoleEmailService` を使用し、本番では環境変数 `EMAIL_PROVIDER=sendgrid` で切り替える。
+
+### 2.4 開発ツールチェーン
+
+#### Biome（リンター / フォーマッター）
+
+ESLint + Prettier を Biome に一本化する。単一ツールで lint と format を高速に実行できるため、CI の実行時間短縮とツール管理の簡素化が見込める。
+
+#### tsc（型検査）
+
+TypeScript のコンパイルは各ツール（Next.js, Hono/tsx, Vitest）が内部で行うため、tsc はビルドには使用しない。`tsc --noEmit` を型検査専用として CI および pre-commit で実行する。
+
+```jsonc
+// tsconfig.json（ルート — プロジェクトリファレンス方式）
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "references": [
+    { "path": "apps/frontend" },
+    { "path": "apps/backend" },
+    { "path": "packages/shared" }
+  ]
+}
+```
+
+各 `apps/` と `packages/` はそれぞれ独自の `tsconfig.json` を持ち、ルートの設定を `extends` する。
+
+#### Vitest（テスト）
+
+テストランナーとして Vitest を使用する。ユニットテスト・統合テストの両方を単一のツールで扱う。
+
+```typescript
+// vitest.workspace.ts（ルートに配置）
+import { defineWorkspace } from "vitest/config";
+
+export default defineWorkspace([
+  "apps/backend",
+  "apps/frontend",
+  "packages/shared",
+]);
+```
+
+**テストの分類と配置:**
+
+| 種別 | 対象 | 配置 | 実行タイミング |
+|------|------|------|---------------|
+| ユニットテスト | サービス層、ユーティリティ、権限判定ロジック | `*.test.ts`（対象ファイルと同階層） | 常時（CI + ローカル） |
+| 統合テスト | API ルート（Hono の `app.request` を使用） | `__tests__/` ディレクトリ | CI（テスト用 DB を Docker Compose で起動） |
+| フロントエンドテスト | React コンポーネント、カスタムフック | `*.test.tsx`（対象ファイルと同階層） | CI + ローカル |
+
+バックエンドの統合テストでは Hono の `app.request()` メソッドを使い、HTTP サーバーを起動せずにルートをテストする。テスト用の PostgreSQL は Docker Compose で起動し、テストごとにトランザクションをロールバックして分離する。
+
+#### monorepo ルートの npm scripts
+
+```jsonc
+// package.json（ルート）
+{
+  "scripts": {
+    "dev": "pnpm --filter './apps/*' --parallel dev",
+    "build": "pnpm --filter './apps/*' build",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "ci": "pnpm check && pnpm typecheck && pnpm test"
+  }
+}
+```
+
+`pnpm ci` を実行すると、Biome による lint/format チェック → tsc による型検査 → Vitest によるテスト実行 の順に走る。CI パイプラインでもこのコマンドを使用する。
 
 ---
 
@@ -817,8 +900,22 @@ docker compose up -d
 # DB マイグレーション
 pnpm --filter backend db:migrate
 # 開発サーバー起動（ホットリロード）
-pnpm --filter frontend dev
-pnpm --filter backend dev
+pnpm dev
+```
+
+### 12.4 CI / 品質チェック
+
+```bash
+# lint + format チェック → 型検査 → テスト を一括実行
+pnpm ci
+
+# 個別実行
+pnpm check          # Biome lint/format チェック
+pnpm check:fix      # Biome 自動修正
+pnpm typecheck      # tsc --noEmit
+pnpm test           # Vitest 実行
+pnpm test:watch     # Vitest ウォッチモード
+pnpm test:coverage  # カバレッジ付きテスト
 ```
 
 ---
@@ -829,25 +926,33 @@ pnpm --filter backend dev
 robocon-hub/
 ├── docker-compose.yml
 ├── .env.example
-├── package.json                 # workspaces 定義
+├── package.json                 # workspaces 定義 + ルート scripts
 ├── pnpm-workspace.yaml
-├── tsconfig.json                # 共通 TypeScript 設定 (strictなど)
-├── biome.json                   # Biome コードフォーマッタ設定
+├── biome.json                   # Biome 設定（monorepo 全体）
+├── tsconfig.json                # ルート tsconfig（プロジェクトリファレンス）
+├── vitest.workspace.ts          # Vitest ワークスペース設定
 │
 ├── apps/
 │   ├── frontend/                # Next.js
 │   │   ├── Dockerfile
 │   │   ├── package.json
+│   │   ├── tsconfig.json        # extends ルート設定 + Next.js 固有
+│   │   ├── vitest.config.ts
 │   │   ├── next.config.ts
 │   │   └── src/
 │   │       ├── app/             # App Router pages
 │   │       ├── components/      # UIコンポーネント
+│   │       │   └── *.test.tsx   # コンポーネントテスト（同階層配置）
 │   │       ├── lib/             # API クライアント、ユーティリティ
+│   │       │   └── *.test.ts
 │   │       └── hooks/           # カスタムフック
+│   │           └── *.test.ts
 │   │
 │   └── backend/                 # Hono API
 │       ├── Dockerfile
 │       ├── package.json
+│       ├── tsconfig.json        # extends ルート設定
+│       ├── vitest.config.ts
 │       └── src/
 │           ├── index.ts         # エントリーポイント
 │           ├── auth.ts          # Better Auth 構成
@@ -878,13 +983,21 @@ robocon-hub/
 │           │   │   ├── sendgrid.ts    # SendGrid 実装
 │           │   │   └── console.ts     # 開発用コンソール実装
 │           │   ├── storage.ts         # S3 操作
-│           │   └── permissions.ts     # 閲覧権限判定
+│           │   ├── permissions.ts     # 閲覧権限判定
+│           │   └── permissions.test.ts # 権限ロジックのユニットテスト
+│           ├── __tests__/             # 統合テスト
+│           │   ├── setup.ts           # テスト用DB接続・トランザクション管理
+│           │   ├── submissions.test.ts
+│           │   ├── comments.test.ts
+│           │   └── permissions.test.ts
 │           └── lib/
 │               └── config.ts          # 環境変数読み込み
 │
 └── packages/
     └── shared/                  # フロント・バック共有の型定義
         ├── package.json
+        ├── tsconfig.json
         └── src/
-            └── types.ts         # API レスポンス型、共通 enum 等
+            ├── types.ts         # API レスポンス型、共通 enum 等
+            └── types.test.ts    # 型ガード等のテスト
 ```

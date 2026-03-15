@@ -1,0 +1,22 @@
+{
+  "name": "fortefibre-docshare-2",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev": "pnpm --filter backend dev",
+    "build": "pnpm --filter backend build",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "typecheck": "pnpm --filter ./apps/backend typecheck && pnpm --filter ./packages/shared typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "ci": "pnpm check && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.8.2",
+    "vitest": "^3.1.1"
+  }
+}

@@ -1,0 +1,257 @@
+import { randomUUID } from 'node:crypto';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { and, eq } from 'drizzle-orm';
+import { db } from '../db/index.js';
+import { invitations, members, organizations, users } from '../db/schema.js';
+import type { AppVariables } from '../middleware/auth.js';
+import { emailService } from '../services/email/index.js';
+
+const inviteSchema = z.object({
+  email: z.string().email(),
+  role: z.enum(['owner', 'member']),
+});
+
+const updateRoleSchema = z.object({
+  role: z.enum(['owner', 'member']),
+});
+
+const orgHeaderSchema = z.object({
+  'x-organization-id': z.string(),
+});
+
+const memberSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  role: z.enum(['owner', 'member']),
+  name: z.string(),
+  email: z.string().email(),
+});
+
+const listUniversityMembersRoute = createRoute({
+  method: 'get',
+  path: '/university/members',
+  request: {
+    headers: orgHeaderSchema,
+  },
+  responses: {
+    200: {
+      description: '所属メンバー一覧',
+      content: {
+        'application/json': {
+          schema: z.object({ data: z.array(memberSchema) }),
+        },
+      },
+    },
+    400: {
+      description: '組織指定不足',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.literal('x-organization-id is required'),
+          }),
+        },
+      },
+    },
+    403: {
+      description: 'オーナー限定',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Owner only') }),
+        },
+      },
+    },
+  },
+});
+
+const invitationSchema = z.object({
+  id: z.string(),
+  organizationId: z.string(),
+  email: z.string().email(),
+  role: z.enum(['owner', 'member']),
+  invitedBy: z.string(),
+  expiresAt: z.any(),
+  createdAt: z.any(),
+});
+
+const inviteUniversityRoute = createRoute({
+  method: 'post',
+  path: '/university/invite',
+  request: {
+    headers: orgHeaderSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: inviteSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: '招待作成',
+      content: {
+        'application/json': {
+          schema: z.object({ data: invitationSchema }),
+        },
+      },
+    },
+    400: {
+      description: '不正入力',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.any() }),
+        },
+      },
+    },
+    403: {
+      description: 'オーナー限定',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Owner only') }),
+        },
+      },
+    },
+  },
+});
+
+export const universityRoutes = new OpenAPIHono<{ Variables: AppVariables }>();
+
+const canManageMembers = async (userId: string, organizationId: string): Promise<boolean> => {
+  const adminRows = await db
+    .select({ isAdmin: users.isAdmin })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (adminRows[0]?.isAdmin) {
+    return true;
+  }
+
+  const ownerRows = await db
+    .select({ role: members.role })
+    .from(members)
+    .where(and(eq(members.userId, userId), eq(members.organizationId, organizationId)))
+    .limit(1);
+
+  return ownerRows[0]?.role === 'owner';
+};
+
+universityRoutes.openapi(listUniversityMembersRoute, async (c) => {
+  const organizationId = c.get('organizationId');
+  if (!organizationId) {
+    return c.json({ error: 'x-organization-id is required' as const }, 400);
+  }
+
+  const user = c.get('currentUser');
+  if (!(await canManageMembers(user.id, organizationId))) {
+    return c.json({ error: 'Owner only' as const }, 403);
+  }
+
+  const rows = await db
+    .select({
+      id: members.id,
+      userId: members.userId,
+      role: members.role,
+      name: users.name,
+      email: users.email,
+    })
+    .from(members)
+    .innerJoin(users, eq(users.id, members.userId))
+    .where(eq(members.organizationId, organizationId));
+
+  return c.json({ data: rows }, 200);
+});
+
+universityRoutes.openapi(inviteUniversityRoute, async (c) => {
+  const organizationId = c.get('organizationId');
+  if (!organizationId) {
+    return c.json({ error: 'x-organization-id is required' as const }, 400);
+  }
+
+  const user = c.get('currentUser');
+  const body = inviteSchema.safeParse(await c.req.json());
+  if (!body.success) {
+    return c.json({ error: body.error.flatten() }, 400);
+  }
+
+  if (!(await canManageMembers(user.id, organizationId))) {
+    return c.json({ error: 'Owner only' as const }, 403);
+  }
+
+  const inviter = await db
+    .select({ orgName: organizations.name })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+
+  const invitationId = randomUUID();
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+
+  const inserted = await db
+    .insert(invitations)
+    .values({
+      id: invitationId,
+      organizationId,
+      email: body.data.email,
+      role: body.data.role,
+      invitedBy: user.id,
+      expiresAt,
+    })
+    .returning();
+
+  await emailService.sendEmail({
+    to: body.data.email,
+    subject: `${inviter[0]?.orgName ?? organizationId} への招待`,
+    html: `招待リンク: invitation:${invitationId}`,
+  });
+
+  return c.json({ data: inserted[0] }, 201);
+});
+
+universityRoutes.put('/university/members/:id/role', async (c) => {
+  const organizationId = c.get('organizationId');
+  if (!organizationId) {
+    return c.json({ error: 'x-organization-id is required' }, 400);
+  }
+
+  const user = c.get('currentUser');
+  const memberId = c.req.param('id');
+  const body = updateRoleSchema.safeParse(await c.req.json());
+  if (!body.success) {
+    return c.json({ error: body.error.flatten() }, 400);
+  }
+
+  if (!(await canManageMembers(user.id, organizationId))) {
+    return c.json({ error: 'Owner only' }, 403);
+  }
+
+  const updated = await db
+    .update(members)
+    .set({ role: body.data.role })
+    .where(and(eq(members.id, memberId), eq(members.organizationId, organizationId)))
+    .returning();
+
+  if (!updated[0]) {
+    return c.json({ error: 'Not found' }, 404);
+  }
+
+  return c.json({ data: updated[0] });
+});
+
+universityRoutes.delete('/university/members/:id', async (c) => {
+  const organizationId = c.get('organizationId');
+  if (!organizationId) {
+    return c.json({ error: 'x-organization-id is required' }, 400);
+  }
+
+  const user = c.get('currentUser');
+  const memberId = c.req.param('id');
+
+  if (!(await canManageMembers(user.id, organizationId))) {
+    return c.json({ error: 'Owner only' }, 403);
+  }
+
+  await db
+    .delete(members)
+    .where(and(eq(members.id, memberId), eq(members.organizationId, organizationId)));
+  return c.body(null, 204);
+});
