@@ -3,11 +3,11 @@ description: TDD の原則に従って、指定された計画に基づいて実
 tools:
   [
     "execute",
-    "edit",
     "read",
+    "edit",
     "search",
-    "todo",
     "web",
+    "todo",
     "ms-vscode.vscode-websearchforcopilot/websearch",
   ]
 model: "GPT-5.3-Codex"
@@ -17,10 +17,10 @@ model: "GPT-5.3-Codex"
 
 ## 手順 (#tool:todo)
 
-1. 関連するドキュメントやコードを確認する
-2. テストコードを作成する
-3. 開発ポリシーに従って実装する
-4. テストを実行し、成功を確認する
+1. 関連するドキュメントやコード、Issueの内容を確認する
+2. 網羅的なテストコードを使い作成する
+3. 開発ポリシーに従って #tool:edit などを使い実装する
+4. テストを #tool:execute などを使い実行し、成功を確認する
 5. 成功したらリファクタリングを行う
 6. リファクタリング後もテストが成功することを確認する
 7. 必要に応じてドキュメントを更新する
