@@ -1,10 +1,10 @@
-import type { Next } from 'hono';
-import { HTTPException } from 'hono/http-exception';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Next } from "hono";
+import { HTTPException } from "hono/http-exception";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockLimit = vi.fn<() => Promise<Array<{ id: string }>>>(async () => []);
 
-vi.mock('../db', () => ({
+vi.mock("../db", () => ({
   db: {
     select: vi.fn(() => ({
       from: () => ({
@@ -16,7 +16,7 @@ vi.mock('../db', () => ({
   },
 }));
 
-const { resolveOrganization } = await import('./organization');
+const { resolveOrganization } = await import("./organization");
 
 type TestContext = {
   req: {
@@ -32,13 +32,16 @@ const createContext = (params: {
   sessionActiveOrganizationId?: string | null;
 }): TestContext => {
   const vars = new Map<string, unknown>();
-  vars.set('currentUser', params.user);
-  vars.set('sessionActiveOrganizationId', params.sessionActiveOrganizationId ?? null);
+  vars.set("currentUser", params.user);
+  vars.set(
+    "sessionActiveOrganizationId",
+    params.sessionActiveOrganizationId ?? null,
+  );
 
   return {
     req: {
       header: (name) => {
-        if (name.toLowerCase() === 'x-organization-id') {
+        if (name.toLowerCase() === "x-organization-id") {
           return params.headerOrganizationId;
         }
         return undefined;
@@ -51,29 +54,29 @@ const createContext = (params: {
   };
 };
 
-describe('resolveOrganization', () => {
+describe("resolveOrganization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLimit.mockResolvedValue([]);
   });
 
-  it('ヘッダー未指定時にセッションactiveOrganizationを利用する', async () => {
+  it("ヘッダー未指定時にセッションactiveOrganizationを利用する", async () => {
     const c = createContext({
-      user: { id: 'user-1', isAdmin: false },
-      sessionActiveOrganizationId: 'org-1',
+      user: { id: "user-1", isAdmin: false },
+      sessionActiveOrganizationId: "org-1",
     });
-    mockLimit.mockResolvedValue([{ id: 'm-1' }]);
+    mockLimit.mockResolvedValue([{ id: "m-1" }]);
 
     await resolveOrganization(c as never, vi.fn(async () => undefined) as Next);
 
-    expect(c.get('organizationId')).toBe('org-1');
+    expect(c.get("organizationId")).toBe("org-1");
   });
 
-  it('所属していないorganization指定は403', async () => {
+  it("所属していないorganization指定は403", async () => {
     const c = createContext({
-      user: { id: 'user-1', isAdmin: false },
-      headerOrganizationId: 'org-x',
-      sessionActiveOrganizationId: 'org-1',
+      user: { id: "user-1", isAdmin: false },
+      headerOrganizationId: "org-x",
+      sessionActiveOrganizationId: "org-1",
     });
 
     await expect(
@@ -81,13 +84,13 @@ describe('resolveOrganization', () => {
     ).rejects.toBeInstanceOf(HTTPException);
   });
 
-  it('organizationコンテキスト未指定時はnull', async () => {
+  it("organizationコンテキスト未指定時はnull", async () => {
     const c = createContext({
-      user: { id: 'admin-1', isAdmin: true },
+      user: { id: "admin-1", isAdmin: true },
     });
 
     await resolveOrganization(c as never, vi.fn(async () => undefined) as Next);
 
-    expect(c.get('organizationId')).toBeNull();
+    expect(c.get("organizationId")).toBeNull();
   });
 });

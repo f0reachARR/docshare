@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from "vitest";
 
 const mockGetSession = vi.fn();
 type UserRow = {
@@ -9,16 +9,16 @@ type UserRow = {
 };
 const mockUserLimit = vi.fn<() => Promise<UserRow[]>>(async () => []);
 
-vi.mock('../auth', () => ({
+vi.mock("../auth", () => ({
   auth: {
     api: {
       getSession: mockGetSession,
     },
-    handler: vi.fn(async () => new Response('Not Found', { status: 404 })),
+    handler: vi.fn(async () => new Response("Not Found", { status: 404 })),
   },
 }));
 
-vi.mock('../db', () => ({
+vi.mock("../db", () => ({
   db: {
     select: vi.fn(() => ({
       from: () => ({
@@ -30,35 +30,38 @@ vi.mock('../db', () => ({
   },
 }));
 
-const { createApp } = await import('../app');
+const { createApp } = await import("../app");
 
-describe('app session integration', () => {
-  it('セッションなしは認証必須APIで401', async () => {
+describe("app session integration", () => {
+  it("セッションなしは認証必須APIで401", async () => {
     const app = createApp();
     mockGetSession.mockResolvedValueOnce(null);
 
-    const res = await app.request('/api/submissions', {
-      method: 'POST',
+    const res = await app.request("/api/submissions", {
+      method: "POST",
       body: JSON.stringify({}),
     });
 
     expect(res.status).toBe(401);
   });
 
-  it('セッションありは認証を通過し、後段バリデーションが動作', async () => {
+  it("セッションありは認証を通過し、後段バリデーションが動作", async () => {
     const app = createApp();
-    mockGetSession.mockResolvedValueOnce({ user: { id: 'user-1' }, session: {} });
+    mockGetSession.mockResolvedValueOnce({
+      user: { id: "user-1" },
+      session: {},
+    });
     mockUserLimit.mockResolvedValueOnce([
       {
-        id: 'user-1',
-        email: 'u@example.com',
-        name: 'user',
+        id: "user-1",
+        email: "u@example.com",
+        name: "user",
         isAdmin: false,
       },
     ]);
 
-    const res = await app.request('/api/submissions', {
-      method: 'POST',
+    const res = await app.request("/api/submissions", {
+      method: "POST",
       body: JSON.stringify({}),
     });
 

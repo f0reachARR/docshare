@@ -1,5 +1,5 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
-import { db } from '../db';
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { db } from "../db";
 import {
   comments,
   competitionEditions,
@@ -7,7 +7,7 @@ import {
   participations,
   submissions,
   users,
-} from '../db/schema';
+} from "../db/schema";
 
 export const isAdmin = async (userId: string): Promise<boolean> => {
   const rows = await db
@@ -18,7 +18,9 @@ export const isAdmin = async (userId: string): Promise<boolean> => {
   return rows[0]?.isAdmin ?? false;
 };
 
-export const getUserUniversityIds = async (userId: string): Promise<string[]> => {
+export const getUserUniversityIds = async (
+  userId: string,
+): Promise<string[]> => {
   const rows = await db
     .select({ organizationId: members.organizationId })
     .from(members)
@@ -35,7 +37,10 @@ export const hasAnySubmission = async (
     .from(participations)
     .innerJoin(submissions, eq(submissions.participationId, participations.id))
     .where(
-      and(eq(participations.universityId, universityId), eq(participations.editionId, editionId)),
+      and(
+        eq(participations.universityId, universityId),
+        eq(participations.editionId, editionId),
+      ),
     );
 
   return Number(result[0]?.value ?? 0) > 0;
@@ -56,7 +61,7 @@ export const canViewOtherSubmissions = async (
     .limit(1);
 
   const sharingStatus = editionRows[0]?.sharingStatus;
-  if (!sharingStatus || !['sharing', 'closed'].includes(sharingStatus)) {
+  if (!sharingStatus || !["sharing", "closed"].includes(sharingStatus)) {
     return false;
   }
 
@@ -122,7 +127,9 @@ export const canComment = async (
   return canViewParticipation(userId, participationId, organizationIdHeader);
 };
 
-const getActiveCommentAuthor = async (commentId: string): Promise<string | null> => {
+const getActiveCommentAuthor = async (
+  commentId: string,
+): Promise<string | null> => {
   const rows = await db
     .select({ authorId: comments.authorId })
     .from(comments)
@@ -135,7 +142,10 @@ const getActiveCommentAuthor = async (commentId: string): Promise<string | null>
   return comment.authorId;
 };
 
-export const canEditComment = async (userId: string, commentId: string): Promise<boolean> => {
+export const canEditComment = async (
+  userId: string,
+  commentId: string,
+): Promise<boolean> => {
   const authorId = await getActiveCommentAuthor(commentId);
   if (!authorId) {
     return false;
@@ -144,7 +154,10 @@ export const canEditComment = async (userId: string, commentId: string): Promise
   return authorId === userId;
 };
 
-export const canDeleteComment = async (userId: string, commentId: string): Promise<boolean> => {
+export const canDeleteComment = async (
+  userId: string,
+  commentId: string,
+): Promise<boolean> => {
   const authorId = await getActiveCommentAuthor(commentId);
   if (!authorId) {
     return false;
@@ -172,17 +185,25 @@ export const canDeleteSubmission = async (
   const roleRows = await db
     .select({ role: members.role })
     .from(members)
-    .where(and(eq(members.userId, userId), eq(members.organizationId, organizationIdHeader)))
+    .where(
+      and(
+        eq(members.userId, userId),
+        eq(members.organizationId, organizationIdHeader),
+      ),
+    )
     .limit(1);
 
-  if (roleRows[0]?.role !== 'owner') {
+  if (roleRows[0]?.role !== "owner") {
     return false;
   }
 
   const submissionRows = await db
     .select({ universityId: participations.universityId })
     .from(submissions)
-    .innerJoin(participations, eq(participations.id, submissions.participationId))
+    .innerJoin(
+      participations,
+      eq(participations.id, submissions.participationId),
+    )
     .where(eq(submissions.id, submissionId))
     .limit(1);
 

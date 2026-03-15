@@ -1,21 +1,24 @@
-import { and, eq } from 'drizzle-orm';
-import { Hono } from 'hono';
-import { z } from 'zod';
-import { db } from '../db';
+import { and, eq } from "drizzle-orm";
+import { Hono } from "hono";
+import { z } from "zod";
+import { db } from "../db";
 import {
   competitionEditions,
   participations,
   submissionTemplates,
   submissions,
-} from '../db/schema';
-import { env } from '../lib/config';
-import type { AppVariables } from '../middleware/auth';
-import { getUserUniversityIds, isAdmin } from '../services/permissions';
-import { buildVersionedSubmissionKey, presignUploadByKey } from '../services/storage';
+} from "../db/schema";
+import { env } from "../lib/config";
+import type { AppVariables } from "../middleware/auth";
+import { getUserUniversityIds, isAdmin } from "../services/permissions";
+import {
+  buildVersionedSubmissionKey,
+  presignUploadByKey,
+} from "../services/storage";
 import {
   isContentTypeConsistent,
   isSubmissionMutableStatus,
-} from '../services/submission-validation';
+} from "../services/submission-validation";
 
 const bodySchema = z.object({
   participationId: z.string().uuid(),
@@ -26,8 +29,8 @@ const bodySchema = z.object({
 
 export const uploadRoutes = new Hono<{ Variables: AppVariables }>();
 
-uploadRoutes.post('/upload/presign', async (c) => {
-  const user = c.get('currentUser');
+uploadRoutes.post("/upload/presign", async (c) => {
+  const user = c.get("currentUser");
   const body = bodySchema.safeParse(await c.req.json());
 
   if (!body.success) {
@@ -37,55 +40,70 @@ uploadRoutes.post('/upload/presign', async (c) => {
   const templateRows = await db
     .select({ template: submissionTemplates, edition: competitionEditions })
     .from(submissionTemplates)
-    .innerJoin(competitionEditions, eq(competitionEditions.id, submissionTemplates.editionId))
+    .innerJoin(
+      competitionEditions,
+      eq(competitionEditions.id, submissionTemplates.editionId),
+    )
     .where(eq(submissionTemplates.id, body.data.templateId))
     .limit(1);
 
   const templateContext = templateRows[0];
   if (!templateContext) {
-    return c.json({ error: 'Template not found' }, 404);
+    return c.json({ error: "Template not found" }, 404);
   }
 
   const template = templateContext.template;
 
-  if (template.acceptType !== 'file') {
-    return c.json({ error: 'Template does not accept file upload' }, 400);
+  if (template.acceptType !== "file") {
+    return c.json({ error: "Template does not accept file upload" }, 400);
   }
 
   if (!isSubmissionMutableStatus(templateContext.edition.sharingStatus)) {
-    return c.json({ error: 'Submissions are not accepted in current sharing_status' }, 409);
+    return c.json(
+      { error: "Submissions are not accepted in current sharing_status" },
+      409,
+    );
   }
 
-  const extension = body.data.fileName.split('.').pop()?.toLowerCase();
+  const extension = body.data.fileName.split(".").pop()?.toLowerCase();
   if (
     template.allowedExtensions?.length &&
     (!extension || !template.allowedExtensions.includes(extension))
   ) {
-    return c.json({ error: 'Disallowed file extension' }, 400);
+    return c.json({ error: "Disallowed file extension" }, 400);
   }
 
   if (!isContentTypeConsistent(body.data.fileName, body.data.contentType)) {
-    return c.json({ error: 'contentType is inconsistent with file extension' }, 400);
+    return c.json(
+      { error: "contentType is inconsistent with file extension" },
+      400,
+    );
   }
 
   const participationRows = await db
-    .select({ universityId: participations.universityId, editionId: participations.editionId })
+    .select({
+      universityId: participations.universityId,
+      editionId: participations.editionId,
+    })
     .from(participations)
     .where(eq(participations.id, body.data.participationId))
     .limit(1);
 
   if (!participationRows[0]) {
-    return c.json({ error: 'Participation not found' }, 404);
+    return c.json({ error: "Participation not found" }, 404);
   }
 
   if (participationRows[0].editionId !== template.editionId) {
-    return c.json({ error: 'Template and participation mismatch' }, 400);
+    return c.json({ error: "Template and participation mismatch" }, 400);
   }
 
   if (!(await isAdmin(user.id))) {
     const organizationIds = await getUserUniversityIds(user.id);
-    if (!participationRows[0] || !organizationIds.includes(participationRows[0].universityId)) {
-      return c.json({ error: 'Forbidden' }, 403);
+    if (
+      !participationRows[0] ||
+      !organizationIds.includes(participationRows[0].universityId)
+    ) {
+      return c.json({ error: "Forbidden" }, 403);
     }
   }
 

@@ -1,4 +1,4 @@
-version: '3.9'
+version: "3.9"
 
 services:
   db:
@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: robocon
     ports:
-      - '5432:5432'
+      - "5432:5432"
 
   minio:
     image: minio/minio
@@ -17,8 +17,8 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - "9000:9000"
+      - "9001:9001"
 
   createbuckets:
     image: minio/mc
@@ -45,7 +45,7 @@ services:
       S3_SECRET_KEY: minioadmin
       S3_BUCKET_RULES: robocon-rules
       S3_BUCKET_SUBMISSIONS: robocon-submissions
-      S3_FORCE_PATH_STYLE: 'true'
+      S3_FORCE_PATH_STYLE: "true"
       BETTER_AUTH_SECRET: change-me
       BETTER_AUTH_URL: http://localhost:8787
       APP_URL: http://localhost:3000
@@ -54,4 +54,4 @@ services:
       - db
       - minio
     ports:
-      - '8787:8787'
+      - "8787:8787"

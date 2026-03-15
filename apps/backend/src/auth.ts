@@ -1,12 +1,12 @@
-import { betterAuth } from 'better-auth';
-import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { organization } from 'better-auth/plugins';
-import { db } from './db';
-import { env } from './lib/config';
-import { emailService } from './services/email';
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { organization } from "better-auth/plugins";
+import { db } from "./db";
+import { env } from "./lib/config";
+import { emailService } from "./services/email";
 
 export const auth = betterAuth({
-  database: drizzleAdapter(db, { provider: 'pg' }),
+  database: drizzleAdapter(db, { provider: "pg" }),
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
   emailAndPassword: {

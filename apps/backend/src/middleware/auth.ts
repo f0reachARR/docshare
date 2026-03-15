@@ -1,10 +1,10 @@
-import { eq } from 'drizzle-orm';
-import type { Context, MiddlewareHandler } from 'hono';
-import { HTTPException } from 'hono/http-exception';
-import { auth } from '../auth';
-import { db } from '../db';
-import { users } from '../db/schema';
-import type { UserContext } from '../types';
+import { eq } from "drizzle-orm";
+import type { Context, MiddlewareHandler } from "hono";
+import { HTTPException } from "hono/http-exception";
+import { auth } from "../auth";
+import { db } from "../db";
+import { users } from "../db/schema";
+import type { UserContext } from "../types";
 
 export type AppVariables = {
   currentUser: UserContext;
@@ -22,18 +22,22 @@ type BetterAuthSession = {
 };
 
 const parseSession = (value: unknown): BetterAuthSession | null => {
-  if (typeof value !== 'object' || value === null) {
+  if (typeof value !== "object" || value === null) {
     return null;
   }
 
   return value as BetterAuthSession;
 };
 
-export const getCurrentUser = (c: Context<{ Variables: AppVariables }>): UserContext => {
-  return c.get('currentUser');
+export const getCurrentUser = (
+  c: Context<{ Variables: AppVariables }>,
+): UserContext => {
+  return c.get("currentUser");
 };
 
-export const requireAuth: MiddlewareHandler<{ Variables: AppVariables }> = async (c, next) => {
+export const requireAuth: MiddlewareHandler<{
+  Variables: AppVariables;
+}> = async (c, next) => {
   let session: BetterAuthSession | null = null;
 
   try {
@@ -43,26 +47,34 @@ export const requireAuth: MiddlewareHandler<{ Variables: AppVariables }> = async
       }),
     );
   } catch {
-    throw new HTTPException(401, { message: 'Unauthorized' });
+    throw new HTTPException(401, { message: "Unauthorized" });
   }
 
   const userId = session?.user?.id;
 
   if (!userId) {
-    throw new HTTPException(401, { message: 'Unauthorized' });
+    throw new HTTPException(401, { message: "Unauthorized" });
   }
 
   const rows = await db
-    .select({ id: users.id, email: users.email, name: users.name, isAdmin: users.isAdmin })
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      isAdmin: users.isAdmin,
+    })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
   if (!rows[0]) {
-    throw new HTTPException(401, { message: 'Unknown user' });
+    throw new HTTPException(401, { message: "Unknown user" });
   }
 
-  c.set('sessionActiveOrganizationId', session?.session?.activeOrganizationId ?? null);
-  c.set('currentUser', rows[0]);
+  c.set(
+    "sessionActiveOrganizationId",
+    session?.session?.activeOrganizationId ?? null,
+  );
+  c.set("currentUser", rows[0]);
   await next();
 };

@@ -1,7 +1,7 @@
-import { extname } from 'node:path';
+import { extname } from "node:path";
 
 type TemplateLike = {
-  acceptType: 'file' | 'url';
+  acceptType: "file" | "url";
   allowedExtensions: string[] | null;
   maxFileSizeMb: number;
   urlPattern: string | null;
@@ -23,7 +23,12 @@ const getExtension = (fileName: string): string | null => {
 };
 
 const hasFileFields = (payload: SubmissionPayload): boolean => {
-  return Boolean(payload.s3Key || payload.fileName || payload.fileSizeBytes || payload.mimeType);
+  return Boolean(
+    payload.s3Key ||
+    payload.fileName ||
+    payload.fileSizeBytes ||
+    payload.mimeType,
+  );
 };
 
 const validateUrlPattern = (url: string, pattern: string): boolean => {
@@ -40,9 +45,9 @@ const validateUrlPattern = (url: string, pattern: string): boolean => {
   }
 
   // `/.../` 形式は正規表現として扱う
-  if (trimmed.startsWith('/') && trimmed.endsWith('/') && trimmed.length >= 2) {
+  if (trimmed.startsWith("/") && trimmed.endsWith("/") && trimmed.length >= 2) {
     try {
-      const regex = new RegExp(trimmed.slice(1, -1), 'i');
+      const regex = new RegExp(trimmed.slice(1, -1), "i");
       return regex.test(url);
     } catch {
       return false;
@@ -60,41 +65,50 @@ const validateUrlPattern = (url: string, pattern: string): boolean => {
   }
 
   const host = parsed.hostname.toLowerCase();
-  return candidates.some((candidate) => host === candidate || host.endsWith(`.${candidate}`));
+  return candidates.some(
+    (candidate) => host === candidate || host.endsWith(`.${candidate}`),
+  );
 };
 
 export const isSubmissionMutableStatus = (
-  sharingStatus: 'draft' | 'accepting' | 'sharing' | 'closed',
+  sharingStatus: "draft" | "accepting" | "sharing" | "closed",
 ): boolean => {
-  return sharingStatus === 'accepting' || sharingStatus === 'sharing';
+  return sharingStatus === "accepting" || sharingStatus === "sharing";
 };
 
 export const validateSubmissionPayload = (
   template: TemplateLike,
   payload: SubmissionPayload,
 ): ValidationResult => {
-  if (template.acceptType === 'file') {
+  if (template.acceptType === "file") {
     if (payload.url) {
-      return { ok: false, error: 'File template does not accept url field' };
+      return { ok: false, error: "File template does not accept url field" };
     }
 
-    if (!payload.s3Key || !payload.fileName || !payload.fileSizeBytes || !payload.mimeType) {
-      return { ok: false, error: 'Missing file fields for file template' };
+    if (
+      !payload.s3Key ||
+      !payload.fileName ||
+      !payload.fileSizeBytes ||
+      !payload.mimeType
+    ) {
+      return { ok: false, error: "Missing file fields for file template" };
     }
 
     if (payload.fileSizeBytes > template.maxFileSizeMb * 1024 * 1024) {
-      return { ok: false, error: 'File exceeds template max size' };
+      return { ok: false, error: "File exceeds template max size" };
     }
 
     if (template.allowedExtensions?.length) {
       const ext = getExtension(payload.fileName);
       if (!ext) {
-        return { ok: false, error: 'File extension is required' };
+        return { ok: false, error: "File extension is required" };
       }
 
-      const allowed = template.allowedExtensions.map((value) => value.toLowerCase());
+      const allowed = template.allowedExtensions.map((value) =>
+        value.toLowerCase(),
+      );
       if (!allowed.includes(ext)) {
-        return { ok: false, error: 'Disallowed file extension' };
+        return { ok: false, error: "Disallowed file extension" };
       }
     }
 
@@ -102,21 +116,27 @@ export const validateSubmissionPayload = (
   }
 
   if (!payload.url) {
-    return { ok: false, error: 'URL is required for url template' };
+    return { ok: false, error: "URL is required for url template" };
   }
 
   if (hasFileFields(payload)) {
-    return { ok: false, error: 'URL template does not accept file fields' };
+    return { ok: false, error: "URL template does not accept file fields" };
   }
 
-  if (template.urlPattern && !validateUrlPattern(payload.url, template.urlPattern)) {
-    return { ok: false, error: 'URL does not match template urlPattern' };
+  if (
+    template.urlPattern &&
+    !validateUrlPattern(payload.url, template.urlPattern)
+  ) {
+    return { ok: false, error: "URL does not match template urlPattern" };
   }
 
   return { ok: true };
 };
 
-export const isContentTypeConsistent = (fileName: string, contentType: string): boolean => {
+export const isContentTypeConsistent = (
+  fileName: string,
+  contentType: string,
+): boolean => {
   const ext = getExtension(fileName);
   if (!ext) {
     return true;
@@ -124,18 +144,22 @@ export const isContentTypeConsistent = (fileName: string, contentType: string): 
 
   const mime = contentType.toLowerCase();
   const map: Record<string, string[]> = {
-    pdf: ['application/pdf'],
-    ppt: ['application/vnd.ms-powerpoint'],
-    pptx: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
-    doc: ['application/msword'],
-    docx: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-    xls: ['application/vnd.ms-excel'],
-    xlsx: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-    txt: ['text/plain'],
-    zip: ['application/zip'],
-    mp4: ['video/mp4'],
-    mov: ['video/quicktime'],
-    webm: ['video/webm'],
+    pdf: ["application/pdf"],
+    ppt: ["application/vnd.ms-powerpoint"],
+    pptx: [
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ],
+    doc: ["application/msword"],
+    docx: [
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ],
+    xls: ["application/vnd.ms-excel"],
+    xlsx: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+    txt: ["text/plain"],
+    zip: ["application/zip"],
+    mp4: ["video/mp4"],
+    mov: ["video/quicktime"],
+    webm: ["video/webm"],
   };
 
   const accepted = map[ext];

@@ -1,7 +1,7 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool, type PoolClient } from 'pg';
-import { env } from '../lib/config';
-import * as schema from './schema';
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool, type PoolClient } from "pg";
+import { env } from "../lib/config";
+import * as schema from "./schema";
 
 const pool = new Pool({
   connectionString: env.DATABASE_URL,

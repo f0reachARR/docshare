@@ -1,6 +1,6 @@
-import type { Next } from 'hono';
-import { HTTPException } from 'hono/http-exception';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Next } from "hono";
+import { HTTPException } from "hono/http-exception";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetSession = vi.fn();
 type UserRow = {
@@ -11,7 +11,7 @@ type UserRow = {
 };
 const mockLimit = vi.fn<() => Promise<UserRow[]>>(async () => []);
 
-vi.mock('../auth', () => ({
+vi.mock("../auth", () => ({
   auth: {
     api: {
       getSession: mockGetSession,
@@ -19,7 +19,7 @@ vi.mock('../auth', () => ({
   },
 }));
 
-vi.mock('../db', () => ({
+vi.mock("../db", () => ({
   db: {
     select: vi.fn(() => ({
       from: () => ({
@@ -31,7 +31,7 @@ vi.mock('../db', () => ({
   },
 }));
 
-const { requireAuth } = await import('./auth');
+const { requireAuth } = await import("./auth");
 
 type TestContext = {
   req: {
@@ -46,7 +46,7 @@ const createContext = (headers?: Record<string, string>): TestContext => {
 
   return {
     req: {
-      raw: new Request('http://localhost/test', {
+      raw: new Request("http://localhost/test", {
         headers,
       }),
     },
@@ -57,32 +57,34 @@ const createContext = (headers?: Record<string, string>): TestContext => {
   };
 };
 
-describe('requireAuth', () => {
+describe("requireAuth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLimit.mockResolvedValue([]);
   });
 
-  it('セッションなしは401', async () => {
+  it("セッションなしは401", async () => {
     const c = createContext();
     mockGetSession.mockResolvedValue(null);
 
-    await expect(requireAuth(c as never, vi.fn() as Next)).rejects.toBeInstanceOf(HTTPException);
+    await expect(
+      requireAuth(c as never, vi.fn() as Next),
+    ).rejects.toBeInstanceOf(HTTPException);
   });
 
-  it('有効セッション時にcurrentUserとactiveOrganizationを設定', async () => {
-    const c = createContext({ cookie: 'better-auth.session_token=test' });
+  it("有効セッション時にcurrentUserとactiveOrganizationを設定", async () => {
+    const c = createContext({ cookie: "better-auth.session_token=test" });
     const next = vi.fn(async () => undefined);
 
     mockGetSession.mockResolvedValue({
-      user: { id: 'user-1' },
-      session: { activeOrganizationId: 'org-1' },
+      user: { id: "user-1" },
+      session: { activeOrganizationId: "org-1" },
     });
     mockLimit.mockResolvedValue([
       {
-        id: 'user-1',
-        email: 'u@example.com',
-        name: 'user',
+        id: "user-1",
+        email: "u@example.com",
+        name: "user",
         isAdmin: false,
       },
     ]);
@@ -90,12 +92,12 @@ describe('requireAuth', () => {
     await requireAuth(c as never, next as Next);
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(c.get('currentUser')).toEqual({
-      id: 'user-1',
-      email: 'u@example.com',
-      name: 'user',
+    expect(c.get("currentUser")).toEqual({
+      id: "user-1",
+      email: "u@example.com",
+      name: "user",
       isAdmin: false,
     });
-    expect(c.get('sessionActiveOrganizationId')).toBe('org-1');
+    expect(c.get("sessionActiveOrganizationId")).toBe("org-1");
   });
 });
