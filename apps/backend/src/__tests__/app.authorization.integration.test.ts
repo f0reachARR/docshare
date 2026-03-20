@@ -47,10 +47,12 @@ const mockDb = {
         from: () => ({
           innerJoin: () => ({
             innerJoin: () => ({
-              where: () => ({
-                orderBy: () => ({
-                  limit: () => ({
-                    offset: mockEditionSubmissionRows,
+              innerJoin: () => ({
+                where: () => ({
+                  orderBy: () => ({
+                    limit: () => ({
+                      offset: mockEditionSubmissionRows,
+                    }),
                   }),
                 }),
               }),

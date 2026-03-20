@@ -4,10 +4,12 @@ import { HTTPException } from 'hono/http-exception';
 import { db } from '../db/index.js';
 import {
   competitionEditions,
+  organizations,
   participations,
   submissionHistories,
   submissionTemplates,
   submissions,
+  users,
 } from '../db/schema.js';
 import {
   createPaginatedResponseSchema,
@@ -105,6 +107,7 @@ const editionSubmissionRowSchema = z.object({
     id: z.string().uuid(),
     editionId: z.string().uuid(),
     universityId: z.string(),
+    universityName: z.string(),
     teamName: z.string().nullable(),
     createdAt: z.any(),
   }),
@@ -115,6 +118,10 @@ const historySchema = z.object({
   submissionId: z.string().uuid(),
   version: z.number().int(),
   submittedBy: z.string(),
+  submittedByUser: z.object({
+    id: z.string(),
+    name: z.string(),
+  }),
   fileS3Key: z.string().nullable(),
   fileName: z.string().nullable(),
   fileSizeBytes: z.number().nullable(),
@@ -475,9 +482,20 @@ submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
   const mainOrder = parsed.value.sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
   const rows = await db
-    .select({ submission: submissions, participation: participations })
+    .select({
+      submission: submissions,
+      participation: {
+        id: participations.id,
+        editionId: participations.editionId,
+        universityId: participations.universityId,
+        universityName: organizations.name,
+        teamName: participations.teamName,
+        createdAt: participations.createdAt,
+      },
+    })
     .from(submissions)
     .innerJoin(participations, eq(participations.id, submissions.participationId))
+    .innerJoin(organizations, eq(organizations.id, participations.universityId))
     .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
     .where(whereClause)
     .orderBy(mainOrder, asc(submissions.id))
@@ -548,7 +566,7 @@ submissionRoutes.openapi(listSubmissionHistoriesRoute, async (c) => {
     .where(eq(submissions.id, submissionId))
     .limit(1);
   if (!row[0]) {
-    return c.json({ error: 'Not found' }, 404);
+    return c.json({ error: 'Not found' as const }, 404);
   }
 
   const canView = await canViewParticipation(
@@ -557,7 +575,7 @@ submissionRoutes.openapi(listSubmissionHistoriesRoute, async (c) => {
     c.get('organizationId'),
   );
   if (!canView) {
-    return c.json({ error: 'Forbidden' }, 403);
+    return c.json({ error: 'Forbidden' as const }, 403);
   }
 
   const parsed = parsePagingParams({
@@ -595,8 +613,24 @@ submissionRoutes.openapi(listSubmissionHistoriesRoute, async (c) => {
   const mainOrder = parsed.value.sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
   const histories = await db
-    .select()
+    .select({
+      id: submissionHistories.id,
+      submissionId: submissionHistories.submissionId,
+      version: submissionHistories.version,
+      submittedBy: submissionHistories.submittedBy,
+      submittedByUser: {
+        id: users.id,
+        name: users.name,
+      },
+      fileS3Key: submissionHistories.fileS3Key,
+      fileName: submissionHistories.fileName,
+      fileSizeBytes: submissionHistories.fileSizeBytes,
+      fileMimeType: submissionHistories.fileMimeType,
+      url: submissionHistories.url,
+      createdAt: submissionHistories.createdAt,
+    })
     .from(submissionHistories)
+    .innerJoin(users, eq(users.id, submissionHistories.submittedBy))
     .where(whereClause)
     .orderBy(mainOrder, asc(submissionHistories.id))
     .limit(parsed.value.pageSize)

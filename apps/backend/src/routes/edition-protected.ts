@@ -1,7 +1,13 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { participations, submissionTemplates, submissions } from '../db/schema.js';
+import {
+  competitionEditions,
+  organizations,
+  participations,
+  submissionTemplates,
+  submissions,
+} from '../db/schema.js';
 import {
   createPaginatedResponseSchema,
   createPaginationMeta,
@@ -142,6 +148,131 @@ const listMySubmissionsRoute = createRoute({
   },
 });
 
+const myParticipationSchema = z.object({
+  id: z.string().uuid(),
+  editionId: z.string().uuid(),
+  universityId: z.string(),
+  universityName: z.string(),
+  teamName: z.string().nullable(),
+  createdAt: z.any(),
+});
+
+const listMyParticipationsRoute = createRoute({
+  method: 'get',
+  path: '/editions/{id}/my-participations',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+  },
+  responses: {
+    200: {
+      description: '自大学の参加チーム一覧',
+      content: {
+        'application/json': {
+          schema: z.object({ data: z.array(myParticipationSchema) }),
+        },
+      },
+    },
+    400: {
+      description: '組織指定不足',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('x-organization-id is required') }),
+        },
+      },
+    },
+    403: {
+      description: '組織コンテキスト不正',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid organization context') }),
+        },
+      },
+    },
+  },
+});
+
+const mySubmissionStatusRoute = createRoute({
+  method: 'get',
+  path: '/editions/{id}/my-submission-status',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+  },
+  responses: {
+    200: {
+      description: '自大学の提出状況集約',
+      content: {
+        'application/json': {
+          schema: z.object({
+            data: z.object({
+              edition: z.object({
+                id: z.string().uuid(),
+                sharingStatus: z.enum(['draft', 'accepting', 'sharing', 'closed']),
+              }),
+              participations: z.array(
+                z.object({
+                  id: z.string().uuid(),
+                  teamName: z.string().nullable(),
+                }),
+              ),
+              templates: z.array(
+                z.object({
+                  id: z.string().uuid(),
+                  name: z.string(),
+                  acceptType: z.enum(['file', 'url']),
+                  isRequired: z.boolean(),
+                  allowedExtensions: z.array(z.string()).nullable(),
+                  urlPattern: z.string().nullable(),
+                  maxFileSizeMb: z.number().int(),
+                  sortOrder: z.number().int(),
+                }),
+              ),
+              items: z.array(
+                z.object({
+                  participationId: z.string().uuid(),
+                  templateId: z.string().uuid(),
+                  submission: z
+                    .object({
+                      id: z.string().uuid(),
+                      version: z.number().int(),
+                      fileName: z.string().nullable(),
+                      url: z.string().nullable(),
+                      updatedAt: z.any(),
+                    })
+                    .nullable(),
+                }),
+              ),
+            }),
+          }),
+        },
+      },
+    },
+    400: {
+      description: '組織指定不足',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('x-organization-id is required') }),
+        },
+      },
+    },
+    403: {
+      description: '組織コンテキスト不正',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid organization context') }),
+        },
+      },
+    },
+    404: {
+      description: '大会未検出',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Not found') }),
+        },
+      },
+    },
+  },
+});
+
 editionProtectedRoutes.openapi(listTemplatesRoute, async (c) => {
   const parsed = parsePagingParams({
     query: c.req.query(),
@@ -263,6 +394,135 @@ editionProtectedRoutes.openapi(listMySubmissionsRoute, async (c) => {
         pageSize: parsed.value.pageSize,
         total: totalRows[0]?.total ?? 0,
       }),
+    },
+    200,
+  );
+});
+
+editionProtectedRoutes.openapi(listMyParticipationsRoute, async (c) => {
+  const organizationId = c.get('organizationId');
+  if (!organizationId) {
+    return c.json({ error: 'x-organization-id is required' as const }, 400);
+  }
+
+  const editionId = c.req.param('id');
+  const rows = await db
+    .select({
+      id: participations.id,
+      editionId: participations.editionId,
+      universityId: participations.universityId,
+      universityName: organizations.name,
+      teamName: participations.teamName,
+      createdAt: participations.createdAt,
+    })
+    .from(participations)
+    .innerJoin(organizations, eq(organizations.id, participations.universityId))
+    .where(
+      and(eq(participations.editionId, editionId), eq(participations.universityId, organizationId)),
+    )
+    .orderBy(asc(participations.createdAt), asc(participations.id));
+
+  return c.json({ data: rows }, 200);
+});
+
+editionProtectedRoutes.openapi(mySubmissionStatusRoute, async (c) => {
+  const organizationId = c.get('organizationId');
+  if (!organizationId) {
+    return c.json({ error: 'x-organization-id is required' as const }, 400);
+  }
+
+  const editionId = c.req.param('id');
+
+  const editionRows = await db
+    .select({ id: competitionEditions.id, sharingStatus: competitionEditions.sharingStatus })
+    .from(competitionEditions)
+    .where(eq(competitionEditions.id, editionId))
+    .limit(1);
+  const edition = editionRows[0];
+  if (!edition) {
+    return c.json({ error: 'Not found' as const }, 404);
+  }
+
+  const participationRows = await db
+    .select({ id: participations.id, teamName: participations.teamName })
+    .from(participations)
+    .where(
+      and(eq(participations.editionId, editionId), eq(participations.universityId, organizationId)),
+    )
+    .orderBy(asc(participations.createdAt), asc(participations.id));
+
+  const templateRows = await db
+    .select({
+      id: submissionTemplates.id,
+      name: submissionTemplates.name,
+      acceptType: submissionTemplates.acceptType,
+      isRequired: submissionTemplates.isRequired,
+      allowedExtensions: submissionTemplates.allowedExtensions,
+      urlPattern: submissionTemplates.urlPattern,
+      maxFileSizeMb: submissionTemplates.maxFileSizeMb,
+      sortOrder: submissionTemplates.sortOrder,
+    })
+    .from(submissionTemplates)
+    .where(eq(submissionTemplates.editionId, editionId))
+    .orderBy(asc(submissionTemplates.sortOrder), asc(submissionTemplates.id));
+
+  const participationIds = participationRows.map((row) => row.id);
+  const templateIds = templateRows.map((row) => row.id);
+
+  const submissionRows =
+    participationIds.length === 0 || templateIds.length === 0
+      ? []
+      : await db
+          .select({
+            id: submissions.id,
+            participationId: submissions.participationId,
+            templateId: submissions.templateId,
+            version: submissions.version,
+            fileName: submissions.fileName,
+            url: submissions.url,
+            updatedAt: submissions.updatedAt,
+          })
+          .from(submissions)
+          .where(
+            and(
+              inArray(submissions.participationId, participationIds),
+              inArray(submissions.templateId, templateIds),
+            ),
+          );
+
+  const submissionMap = new Map<string, (typeof submissionRows)[number]>();
+  for (const row of submissionRows) {
+    submissionMap.set(`${row.participationId}:${row.templateId}`, row);
+  }
+
+  const items = participationRows.flatMap((participation) => {
+    return templateRows.map((template) => {
+      const key = `${participation.id}:${template.id}`;
+      const submission = submissionMap.get(key);
+      return {
+        participationId: participation.id,
+        templateId: template.id,
+        submission: submission
+          ? {
+              id: submission.id,
+              version: submission.version,
+              fileName: submission.fileName,
+              url: submission.url,
+              updatedAt: submission.updatedAt,
+            }
+          : null,
+      };
+    });
+  });
+
+  return c.json(
+    {
+      data: {
+        edition,
+        participations: participationRows,
+        templates: templateRows,
+        items,
+      },
     },
     200,
   );

@@ -143,6 +143,110 @@ const inviteUniversityRoute = createRoute({
   },
 });
 
+const updateUniversityMemberRoleRoute = createRoute({
+  method: 'put',
+  path: '/university/members/{id}/role',
+  request: {
+    headers: orgHeaderSchema,
+    params: z.object({ id: z.string() }),
+    body: {
+      content: {
+        'application/json': {
+          schema: updateRoleSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'メンバー権限更新',
+      content: {
+        'application/json': {
+          schema: z.object({
+            data: z.object({
+              id: z.string(),
+              userId: z.string(),
+              role: z.enum(['owner', 'member']),
+            }),
+          }),
+        },
+      },
+    },
+    400: {
+      description: '不正入力',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.union([z.literal('x-organization-id is required'), z.any()]),
+          }),
+        },
+      },
+    },
+    403: {
+      description: 'オーナー限定',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Owner only') }),
+        },
+      },
+    },
+    404: {
+      description: '対象未検出',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Not found') }),
+        },
+      },
+    },
+    409: {
+      description: '最後のownerの降格禁止',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Last owner cannot be removed') }),
+        },
+      },
+    },
+  },
+});
+
+const deleteUniversityMemberRoute = createRoute({
+  method: 'delete',
+  path: '/university/members/{id}',
+  request: {
+    headers: orgHeaderSchema,
+    params: z.object({ id: z.string() }),
+  },
+  responses: {
+    204: {
+      description: 'メンバー削除',
+    },
+    400: {
+      description: '組織指定不足',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('x-organization-id is required') }),
+        },
+      },
+    },
+    403: {
+      description: 'オーナー限定',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Owner only') }),
+        },
+      },
+    },
+    409: {
+      description: '最後のownerの削除禁止',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Last owner cannot be removed') }),
+        },
+      },
+    },
+  },
+});
+
 export const universityRoutes = new OpenAPIHono<{ Variables: AppVariables }>();
 
 const canManageMembers = async (userId: string, organizationId: string): Promise<boolean> => {
@@ -162,6 +266,25 @@ const canManageMembers = async (userId: string, organizationId: string): Promise
     .limit(1);
 
   return ownerRows[0]?.role === 'owner';
+};
+
+const getScopedMember = async (memberId: string, organizationId: string) => {
+  const rows = await db
+    .select({ id: members.id, role: members.role })
+    .from(members)
+    .where(and(eq(members.id, memberId), eq(members.organizationId, organizationId)))
+    .limit(1);
+
+  return rows[0] ?? null;
+};
+
+const isLastOwner = async (organizationId: string): Promise<boolean> => {
+  const rows = await db
+    .select({ total: count() })
+    .from(members)
+    .where(and(eq(members.organizationId, organizationId), eq(members.role, 'owner')));
+
+  return (rows[0]?.total ?? 0) <= 1;
 };
 
 universityRoutes.openapi(listUniversityMembersRoute, async (c) => {
@@ -283,10 +406,10 @@ universityRoutes.openapi(inviteUniversityRoute, async (c) => {
   return c.json({ data: inserted[0] }, 201);
 });
 
-universityRoutes.put('/university/members/:id/role', async (c) => {
+universityRoutes.openapi(updateUniversityMemberRoleRoute, async (c) => {
   const organizationId = c.get('organizationId');
   if (!organizationId) {
-    return c.json({ error: 'x-organization-id is required' }, 400);
+    return c.json({ error: 'x-organization-id is required' as const }, 400);
   }
 
   const user = c.get('currentUser');
@@ -297,7 +420,20 @@ universityRoutes.put('/university/members/:id/role', async (c) => {
   }
 
   if (!(await canManageMembers(user.id, organizationId))) {
-    return c.json({ error: 'Owner only' }, 403);
+    return c.json({ error: 'Owner only' as const }, 403);
+  }
+
+  const targetMember = await getScopedMember(memberId, organizationId);
+  if (!targetMember) {
+    return c.json({ error: 'Not found' as const }, 404);
+  }
+
+  if (
+    targetMember.role === 'owner' &&
+    body.data.role !== 'owner' &&
+    (await isLastOwner(organizationId))
+  ) {
+    return c.json({ error: 'Last owner cannot be removed' as const }, 409);
   }
 
   const updated = await db
@@ -306,24 +442,25 @@ universityRoutes.put('/university/members/:id/role', async (c) => {
     .where(and(eq(members.id, memberId), eq(members.organizationId, organizationId)))
     .returning();
 
-  if (!updated[0]) {
-    return c.json({ error: 'Not found' }, 404);
-  }
-
-  return c.json({ data: updated[0] });
+  return c.json({ data: updated[0] }, 200);
 });
 
-universityRoutes.delete('/university/members/:id', async (c) => {
+universityRoutes.openapi(deleteUniversityMemberRoute, async (c) => {
   const organizationId = c.get('organizationId');
   if (!organizationId) {
-    return c.json({ error: 'x-organization-id is required' }, 400);
+    return c.json({ error: 'x-organization-id is required' as const }, 400);
   }
 
   const user = c.get('currentUser');
   const memberId = c.req.param('id');
 
   if (!(await canManageMembers(user.id, organizationId))) {
-    return c.json({ error: 'Owner only' }, 403);
+    return c.json({ error: 'Owner only' as const }, 403);
+  }
+
+  const targetMember = await getScopedMember(memberId, organizationId);
+  if (targetMember?.role === 'owner' && (await isLastOwner(organizationId))) {
+    return c.json({ error: 'Last owner cannot be removed' as const }, 409);
   }
 
   await db
