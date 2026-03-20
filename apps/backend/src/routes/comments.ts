@@ -25,6 +25,8 @@ const commentSchema = z.object({
   participationId: z.string().uuid(),
   editionId: z.string().uuid(),
   authorId: z.string(),
+  authorUniversityName: z.string().nullable(),
+  authorTeamName: z.string().nullable(),
   body: z.string(),
   createdAt: z.any(),
   updatedAt: z.any(),
@@ -219,6 +221,52 @@ const deleteCommentRoute = createRoute({
 
 export const commentRoutes = new OpenAPIHono<{ Variables: AppVariables }>();
 
+const resolveCommentAuthorAffiliation = async ({
+  editionId,
+  organizationId,
+  targetParticipationUniversityId,
+  userIsAdmin,
+}: {
+  editionId: string;
+  organizationId: string | null;
+  targetParticipationUniversityId: string;
+  userIsAdmin: boolean;
+}): Promise<{ authorUniversityName: string | null; authorTeamName: string | null }> => {
+  const authorUniversityId =
+    organizationId ?? (userIsAdmin ? null : targetParticipationUniversityId);
+
+  if (!authorUniversityId) {
+    return {
+      authorUniversityName: null,
+      authorTeamName: null,
+    };
+  }
+
+  const organizationRows = await db
+    .select({ name: organizations.name })
+    .from(organizations)
+    .where(eq(organizations.id, authorUniversityId))
+    .limit(1);
+
+  const participationRows = await db
+    .select({ teamName: participations.teamName })
+    .from(participations)
+    .where(
+      and(
+        eq(participations.editionId, editionId),
+        eq(participations.universityId, authorUniversityId),
+      ),
+    )
+    .orderBy(asc(participations.createdAt), asc(participations.id))
+    .limit(2);
+
+  return {
+    authorUniversityName: organizationRows[0]?.name ?? null,
+    authorTeamName:
+      participationRows.length === 1 ? (participationRows[0]?.teamName ?? null) : null,
+  };
+};
+
 commentRoutes.openapi(listCommentsRoute, async (c) => {
   const user = c.get('currentUser');
   const participationId = c.req.param('id');
@@ -263,13 +311,11 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
       updatedAt: comments.updatedAt,
       authorId: users.id,
       authorName: users.name,
-      universityName: organizations.name,
-      teamName: participations.teamName,
+      universityName: comments.authorUniversityName,
+      teamName: comments.authorTeamName,
     })
     .from(comments)
     .innerJoin(users, eq(users.id, comments.authorId))
-    .innerJoin(participations, eq(participations.id, comments.participationId))
-    .innerJoin(organizations, eq(organizations.id, participations.universityId))
     .where(whereClause)
     .orderBy(mainOrder, asc(comments.id))
     .limit(parsed.value.pageSize)
@@ -311,7 +357,10 @@ commentRoutes.openapi(createCommentRoute, async (c) => {
   }
 
   const participationRows = await db
-    .select({ editionId: participations.editionId })
+    .select({
+      editionId: participations.editionId,
+      universityId: participations.universityId,
+    })
     .from(participations)
     .where(eq(participations.id, participationId))
     .limit(1);
@@ -331,12 +380,21 @@ commentRoutes.openapi(createCommentRoute, async (c) => {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
 
+  const authorAffiliation = await resolveCommentAuthorAffiliation({
+    editionId: participationRows[0].editionId,
+    organizationId: c.get('organizationId'),
+    targetParticipationUniversityId: participationRows[0].universityId,
+    userIsAdmin: user.isAdmin,
+  });
+
   const inserted = await db
     .insert(comments)
     .values({
       participationId,
       editionId: participationRows[0].editionId,
       authorId: user.id,
+      authorUniversityName: authorAffiliation.authorUniversityName,
+      authorTeamName: authorAffiliation.authorTeamName,
       body: body.data.body,
     })
     .returning();

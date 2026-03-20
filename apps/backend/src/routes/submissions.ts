@@ -710,7 +710,7 @@ submissionRoutes.openapi(downloadSubmissionRoute, async (c) => {
   }
 
   if (!row[0].submission.fileS3Key) {
-    return c.json({ error: 'File submission not found' }, 400);
+    return c.json({ error: 'File submission not found' as const }, 400);
   }
 
   const download = await presignDownload(

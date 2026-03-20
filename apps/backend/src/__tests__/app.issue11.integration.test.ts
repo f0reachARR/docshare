@@ -18,35 +18,35 @@ const dequeueDb = async (): Promise<DbQueueItem> => {
 
 const createAwaitableBuilder = () => {
   const builder: {
-    from: () => typeof builder;
-    innerJoin: () => typeof builder;
-    leftJoin: () => typeof builder;
-    where: () => typeof builder;
-    orderBy: () => typeof builder;
-    groupBy: () => typeof builder;
-    having: () => typeof builder;
-    limit: () => typeof builder;
-    offset: () => Promise<DbQueueItem>;
-    values: () => typeof builder;
-    set: () => typeof builder;
-    returning: () => Promise<DbQueueItem>;
+    from: ReturnType<typeof vi.fn>;
+    innerJoin: ReturnType<typeof vi.fn>;
+    leftJoin: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
+    orderBy: ReturnType<typeof vi.fn>;
+    groupBy: ReturnType<typeof vi.fn>;
+    having: ReturnType<typeof vi.fn>;
+    limit: ReturnType<typeof vi.fn>;
+    offset: ReturnType<typeof vi.fn>;
+    values: ReturnType<typeof vi.fn>;
+    set: ReturnType<typeof vi.fn>;
+    returning: ReturnType<typeof vi.fn>;
     then: <TResult1 = DbQueueItem, TResult2 = never>(
       onfulfilled?: ((value: DbQueueItem) => TResult1 | PromiseLike<TResult1>) | null,
       onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
     ) => Promise<TResult1 | TResult2>;
   } = {
-    from: () => builder,
-    innerJoin: () => builder,
-    leftJoin: () => builder,
-    where: () => builder,
-    orderBy: () => builder,
-    groupBy: () => builder,
-    having: () => builder,
-    limit: () => builder,
-    offset: async () => dequeueDb(),
-    values: () => builder,
-    set: () => builder,
-    returning: async () => dequeueDb(),
+    from: vi.fn(() => builder),
+    innerJoin: vi.fn(() => builder),
+    leftJoin: vi.fn(() => builder),
+    where: vi.fn(() => builder),
+    orderBy: vi.fn(() => builder),
+    groupBy: vi.fn(() => builder),
+    having: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
+    offset: vi.fn(async () => dequeueDb()),
+    values: vi.fn(() => builder),
+    set: vi.fn(() => builder),
+    returning: vi.fn(async () => dequeueDb()),
     // biome-ignore lint/suspicious/noThenProperty: Test double emulates Drizzle's awaitable query builder.
     then: (onfulfilled, onrejected) => dequeueDb().then(onfulfilled, onrejected),
   };
@@ -553,6 +553,78 @@ describe('issue #11 api integration', () => {
       name: 'Alice',
       universityName: 'Org One',
       teamName: 'Team A',
+    });
+  });
+
+  it('POST /api/participations/:id/comments stores author affiliation snapshot', async () => {
+    const app = createApp();
+
+    enqueueDb(
+      [
+        {
+          editionId: '00000000-0000-0000-0000-000000000001',
+          universityId: 'org-1',
+        },
+      ],
+      [{ name: 'Org One' }],
+      [{ teamName: 'Team A' }],
+      [
+        {
+          id: '40000000-0000-0000-0000-000000000001',
+          participationId: '10000000-0000-0000-0000-000000000001',
+          editionId: '00000000-0000-0000-0000-000000000001',
+          authorId: 'member-user',
+          authorUniversityName: 'Org One',
+          authorTeamName: 'Team A',
+          body: 'Looks good',
+          createdAt: '2026-03-20T00:00:00.000Z',
+          updatedAt: '2026-03-20T00:00:00.000Z',
+          deletedAt: null,
+        },
+      ],
+    );
+
+    const res = await app.request(
+      '/api/participations/10000000-0000-0000-0000-000000000001/comments',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-role': 'member',
+          'x-organization-id': 'org-1',
+        },
+        body: JSON.stringify({ body: 'Looks good' }),
+      },
+    );
+
+    expect(res.status).toBe(201);
+    expect(await res.json()).toEqual({
+      data: {
+        id: '40000000-0000-0000-0000-000000000001',
+        participationId: '10000000-0000-0000-0000-000000000001',
+        editionId: '00000000-0000-0000-0000-000000000001',
+        authorId: 'member-user',
+        authorUniversityName: 'Org One',
+        authorTeamName: 'Team A',
+        body: 'Looks good',
+        createdAt: '2026-03-20T00:00:00.000Z',
+        updatedAt: '2026-03-20T00:00:00.000Z',
+        deletedAt: null,
+      },
+    });
+
+    const insertBuilder = mockDb.insert.mock.results[0]?.value as
+      | {
+          values: ReturnType<typeof vi.fn>;
+        }
+      | undefined;
+    expect(insertBuilder?.values).toHaveBeenCalledWith({
+      participationId: '10000000-0000-0000-0000-000000000001',
+      editionId: '00000000-0000-0000-0000-000000000001',
+      authorId: 'member-user',
+      authorUniversityName: 'Org One',
+      authorTeamName: 'Team A',
+      body: 'Looks good',
     });
   });
 

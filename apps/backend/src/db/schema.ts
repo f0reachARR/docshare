@@ -206,6 +206,8 @@ export const comments = pgTable(
     authorId: text('author_id')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
+    authorUniversityName: text('author_university_name'),
+    authorTeamName: text('author_team_name'),
     body: text('body').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
