@@ -6,7 +6,11 @@ describe('/invite/:invitationId', () => {
   it('正常承認', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: true }) }),
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: true }),
+      }),
     );
 
     render(<InvitePage params={Promise.resolve({ invitationId: 'ok-id' })} />);

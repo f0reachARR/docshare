@@ -11,7 +11,12 @@ export class ApiError extends Error {
 
   details?: unknown;
 
-  constructor(params: { status: number; message: string; code?: string; details?: unknown }) {
+  constructor(params: {
+    status: number;
+    message: string;
+    code?: string;
+    details?: unknown;
+  }) {
     super(params.message);
     this.name = 'ApiError';
     this.status = params.status;

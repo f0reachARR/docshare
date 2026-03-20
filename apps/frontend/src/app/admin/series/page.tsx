@@ -53,7 +53,11 @@ export default function AdminSeriesPage() {
               {row.name}
               <button
                 type='button'
-                onClick={() => void api.adminUpdateSeries(row.id, { name: `${row.name} updated` })}
+                onClick={() =>
+                  void api.adminUpdateSeries(row.id, {
+                    name: `${row.name} updated`,
+                  })
+                }
               >
                 更新
               </button>

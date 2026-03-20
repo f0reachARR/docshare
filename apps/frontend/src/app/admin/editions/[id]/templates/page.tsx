@@ -67,7 +67,10 @@ export default function AdminTemplatesPage({ params }: Props) {
               <button
                 type='button'
                 onClick={() =>
-                  void api.adminUpdateTemplate(row.id, { ...row, name: `${row.name} 更新` })
+                  void api.adminUpdateTemplate(row.id, {
+                    ...row,
+                    name: `${row.name} 更新`,
+                  })
                 }
               >
                 更新

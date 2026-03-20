@@ -11,12 +11,16 @@ describe('/competitions', () => {
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
-          json: async () => ({ data: [{ id: 's1', name: 'NHK学生ロボコン', description: null }] }),
+          json: async () => ({
+            data: [{ id: 's1', name: 'NHK学生ロボコン', description: null }],
+          }),
         })
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
-          json: async () => ({ data: [{ id: 'e1', seriesId: 's1', year: 2024, name: '2024' }] }),
+          json: async () => ({
+            data: [{ id: 'e1', seriesId: 's1', year: 2024, name: '2024' }],
+          }),
         }),
     );
 
@@ -34,8 +38,16 @@ describe('/competitions', () => {
         statusText: 'Server',
         json: async () => ({}),
       })
-      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: [] }) })
-      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: [] }) });
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [] }),
+      });
 
     vi.stubGlobal('fetch', fetchMock);
 

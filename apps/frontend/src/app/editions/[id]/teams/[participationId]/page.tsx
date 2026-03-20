@@ -20,7 +20,12 @@ export default function TeamDetailPage({ params }: Props) {
   const [editionId, setEditionId] = useState<string | null>(null);
   const [participationId, setParticipationId] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<
-    Array<{ id: string; fileName: string | null; url: string | null; version: number }>
+    Array<{
+      id: string;
+      fileName: string | null;
+      url: string | null;
+      version: number;
+    }>
   >([]);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [draft, setDraft] = useState('');
@@ -121,7 +126,8 @@ export default function TeamDetailPage({ params }: Props) {
         <ul>
           {submissions.map((submission) => (
             <li key={submission.id}>
-              {submission.fileName ?? submission.url ?? '提出内容'} (v{submission.version}){' '}
+              {submission.fileName ?? submission.url ?? '提出内容'} (v
+              {submission.version}){' '}
               {submission.fileName ? (
                 <button
                   type='button'

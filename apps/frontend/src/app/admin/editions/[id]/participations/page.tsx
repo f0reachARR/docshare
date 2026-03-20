@@ -54,7 +54,10 @@ export default function AdminParticipationsPage({ params }: Props) {
             if (!editionId) {
               return;
             }
-            void api.adminCreateParticipation(editionId, { universityId, teamName });
+            void api.adminCreateParticipation(editionId, {
+              universityId,
+              teamName,
+            });
           }}
         >
           作成
@@ -66,7 +69,11 @@ export default function AdminParticipationsPage({ params }: Props) {
               {row.teamName ?? '名称なし'}
               <button
                 type='button'
-                onClick={() => void api.adminUpdateParticipation(row.id, { teamName: 'updated' })}
+                onClick={() =>
+                  void api.adminUpdateParticipation(row.id, {
+                    teamName: 'updated',
+                  })
+                }
               >
                 更新
               </button>

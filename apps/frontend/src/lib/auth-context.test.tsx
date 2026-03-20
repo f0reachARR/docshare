@@ -38,7 +38,12 @@ describe('AuthProvider', () => {
         status: 200,
         json: async () => ({
           data: {
-            user: { id: 'u1', email: 'u1@test.dev', name: 'u1', isAdmin: false },
+            user: {
+              id: 'u1',
+              email: 'u1@test.dev',
+              name: 'u1',
+              isAdmin: false,
+            },
             organizations: [{ id: 'org-1', name: 'Org 1', slug: 'org-1', role: 'owner' }],
             activeOrganizationId: 'org-1',
           },

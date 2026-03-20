@@ -39,7 +39,11 @@ export type CompetitionEdition = {
   description: string | null;
   sharingStatus: 'draft' | 'accepting' | 'sharing' | 'closed';
   externalLinks: Array<{ label: string; url: string }> | null;
-  ruleDocuments: Array<{ label: string; s3_key: string; mime_type: string }> | null;
+  ruleDocuments: Array<{
+    label: string;
+    s3_key: string;
+    mime_type: string;
+  }> | null;
 };
 
 export type SubmissionTemplate = {

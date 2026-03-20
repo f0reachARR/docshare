@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: robocon
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U robocon -d robocon']
+      test: ["CMD-SHELL", "pg_isready -U robocon -d robocon"]
       interval: 5s
       timeout: 5s
       retries: 10

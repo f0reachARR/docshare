@@ -28,7 +28,9 @@ describe('/admin/series', () => {
 
     renderWithAuth(<AdminSeriesPage />, { role: 'admin' });
 
-    fireEvent.change(await screen.findByRole('textbox'), { target: { value: 'new' } });
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: 'new' },
+    });
     fireEvent.click(screen.getByRole('button', { name: '作成' }));
 
     await waitFor(() => {

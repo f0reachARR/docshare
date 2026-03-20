@@ -16,9 +16,15 @@ describe('auth forms', () => {
     vi.stubGlobal('fetch', vi.fn());
     render(<RegisterPage />);
 
-    fireEvent.change(screen.getByLabelText('名前'), { target: { value: 'user' } });
-    fireEvent.change(screen.getByLabelText('メールアドレス'), { target: { value: 'invalid' } });
-    fireEvent.change(screen.getByLabelText('パスワード'), { target: { value: 'password' } });
+    fireEvent.change(screen.getByLabelText('名前'), {
+      target: { value: 'user' },
+    });
+    fireEvent.change(screen.getByLabelText('メールアドレス'), {
+      target: { value: 'invalid' },
+    });
+    fireEvent.change(screen.getByLabelText('パスワード'), {
+      target: { value: 'password' },
+    });
     fireEvent.click(screen.getByRole('button', { name: '登録' }));
 
     expect(await screen.findByText('メールアドレス形式が不正です。')).toBeInTheDocument();

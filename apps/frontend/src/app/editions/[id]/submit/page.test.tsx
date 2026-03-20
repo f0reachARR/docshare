@@ -9,7 +9,11 @@ class MockXHR {
   upload = {
     addEventListener: (
       _name: string,
-      callback: (event: { lengthComputable: boolean; loaded: number; total: number }) => void,
+      callback: (event: {
+        lengthComputable: boolean;
+        loaded: number;
+        total: number;
+      }) => void,
     ) => {
       callback({ lengthComputable: true, loaded: 100, total: 100 });
     },
@@ -55,8 +59,16 @@ describe('/editions/:id/submit', () => {
           ],
         }),
       })
-      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: [] }) })
-      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: { id: 'p1' } }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { id: 'p1' } }),
+      })
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -69,8 +81,16 @@ describe('/editions/:id/submit', () => {
           },
         }),
       })
-      .mockResolvedValueOnce({ ok: true, status: 201, json: async () => ({ data: { id: 's1' } }) })
-      .mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => ({ data: { id: 's1' } }),
+      })
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [] }),
+      });
 
     vi.stubGlobal('fetch', fetchMock);
 
@@ -109,7 +129,11 @@ describe('/editions/:id/submit', () => {
             ],
           }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: [] }) })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ data: [] }),
+        })
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -150,7 +174,11 @@ describe('/editions/:id/submit', () => {
             ],
           }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: [] }) })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ data: [] }),
+        })
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -193,7 +221,11 @@ describe('/editions/:id/submit', () => {
         status: 200,
         json: async () => ({ data: [{ id: 's1', templateId: 't1' }] }),
       })
-      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: { id: 'p1' } }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { id: 'p1' } }),
+      })
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -206,8 +238,16 @@ describe('/editions/:id/submit', () => {
           },
         }),
       })
-      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: { id: 's1' } }) })
-      .mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { id: 's1' } }),
+      })
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [] }),
+      });
 
     vi.stubGlobal('fetch', fetchMock);
 
@@ -247,7 +287,11 @@ describe('/editions/:id/submit', () => {
             ],
           }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: [] }) })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ data: [] }),
+        })
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -269,7 +313,9 @@ describe('/editions/:id/submit', () => {
           ok: false,
           status: 409,
           statusText: 'Conflict',
-          json: async () => ({ error: 'Already exists for this template and participation' }),
+          json: async () => ({
+            error: 'Already exists for this template and participation',
+          }),
         }),
     );
 

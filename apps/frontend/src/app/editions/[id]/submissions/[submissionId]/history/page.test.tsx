@@ -13,15 +13,29 @@ describe('/editions/:id/submissions/:submissionId/history', () => {
         status: 200,
         json: async () => ({
           data: [
-            { id: 'h1', version: 1, fileName: 'v1.pdf', url: null, createdAt: '2026-01-01' },
-            { id: 'h2', version: 3, fileName: 'v3.pdf', url: null, createdAt: '2026-01-03' },
+            {
+              id: 'h1',
+              version: 1,
+              fileName: 'v1.pdf',
+              url: null,
+              createdAt: '2026-01-01',
+            },
+            {
+              id: 'h2',
+              version: 3,
+              fileName: 'v3.pdf',
+              url: null,
+              createdAt: '2026-01-03',
+            },
           ],
         }),
       })
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ data: { url: 'https://example.com/history-download' } }),
+        json: async () => ({
+          data: { url: 'https://example.com/history-download' },
+        }),
       });
 
     vi.stubGlobal('fetch', fetchMock);

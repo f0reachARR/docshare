@@ -66,7 +66,10 @@ export const createAppApi = (getOrganizationId: () => string | null) => {
       client.put<ApiResponse<CommentItem>>(`/comments/${commentId}`, { body }),
     deleteComment: (commentId: string) => client.delete<void>(`/comments/${commentId}`),
     createInvite: (email: string, role: 'owner' | 'member') =>
-      client.post<ApiResponse<{ id: string }>>('/university/invite', { email, role }),
+      client.post<ApiResponse<{ id: string }>>('/university/invite', {
+        email,
+        role,
+      }),
     listMembers: () =>
       client.get<
         ApiResponse<

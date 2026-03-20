@@ -15,7 +15,12 @@ describe('/editions/:id/teams/:participationId', () => {
         json: async () => ({
           data: [
             {
-              submission: { id: 's1', fileName: 'doc.pdf', url: null, version: 1 },
+              submission: {
+                id: 's1',
+                fileName: 'doc.pdf',
+                url: null,
+                version: 1,
+              },
               participation: { id: 'p1' },
             },
           ],
@@ -36,10 +41,22 @@ describe('/editions/:id/teams/:participationId', () => {
           ],
         }),
       })
-      .mockResolvedValueOnce({ ok: true, status: 201, json: async () => ({ data: { id: 'c2' } }) })
-      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: { id: 'c1' } }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => ({ data: { id: 'c2' } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { id: 'c1' } }),
+      })
       .mockResolvedValueOnce({ ok: true, status: 204, json: async () => ({}) })
-      .mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [] }),
+      });
 
     vi.stubGlobal('fetch', fetchMock);
 
@@ -49,7 +66,9 @@ describe('/editions/:id/teams/:participationId', () => {
 
     expect(await screen.findByRole('link', { name: 'link' })).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('comment-input'), { target: { value: 'new comment' } });
+    fireEvent.change(screen.getByLabelText('comment-input'), {
+      target: { value: 'new comment' },
+    });
     fireEvent.click(screen.getByRole('button', { name: '投稿' }));
 
     fireEvent.click(screen.getByRole('button', { name: '編集' }));
@@ -73,7 +92,12 @@ describe('/editions/:id/teams/:participationId', () => {
         json: async () => ({
           data: [
             {
-              submission: { id: 's1', fileName: 'doc.pdf', url: null, version: 2 },
+              submission: {
+                id: 's1',
+                fileName: 'doc.pdf',
+                url: null,
+                version: 2,
+              },
               participation: { id: 'p1' },
             },
           ],

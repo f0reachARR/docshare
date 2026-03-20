@@ -16,7 +16,15 @@ describe('/university/settings', () => {
         ok: true,
         status: 200,
         json: async () => ({
-          data: [{ id: 'm1', userId: 'u1', role: 'member', name: 'A', email: 'a@example.com' }],
+          data: [
+            {
+              id: 'm1',
+              userId: 'u1',
+              role: 'member',
+              name: 'A',
+              email: 'a@example.com',
+            },
+          ],
         }),
       }),
     );

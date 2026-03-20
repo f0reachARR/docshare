@@ -11,7 +11,9 @@ describe('/competitions/:seriesSlug/:year', () => {
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
-          json: async () => ({ data: [{ id: 's1', name: 'NHK学生ロボコン', description: null }] }),
+          json: async () => ({
+            data: [{ id: 's1', name: 'NHK学生ロボコン', description: null }],
+          }),
         })
         .mockResolvedValueOnce({
           ok: true,
@@ -34,7 +36,10 @@ describe('/competitions/:seriesSlug/:year', () => {
 
     render(
       <CompetitionDetailPage
-        params={Promise.resolve({ seriesSlug: 'nhk学生ロボコン', year: '2024' })}
+        params={Promise.resolve({
+          seriesSlug: 'nhk学生ロボコン',
+          year: '2024',
+        })}
       />,
     );
 
@@ -46,8 +51,16 @@ describe('/competitions/:seriesSlug/:year', () => {
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: [] }) })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: [] }) }),
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ data: [] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ data: [] }),
+        }),
     );
 
     render(
