@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import { competitionEditions } from '../../db/schema.js';
 import { env } from '../../lib/config.js';
+import { editionResponseSchema, toEditionResponse } from '../../lib/edition-response.js';
 import type { AppVariables } from '../../middleware/auth.js';
 import { presignUpload } from '../../services/storage.js';
 
@@ -34,27 +35,6 @@ const ruleUpdateSchema = z.object({
   ),
 });
 
-const editionSchema = z.object({
-  id: z.string().uuid(),
-  seriesId: z.string().uuid(),
-  year: z.number().int(),
-  name: z.string(),
-  description: z.string().nullable(),
-  ruleDocuments: z
-    .array(
-      z.object({
-        label: z.string(),
-        s3_key: z.string(),
-        mime_type: z.string(),
-      }),
-    )
-    .nullable(),
-  sharingStatus: z.enum(['draft', 'accepting', 'sharing', 'closed']),
-  externalLinks: z.array(z.object({ label: z.string(), url: z.string().url() })).nullable(),
-  createdAt: z.any(),
-  updatedAt: z.any(),
-});
-
 const createEditionRoute = createRoute({
   method: 'post',
   path: '/editions',
@@ -72,7 +52,7 @@ const createEditionRoute = createRoute({
       description: '大会開催回作成',
       content: {
         'application/json': {
-          schema: z.object({ data: editionSchema }),
+          schema: z.object({ data: editionResponseSchema }),
         },
       },
     },
@@ -105,7 +85,7 @@ const updateSharingStatusRoute = createRoute({
       description: 'sharing_status更新',
       content: {
         'application/json': {
-          schema: z.object({ data: editionSchema }),
+          schema: z.object({ data: editionResponseSchema }),
         },
       },
     },
@@ -146,7 +126,7 @@ const updateEditionRoute = createRoute({
       description: '大会開催回更新',
       content: {
         'application/json': {
-          schema: z.object({ data: editionSchema }),
+          schema: z.object({ data: editionResponseSchema }),
         },
       },
     },
@@ -239,7 +219,7 @@ const updateRulesRoute = createRoute({
       description: 'ルール資料更新',
       content: {
         'application/json': {
-          schema: z.object({ data: editionSchema }),
+          schema: z.object({ data: editionResponseSchema }),
         },
       },
     },
@@ -284,7 +264,7 @@ adminEditionRoutes.openapi(createEditionRoute, async (c) => {
     })
     .returning();
 
-  return c.json({ data: inserted[0] }, 201);
+  return c.json({ data: await toEditionResponse(inserted[0]) }, 201);
 });
 
 adminEditionRoutes.openapi(updateEditionRoute, async (c) => {
@@ -311,7 +291,7 @@ adminEditionRoutes.openapi(updateEditionRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  return c.json({ data: updated[0] }, 200);
+  return c.json({ data: await toEditionResponse(updated[0]) }, 200);
 });
 
 adminEditionRoutes.openapi(deleteEditionRoute, async (c) => {
@@ -335,7 +315,7 @@ adminEditionRoutes.openapi(updateSharingStatusRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  return c.json({ data: updated[0] }, 200);
+  return c.json({ data: await toEditionResponse(updated[0]) }, 200);
 });
 
 adminEditionRoutes.openapi(presignRuleUploadRoute, async (c) => {
@@ -372,5 +352,5 @@ adminEditionRoutes.openapi(updateRulesRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  return c.json({ data: updated[0] }, 200);
+  return c.json({ data: await toEditionResponse(updated[0]) }, 200);
 });

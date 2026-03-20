@@ -3,6 +3,11 @@ import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { competitionEditions } from '../db/schema.js';
 import {
+  editionResponseSchema,
+  toEditionResponse,
+  toEditionResponses,
+} from '../lib/edition-response.js';
+import {
   createPaginatedResponseSchema,
   createPaginationMeta,
   createPagingQuerySchema,
@@ -22,27 +27,6 @@ const querySchema = createPagingQuerySchema(listEditionSortValues, true).extend(
   series_id: z.string().uuid().optional(),
 });
 
-const editionSchema = z.object({
-  id: z.string().uuid(),
-  seriesId: z.string().uuid(),
-  year: z.number().int(),
-  name: z.string(),
-  description: z.string().nullable(),
-  ruleDocuments: z
-    .array(
-      z.object({
-        label: z.string(),
-        s3_key: z.string(),
-        mime_type: z.string(),
-      }),
-    )
-    .nullable(),
-  sharingStatus: z.enum(['draft', 'accepting', 'sharing', 'closed']),
-  externalLinks: z.array(z.object({ label: z.string(), url: z.string().url() })).nullable(),
-  createdAt: z.any(),
-  updatedAt: z.any(),
-});
-
 const editionListRoute = createRoute({
   method: 'get',
   path: '/editions',
@@ -54,7 +38,7 @@ const editionListRoute = createRoute({
       description: '大会開催回一覧',
       content: {
         'application/json': {
-          schema: createPaginatedResponseSchema(editionSchema),
+          schema: createPaginatedResponseSchema(editionResponseSchema),
         },
       },
     },
@@ -88,7 +72,7 @@ const editionDetailRoute = createRoute({
       description: '大会開催回詳細',
       content: {
         'application/json': {
-          schema: z.object({ data: editionSchema }),
+          schema: z.object({ data: editionResponseSchema }),
         },
       },
     },
@@ -169,7 +153,7 @@ editionRoutes.openapi(editionListRoute, async (c) => {
 
   return c.json(
     {
-      data: rows,
+      data: await toEditionResponses(rows),
       pagination: createPaginationMeta({
         page: parsed.value.page,
         pageSize: parsed.value.pageSize,
@@ -190,5 +174,5 @@ editionRoutes.openapi(editionDetailRoute, async (c) => {
   if (!rows[0]) {
     return c.json({ error: 'Not found' as const }, 404);
   }
-  return c.json({ data: rows[0] }, 200);
+  return c.json({ data: await toEditionResponse(rows[0]) }, 200);
 });
