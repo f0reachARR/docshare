@@ -1,3 +1,4 @@
+import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { auth } from './auth.js';
 import { requireAdmin } from './middleware/admin.js';
@@ -41,6 +42,8 @@ export const createApp = (): OpenAPIHono => {
       version: '0.1.0',
     },
   });
+
+  app.get('/ui', swaggerUI({ url: '/api/openapi.json' }));
 
   app.openapi(healthRoute, (c) => c.json({ ok: true }));
 

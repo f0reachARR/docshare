@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { db } from '../db/index.js';
 import {
@@ -9,6 +9,12 @@ import {
   submissionTemplates,
   submissions,
 } from '../db/schema.js';
+import {
+  createPaginatedResponseSchema,
+  createPaginationMeta,
+  createPagingQuerySchema,
+  parsePagingParams,
+} from '../lib/pagination.js';
 import type { AppVariables } from '../middleware/auth.js';
 import {
   canDeleteSubmission,
@@ -104,18 +110,64 @@ const editionSubmissionRowSchema = z.object({
   }),
 });
 
+const historySchema = z.object({
+  id: z.string().uuid(),
+  submissionId: z.string().uuid(),
+  version: z.number().int(),
+  submittedBy: z.string(),
+  fileS3Key: z.string().nullable(),
+  fileName: z.string().nullable(),
+  fileSizeBytes: z.number().nullable(),
+  fileMimeType: z.string().nullable(),
+  url: z.string().nullable(),
+  createdAt: z.any(),
+});
+
+const listEditionSubmissionSortValues = [
+  'createdAt:asc',
+  'createdAt:desc',
+  'updatedAt:asc',
+  'updatedAt:desc',
+  'teamName:asc',
+  'teamName:desc',
+] as const;
+
+const listHistorySortValues = [
+  'version:asc',
+  'version:desc',
+  'createdAt:asc',
+  'createdAt:desc',
+] as const;
+
 const listEditionSubmissionsRoute = createRoute({
   method: 'get',
   path: '/editions/{id}/submissions',
   request: {
     params: z.object({ id: z.string().uuid() }),
+    query: createPagingQuerySchema(listEditionSubmissionSortValues, true),
   },
   responses: {
     200: {
       description: '他大学提出一覧',
       content: {
         'application/json': {
-          schema: z.object({ data: z.array(editionSubmissionRowSchema) }),
+          schema: createPaginatedResponseSchema(editionSubmissionRowSchema),
+        },
+      },
+    },
+    400: {
+      description: '不正クエリ',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid query') }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
         },
       },
     },
@@ -124,6 +176,57 @@ const listEditionSubmissionsRoute = createRoute({
       content: {
         'application/json': {
           schema: z.object({ error: z.literal('Forbidden') }),
+        },
+      },
+    },
+  },
+});
+
+const listSubmissionHistoriesRoute = createRoute({
+  method: 'get',
+  path: '/submissions/{id}/history',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+    query: createPagingQuerySchema(listHistorySortValues, true),
+  },
+  responses: {
+    200: {
+      description: '提出履歴一覧',
+      content: {
+        'application/json': {
+          schema: createPaginatedResponseSchema(historySchema),
+        },
+      },
+    },
+    400: {
+      description: '不正クエリ',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid query') }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
+        },
+      },
+    },
+    403: {
+      description: '権限なし',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Forbidden') }),
+        },
+      },
+    },
+    404: {
+      description: '未検出',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Not found') }),
         },
       },
     },
@@ -248,7 +351,7 @@ submissionRoutes.put('/submissions/:id', async (c) => {
     .limit(1);
   const existing = existingRows[0];
   if (!existing) {
-    return c.json({ error: 'Not found' }, 404);
+    return c.json({ error: 'Not found' as const }, 404);
   }
 
   await assertCanMutateParticipation(user.id, existing.participationId);
@@ -316,7 +419,7 @@ submissionRoutes.delete('/submissions/:id', async (c) => {
 
   const allowed = await canDeleteSubmission(user.id, submissionId, c.get('organizationId'));
   if (!allowed) {
-    return c.json({ error: 'Forbidden' }, 403);
+    return c.json({ error: 'Forbidden' as const }, 403);
   }
 
   await db.delete(submissions).where(eq(submissions.id, submissionId));
@@ -332,15 +435,66 @@ submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
 
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: createPagingQuerySchema(listEditionSubmissionSortValues, true),
+    sortValues: listEditionSubmissionSortValues,
+    defaultSort: 'createdAt:asc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
+  }
+
+  const whereClause = and(
+    eq(submissionTemplates.editionId, editionId),
+    parsed.value.q
+      ? or(
+          ilike(submissions.fileName, `%${parsed.value.q}%`),
+          ilike(submissions.url, `%${parsed.value.q}%`),
+          ilike(participations.teamName, `%${parsed.value.q}%`),
+        )
+      : undefined,
+  );
+
+  const totalRows = await db
+    .select({ total: count() })
+    .from(submissions)
+    .innerJoin(participations, eq(participations.id, submissions.participationId))
+    .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
+    .where(whereClause);
+
+  const sortColumn =
+    parsed.value.sort.field === 'updatedAt'
+      ? submissions.updatedAt
+      : parsed.value.sort.field === 'teamName'
+        ? participations.teamName
+        : submissions.createdAt;
+  const mainOrder = parsed.value.sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
   const rows = await db
     .select({ submission: submissions, participation: participations })
     .from(submissions)
     .innerJoin(participations, eq(participations.id, submissions.participationId))
     .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
-    .where(eq(submissionTemplates.editionId, editionId))
-    .orderBy(asc(participations.createdAt));
+    .where(whereClause)
+    .orderBy(mainOrder, asc(submissions.id))
+    .limit(parsed.value.pageSize)
+    .offset(parsed.value.offset);
 
-  return c.json({ data: rows }, 200);
+  return c.json(
+    {
+      data: rows,
+      pagination: createPaginationMeta({
+        page: parsed.value.page,
+        pageSize: parsed.value.pageSize,
+        total: totalRows[0]?.total ?? 0,
+      }),
+    },
+    200,
+  );
 });
 
 submissionRoutes.get('/submissions/:id/download', async (c) => {
@@ -361,7 +515,7 @@ submissionRoutes.get('/submissions/:id/download', async (c) => {
     .limit(1);
 
   if (!row[0]) {
-    return c.json({ error: 'Not found' }, 404);
+    return c.json({ error: 'Not found' as const }, 404);
   }
 
   const canView = await canViewParticipation(
@@ -370,7 +524,7 @@ submissionRoutes.get('/submissions/:id/download', async (c) => {
     c.get('organizationId'),
   );
   if (!canView) {
-    return c.json({ error: 'Forbidden' }, 403);
+    return c.json({ error: 'Forbidden' as const }, 403);
   }
 
   if (!row[0].submission.fileS3Key) {
@@ -384,7 +538,7 @@ submissionRoutes.get('/submissions/:id/download', async (c) => {
   return c.json({ data: download });
 });
 
-submissionRoutes.get('/submissions/:id/history', async (c) => {
+submissionRoutes.openapi(listSubmissionHistoriesRoute, async (c) => {
   const user = c.get('currentUser');
   const submissionId = c.req.param('id');
 
@@ -406,13 +560,59 @@ submissionRoutes.get('/submissions/:id/history', async (c) => {
     return c.json({ error: 'Forbidden' }, 403);
   }
 
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: createPagingQuerySchema(listHistorySortValues, true),
+    sortValues: listHistorySortValues,
+    defaultSort: 'version:desc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
+  }
+
+  const whereClause = and(
+    eq(submissionHistories.submissionId, submissionId),
+    parsed.value.q
+      ? or(
+          ilike(submissionHistories.fileName, `%${parsed.value.q}%`),
+          ilike(submissionHistories.url, `%${parsed.value.q}%`),
+        )
+      : undefined,
+  );
+
+  const totalRows = await db
+    .select({ total: count() })
+    .from(submissionHistories)
+    .where(whereClause);
+
+  const sortColumn =
+    parsed.value.sort.field === 'createdAt'
+      ? submissionHistories.createdAt
+      : submissionHistories.version;
+  const mainOrder = parsed.value.sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
   const histories = await db
     .select()
     .from(submissionHistories)
-    .where(eq(submissionHistories.submissionId, submissionId))
-    .orderBy(desc(submissionHistories.version));
+    .where(whereClause)
+    .orderBy(mainOrder, asc(submissionHistories.id))
+    .limit(parsed.value.pageSize)
+    .offset(parsed.value.offset);
 
-  return c.json({ data: histories });
+  return c.json(
+    {
+      data: histories,
+      pagination: createPaginationMeta({
+        page: parsed.value.page,
+        pageSize: parsed.value.pageSize,
+        total: totalRows[0]?.total ?? 0,
+      }),
+    },
+    200,
+  );
 });
 
 submissionRoutes.get('/submission-history/:historyId/download', async (c) => {

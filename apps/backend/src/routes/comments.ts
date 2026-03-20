@@ -1,7 +1,13 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { comments, members, organizations, participations, users } from '../db/schema.js';
+import {
+  createPaginatedResponseSchema,
+  createPaginationMeta,
+  createPagingQuerySchema,
+  parsePagingParams,
+} from '../lib/pagination.js';
 import type { AppVariables } from '../middleware/auth.js';
 import {
   canComment,
@@ -28,18 +34,44 @@ const commentWithAuthorSchema = z.object({
   }),
 });
 
+const listCommentSortValues = [
+  'createdAt:asc',
+  'createdAt:desc',
+  'updatedAt:asc',
+  'updatedAt:desc',
+] as const;
+
+const listCommentQuerySchema = createPagingQuerySchema(listCommentSortValues, true);
+
 const listCommentsRoute = createRoute({
   method: 'get',
   path: '/participations/{id}/comments',
   request: {
     params: z.object({ id: z.string().uuid() }),
+    query: listCommentQuerySchema,
   },
   responses: {
     200: {
       description: 'コメント一覧',
       content: {
         'application/json': {
-          schema: z.object({ data: z.array(commentWithAuthorSchema) }),
+          schema: createPaginatedResponseSchema(commentWithAuthorSchema),
+        },
+      },
+    },
+    400: {
+      description: '不正クエリ',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid query') }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
         },
       },
     },
@@ -65,6 +97,31 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
 
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: listCommentQuerySchema,
+    sortValues: listCommentSortValues,
+    defaultSort: 'createdAt:asc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
+  }
+
+  const whereClause = and(
+    eq(comments.participationId, participationId),
+    isNull(comments.deletedAt),
+    parsed.value.q ? ilike(comments.body, `%${parsed.value.q}%`) : undefined,
+  );
+
+  const totalRows = await db.select({ total: count() }).from(comments).where(whereClause);
+
+  const sortColumn =
+    parsed.value.sort.field === 'updatedAt' ? comments.updatedAt : comments.createdAt;
+  const mainOrder = parsed.value.sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
   const rows = await db
     .select({
       id: comments.id,
@@ -78,8 +135,10 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
     })
     .from(comments)
     .innerJoin(users, eq(users.id, comments.authorId))
-    .where(and(eq(comments.participationId, participationId), isNull(comments.deletedAt)))
-    .orderBy(asc(comments.createdAt));
+    .where(whereClause)
+    .orderBy(mainOrder, asc(comments.id))
+    .limit(parsed.value.pageSize)
+    .offset(parsed.value.offset);
 
   const authorIds = Array.from(new Set(rows.map((row) => row.authorId)));
 
@@ -119,6 +178,11 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
           universityName: universityByAuthor.get(row.authorId) ?? null,
         },
       })),
+      pagination: createPaginationMeta({
+        page: parsed.value.page,
+        pageSize: parsed.value.pageSize,
+        total: totalRows[0]?.total ?? 0,
+      }),
     },
     200,
   );

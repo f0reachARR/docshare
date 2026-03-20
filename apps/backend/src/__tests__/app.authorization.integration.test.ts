@@ -11,14 +11,36 @@ const statusEditionIds = {
 
 const mockDeleteWhere = vi.fn(async () => undefined);
 const mockEditionSubmissionRows = vi.fn(async () => []);
+const mockCountRows = vi.fn(async () => [{ total: 0 }]);
+const mockSubmissionParticipationRows = vi.fn(async () => [] as Array<{ participationId: string }>);
+const mockAdminRows = vi.fn(async () => [{ isAdmin: true }]);
 
 const mockDb = {
   select: vi.fn((selection?: unknown) => {
+    const isCountSelect =
+      typeof selection === 'object' && selection !== null && 'total' in selection;
     const isEditionSubmissionsSelect =
       typeof selection === 'object' &&
       selection !== null &&
       'submission' in selection &&
       'participation' in selection;
+    const isSubmissionParticipationSelect =
+      typeof selection === 'object' && selection !== null && 'participationId' in selection;
+    const isAdminSelect =
+      typeof selection === 'object' && selection !== null && 'isAdmin' in selection;
+
+    if (isCountSelect) {
+      return {
+        from: () => ({
+          innerJoin: () => ({
+            innerJoin: () => ({
+              where: mockCountRows,
+            }),
+          }),
+          where: mockCountRows,
+        }),
+      };
+    }
 
     if (isEditionSubmissionsSelect) {
       return {
@@ -26,9 +48,33 @@ const mockDb = {
           innerJoin: () => ({
             innerJoin: () => ({
               where: () => ({
-                orderBy: mockEditionSubmissionRows,
+                orderBy: () => ({
+                  limit: () => ({
+                    offset: mockEditionSubmissionRows,
+                  }),
+                }),
               }),
             }),
+          }),
+        }),
+      };
+    }
+
+    if (isSubmissionParticipationSelect) {
+      return {
+        from: () => ({
+          where: () => ({
+            limit: mockSubmissionParticipationRows,
+          }),
+        }),
+      };
+    }
+
+    if (isAdminSelect) {
+      return {
+        from: () => ({
+          where: () => ({
+            limit: mockAdminRows,
           }),
         }),
       };
@@ -124,7 +170,12 @@ describe('authorization integration (app.request)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockEditionSubmissionRows.mockResolvedValue([]);
+    mockCountRows.mockResolvedValue([{ total: 0 }]);
     mockDeleteWhere.mockResolvedValue(undefined);
+    mockSubmissionParticipationRows.mockResolvedValue([
+      { participationId: '00000000-0000-0000-0000-000000000011' },
+    ]);
+    mockAdminRows.mockResolvedValue([{ isAdmin: true }]);
   });
 
   it('submission delete permission matrix: admin/owner/member', async () => {
@@ -184,10 +235,126 @@ describe('authorization integration (app.request)', () => {
     const json = (await res.json()) as { paths: Record<string, unknown> };
 
     expect(json.paths['/api/series']).toBeDefined();
+    expect(json.paths['/api/editions']).toBeDefined();
+    expect(json.paths['/api/editions/{id}/templates']).toBeDefined();
+    expect(json.paths['/api/editions/{id}/my-submissions']).toBeDefined();
     expect(json.paths['/api/submissions']).toBeDefined();
     expect(json.paths['/api/editions/{id}/submissions']).toBeDefined();
     expect(json.paths['/api/participations/{id}/comments']).toBeDefined();
+    expect(json.paths['/api/submissions/{id}/history']).toBeDefined();
     expect(json.paths['/api/university/members']).toBeDefined();
+    expect(json.paths['/api/admin/universities']).toBeDefined();
     expect(json.paths['/api/admin/editions']).toBeDefined();
+
+    const seriesGet = json.paths['/api/series'] as {
+      get?: { parameters?: Array<{ name?: string; in?: string }> };
+    };
+    const parameterNames = (seriesGet.get?.parameters ?? [])
+      .filter((parameter) => parameter.in === 'query')
+      .map((parameter) => parameter.name)
+      .sort();
+
+    expect(parameterNames).toContain('page');
+    expect(parameterNames).toContain('pageSize');
+    expect(parameterNames).toContain('q');
+    expect(parameterNames).toContain('sort');
+  });
+
+  it('all target list APIs return 422 for invalid sort', async () => {
+    const app = createApp();
+    const cases = [
+      {
+        path: '/api/series',
+        headers: undefined,
+      },
+      {
+        path: '/api/editions',
+        headers: undefined,
+      },
+      {
+        path: '/api/editions/00000000-0000-0000-0000-000000000010/templates',
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: '/api/editions/00000000-0000-0000-0000-000000000010/my-submissions',
+        headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
+      },
+      {
+        path: `/api/editions/${statusEditionIds.sharing}/submissions`,
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: '/api/participations/00000000-0000-0000-0000-000000000011/comments',
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: '/api/submissions/00000000-0000-0000-0000-000000000012/history',
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: '/api/university/members',
+        headers: { 'x-role': 'admin', 'x-organization-id': 'org-1' },
+      },
+      {
+        path: '/api/admin/universities',
+        headers: { 'x-role': 'admin' },
+      },
+    ] as const;
+
+    for (const testCase of cases) {
+      const res = await app.request(`${testCase.path}?sort=invalid:asc`, {
+        headers: testCase.headers,
+      });
+      expect(res.status, `${testCase.path} should return 422 for invalid sort`).toBe(422);
+    }
+  });
+
+  it('all target list APIs return 400 for invalid page/pageSize', async () => {
+    const app = createApp();
+    const cases = [
+      {
+        path: '/api/series',
+        headers: undefined,
+      },
+      {
+        path: '/api/editions',
+        headers: undefined,
+      },
+      {
+        path: '/api/editions/00000000-0000-0000-0000-000000000010/templates',
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: '/api/editions/00000000-0000-0000-0000-000000000010/my-submissions',
+        headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
+      },
+      {
+        path: `/api/editions/${statusEditionIds.sharing}/submissions`,
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: '/api/participations/00000000-0000-0000-0000-000000000011/comments',
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: '/api/submissions/00000000-0000-0000-0000-000000000012/history',
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: '/api/university/members',
+        headers: { 'x-role': 'admin', 'x-organization-id': 'org-1' },
+      },
+      {
+        path: '/api/admin/universities',
+        headers: { 'x-role': 'admin' },
+      },
+    ] as const;
+
+    for (const testCase of cases) {
+      const res = await app.request(`${testCase.path}?page=0&pageSize=101`, {
+        headers: testCase.headers,
+      });
+      expect(res.status, `${testCase.path} should return 400 for invalid paging`).toBe(400);
+    }
   });
 });

@@ -1,9 +1,24 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { competitionEditions } from '../db/schema.js';
+import {
+  createPaginatedResponseSchema,
+  createPaginationMeta,
+  createPagingQuerySchema,
+  parsePagingParams,
+} from '../lib/pagination.js';
 
-const querySchema = z.object({
+const listEditionSortValues = [
+  'year:asc',
+  'year:desc',
+  'name:asc',
+  'name:desc',
+  'createdAt:asc',
+  'createdAt:desc',
+] as const;
+
+const querySchema = createPagingQuerySchema(listEditionSortValues, true).extend({
   series_id: z.string().uuid().optional(),
 });
 
@@ -39,7 +54,7 @@ const editionListRoute = createRoute({
       description: '大会開催回一覧',
       content: {
         'application/json': {
-          schema: z.object({ data: z.array(editionSchema) }),
+          schema: createPaginatedResponseSchema(editionSchema),
         },
       },
     },
@@ -48,6 +63,14 @@ const editionListRoute = createRoute({
       content: {
         'application/json': {
           schema: z.object({ error: z.literal('Invalid query') }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
         },
       },
     },
@@ -83,20 +106,78 @@ const editionDetailRoute = createRoute({
 export const editionRoutes = new OpenAPIHono();
 
 editionRoutes.openapi(editionListRoute, async (c) => {
-  const parse = querySchema.safeParse(c.req.query());
-  if (!parse.success) {
-    return c.json({ error: 'Invalid query' as const }, 400);
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: querySchema,
+    sortValues: listEditionSortValues,
+    defaultSort: 'year:asc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
   }
 
-  const rows = parse.data.series_id
+  const parsedQuery = querySchema.parse(c.req.query());
+
+  const whereClauses = [
+    parsed.value.q
+      ? or(
+          ilike(competitionEditions.name, `%${parsed.value.q}%`),
+          ilike(competitionEditions.description, `%${parsed.value.q}%`),
+        )
+      : undefined,
+    parsedQuery.series_id ? eq(competitionEditions.seriesId, parsedQuery.series_id) : undefined,
+  ].filter((clause): clause is Exclude<typeof clause, undefined> => clause !== undefined);
+
+  const whereClause =
+    whereClauses.length === 0
+      ? undefined
+      : whereClauses.length === 1
+        ? whereClauses[0]
+        : and(...whereClauses);
+
+  const totalRows = whereClause
+    ? await db.select({ total: count() }).from(competitionEditions).where(whereClause)
+    : await db.select({ total: count() }).from(competitionEditions);
+
+  const sortField = parsed.value.sort.field as 'year' | 'name' | 'createdAt';
+  const sortDirection = parsed.value.sort.direction;
+  const sortColumn =
+    sortField === 'year'
+      ? competitionEditions.year
+      : sortField === 'name'
+        ? competitionEditions.name
+        : competitionEditions.createdAt;
+  const mainOrder = sortDirection === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
+  const rows = whereClause
     ? await db
         .select()
         .from(competitionEditions)
-        .where(eq(competitionEditions.seriesId, parse.data.series_id))
-        .orderBy(asc(competitionEditions.year))
-    : await db.select().from(competitionEditions).orderBy(asc(competitionEditions.year));
+        .where(whereClause)
+        .orderBy(mainOrder, asc(competitionEditions.id))
+        .limit(parsed.value.pageSize)
+        .offset(parsed.value.offset)
+    : await db
+        .select()
+        .from(competitionEditions)
+        .orderBy(mainOrder, asc(competitionEditions.id))
+        .limit(parsed.value.pageSize)
+        .offset(parsed.value.offset);
 
-  return c.json({ data: rows }, 200);
+  return c.json(
+    {
+      data: rows,
+      pagination: createPaginationMeta({
+        page: parsed.value.page,
+        pageSize: parsed.value.pageSize,
+        total: totalRows[0]?.total ?? 0,
+      }),
+    },
+    200,
+  );
 });
 
 editionRoutes.openapi(editionDetailRoute, async (c) => {

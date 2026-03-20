@@ -1,8 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { invitations, members, organizations, users } from '../db/schema.js';
+import {
+  createPaginatedResponseSchema,
+  createPaginationMeta,
+  createPagingQuerySchema,
+  parsePagingParams,
+} from '../lib/pagination.js';
 import type { AppVariables } from '../middleware/auth.js';
 import { emailService } from '../services/email/index.js';
 
@@ -27,18 +33,30 @@ const memberSchema = z.object({
   email: z.string().email(),
 });
 
+const listMemberSortValues = [
+  'name:asc',
+  'name:desc',
+  'email:asc',
+  'email:desc',
+  'createdAt:asc',
+  'createdAt:desc',
+] as const;
+
+const listMemberQuerySchema = createPagingQuerySchema(listMemberSortValues, true);
+
 const listUniversityMembersRoute = createRoute({
   method: 'get',
   path: '/university/members',
   request: {
     headers: orgHeaderSchema,
+    query: listMemberQuerySchema,
   },
   responses: {
     200: {
       description: '所属メンバー一覧',
       content: {
         'application/json': {
-          schema: z.object({ data: z.array(memberSchema) }),
+          schema: createPaginatedResponseSchema(memberSchema),
         },
       },
     },
@@ -47,8 +65,19 @@ const listUniversityMembersRoute = createRoute({
       content: {
         'application/json': {
           schema: z.object({
-            error: z.literal('x-organization-id is required'),
+            error: z.union([
+              z.literal('x-organization-id is required'),
+              z.literal('Invalid query'),
+            ]),
           }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
         },
       },
     },
@@ -146,6 +175,40 @@ universityRoutes.openapi(listUniversityMembersRoute, async (c) => {
     return c.json({ error: 'Owner only' as const }, 403);
   }
 
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: listMemberQuerySchema,
+    sortValues: listMemberSortValues,
+    defaultSort: 'createdAt:asc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
+  }
+
+  const whereClause = and(
+    eq(members.organizationId, organizationId),
+    parsed.value.q
+      ? or(ilike(users.name, `%${parsed.value.q}%`), ilike(users.email, `%${parsed.value.q}%`))
+      : undefined,
+  );
+
+  const totalRows = await db
+    .select({ total: count() })
+    .from(members)
+    .innerJoin(users, eq(users.id, members.userId))
+    .where(whereClause);
+
+  const sortColumn =
+    parsed.value.sort.field === 'name'
+      ? users.name
+      : parsed.value.sort.field === 'email'
+        ? users.email
+        : members.createdAt;
+  const mainOrder = parsed.value.sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
   const rows = await db
     .select({
       id: members.id,
@@ -156,9 +219,22 @@ universityRoutes.openapi(listUniversityMembersRoute, async (c) => {
     })
     .from(members)
     .innerJoin(users, eq(users.id, members.userId))
-    .where(eq(members.organizationId, organizationId));
+    .where(whereClause)
+    .orderBy(mainOrder, asc(members.id))
+    .limit(parsed.value.pageSize)
+    .offset(parsed.value.offset);
 
-  return c.json({ data: rows }, 200);
+  return c.json(
+    {
+      data: rows,
+      pagination: createPaginationMeta({
+        page: parsed.value.page,
+        pageSize: parsed.value.pageSize,
+        total: totalRows[0]?.total ?? 0,
+      }),
+    },
+    200,
+  );
 });
 
 universityRoutes.openapi(inviteUniversityRoute, async (c) => {
