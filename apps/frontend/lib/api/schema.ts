@@ -1347,6 +1347,135 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/editions/{id}/submission-matrix': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          page?: number;
+          pageSize?: number;
+          sort?:
+            | 'createdAt:asc'
+            | 'createdAt:desc'
+            | 'teamName:asc'
+            | 'teamName:desc'
+            | 'universityName:asc'
+            | 'universityName:desc';
+          q?: string;
+        };
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 他大学提出マトリクス */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              templates: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                /** @enum {string} */
+                acceptType: 'file' | 'url';
+                sortOrder: number;
+              }[];
+              rows: {
+                participation: {
+                  /** Format: uuid */
+                  id: string;
+                  /** Format: uuid */
+                  editionId: string;
+                  universityId: string;
+                  universityName: string;
+                  teamName: string | null;
+                  createdAt?: unknown;
+                };
+                cells: ({
+                  /** Format: uuid */
+                  id: string;
+                  /** Format: uuid */
+                  templateId: string;
+                  /** Format: uuid */
+                  participationId: string;
+                  submittedBy: string;
+                  version: number;
+                  fileName: string | null;
+                  fileSizeBytes: number | null;
+                  fileMimeType: string | null;
+                  url: string | null;
+                  createdAt?: unknown;
+                  updatedAt?: unknown;
+                } | null)[];
+              }[];
+              pagination: {
+                page: number;
+                pageSize: number;
+                total: number;
+                totalPages: number;
+                hasNext: boolean;
+                hasPrev: boolean;
+              };
+            };
+          };
+        };
+        /** @description 不正クエリ */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Invalid query';
+            };
+          };
+        };
+        /** @description 権限なし */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Forbidden';
+            };
+          };
+        };
+        /** @description 不正ソート */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Invalid sort';
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/submissions/{id}/download': {
     parameters: {
       query?: never;
@@ -2173,7 +2302,7 @@ export interface paths {
                 email: string;
                 /** @enum {string} */
                 role: 'owner' | 'member';
-                invitedBy: string;
+                inviterId: string;
                 expiresAt?: unknown;
                 createdAt?: unknown;
               };

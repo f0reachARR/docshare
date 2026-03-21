@@ -9,8 +9,46 @@ const statusEditionIds = {
   closed: '00000000-0000-0000-0000-000000000004',
 } as const;
 
+type MatrixParticipationRow = {
+  participation: {
+    id: string;
+    editionId: string;
+    universityId: string;
+    universityName: string;
+    teamName: string | null;
+    createdAt: string;
+  };
+};
+
+type MatrixTemplateRow = {
+  template: {
+    id: string;
+    name: string;
+    acceptType: 'file' | 'url';
+    sortOrder: number;
+  };
+};
+
+type MatrixSubmissionRow = {
+  id: string;
+  templateId: string;
+  participationId: string;
+  submittedBy: string;
+  version: number;
+  fileS3Key: string | null;
+  fileName: string | null;
+  fileSizeBytes: number | null;
+  fileMimeType: string | null;
+  url: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const mockDeleteWhere = vi.fn(async () => undefined);
 const mockEditionSubmissionRows = vi.fn(async () => []);
+const mockMatrixParticipationRows = vi.fn<() => Promise<MatrixParticipationRow[]>>(async () => []);
+const mockMatrixTemplateRows = vi.fn<() => Promise<MatrixTemplateRow[]>>(async () => []);
+const mockMatrixSubmissionRows = vi.fn<() => Promise<MatrixSubmissionRow[]>>(async () => []);
 const mockCountRows = vi.fn(async () => [{ total: 0 }]);
 const mockSubmissionParticipationRows = vi.fn(async () => [] as Array<{ participationId: string }>);
 const mockAdminRows = vi.fn(async () => [{ isAdmin: true }]);
@@ -24,8 +62,24 @@ const mockDb = {
       selection !== null &&
       'submission' in selection &&
       'participation' in selection;
+    const isMatrixParticipationSelect =
+      typeof selection === 'object' &&
+      selection !== null &&
+      'participation' in selection &&
+      !('submission' in selection);
+    const isMatrixTemplateSelect =
+      typeof selection === 'object' && selection !== null && 'template' in selection;
+    const isMatrixSubmissionSelect =
+      typeof selection === 'object' &&
+      selection !== null &&
+      'templateId' in selection &&
+      'participationId' in selection &&
+      'fileName' in selection;
     const isSubmissionParticipationSelect =
-      typeof selection === 'object' && selection !== null && 'participationId' in selection;
+      typeof selection === 'object' &&
+      selection !== null &&
+      'participationId' in selection &&
+      !('templateId' in selection);
     const isAdminSelect =
       typeof selection === 'object' && selection !== null && 'isAdmin' in selection;
 
@@ -33,6 +87,7 @@ const mockDb = {
       return {
         from: () => ({
           innerJoin: () => ({
+            where: mockCountRows,
             innerJoin: () => ({
               where: mockCountRows,
             }),
@@ -68,6 +123,40 @@ const mockDb = {
           where: () => ({
             limit: mockSubmissionParticipationRows,
           }),
+        }),
+      };
+    }
+
+    if (isMatrixParticipationSelect) {
+      return {
+        from: () => ({
+          innerJoin: () => ({
+            where: () => ({
+              orderBy: () => ({
+                limit: () => ({
+                  offset: mockMatrixParticipationRows,
+                }),
+              }),
+            }),
+          }),
+        }),
+      };
+    }
+
+    if (isMatrixTemplateSelect) {
+      return {
+        from: () => ({
+          where: () => ({
+            orderBy: mockMatrixTemplateRows,
+          }),
+        }),
+      };
+    }
+
+    if (isMatrixSubmissionSelect) {
+      return {
+        from: () => ({
+          where: mockMatrixSubmissionRows,
         }),
       };
     }
@@ -172,6 +261,9 @@ describe('authorization integration (app.request)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockEditionSubmissionRows.mockResolvedValue([]);
+    mockMatrixParticipationRows.mockResolvedValue([]);
+    mockMatrixTemplateRows.mockResolvedValue([]);
+    mockMatrixSubmissionRows.mockResolvedValue([]);
     mockCountRows.mockResolvedValue([{ total: 0 }]);
     mockDeleteWhere.mockResolvedValue(undefined);
     mockSubmissionParticipationRows.mockResolvedValue([
@@ -227,6 +319,165 @@ describe('authorization integration (app.request)', () => {
       headers: { 'x-role': 'member' },
     });
     expect(closedRes.status).toBe(200);
+
+    const matrixDraftRes = await app.request(
+      `/api/editions/${statusEditionIds.draft}/submission-matrix`,
+      {
+        headers: { 'x-role': 'member' },
+      },
+    );
+    expect(matrixDraftRes.status).toBe(403);
+
+    const matrixAcceptingRes = await app.request(
+      `/api/editions/${statusEditionIds.accepting}/submission-matrix`,
+      {
+        headers: { 'x-role': 'member' },
+      },
+    );
+    expect(matrixAcceptingRes.status).toBe(403);
+
+    const matrixSharingRes = await app.request(
+      `/api/editions/${statusEditionIds.sharing}/submission-matrix`,
+      {
+        headers: { 'x-role': 'member' },
+      },
+    );
+    expect(matrixSharingRes.status).toBe(200);
+
+    const matrixClosedRes = await app.request(
+      `/api/editions/${statusEditionIds.closed}/submission-matrix`,
+      {
+        headers: { 'x-role': 'member' },
+      },
+    );
+    expect(matrixClosedRes.status).toBe(200);
+  });
+
+  it('GET /api/editions/:id/submission-matrix returns contract-compliant matrix response', async () => {
+    const app = createApp();
+
+    mockCountRows.mockResolvedValue([{ total: 2 }]);
+    mockMatrixParticipationRows.mockResolvedValue([
+      {
+        participation: {
+          id: '10000000-0000-0000-0000-000000000001',
+          editionId: statusEditionIds.sharing,
+          universityId: 'org-1',
+          universityName: 'Org One',
+          teamName: 'Team A',
+          createdAt: '2026-03-20T00:00:00.000Z',
+        },
+      },
+      {
+        participation: {
+          id: '10000000-0000-0000-0000-000000000002',
+          editionId: statusEditionIds.sharing,
+          universityId: 'org-2',
+          universityName: 'Org Two',
+          teamName: 'Team B',
+          createdAt: '2026-03-20T00:10:00.000Z',
+        },
+      },
+    ]);
+    mockMatrixTemplateRows.mockResolvedValue([
+      {
+        template: {
+          id: '20000000-0000-0000-0000-000000000001',
+          name: 'Design PDF',
+          acceptType: 'file',
+          sortOrder: 1,
+        },
+      },
+      {
+        template: {
+          id: '20000000-0000-0000-0000-000000000002',
+          name: 'Demo URL',
+          acceptType: 'url',
+          sortOrder: 2,
+        },
+      },
+    ]);
+    mockMatrixSubmissionRows.mockResolvedValue([
+      {
+        id: '30000000-0000-0000-0000-000000000001',
+        templateId: '20000000-0000-0000-0000-000000000001',
+        participationId: '10000000-0000-0000-0000-000000000001',
+        submittedBy: 'member-user',
+        version: 2,
+        fileS3Key: 'secret/internal/path.pdf',
+        fileName: 'design.pdf',
+        fileSizeBytes: 1234,
+        fileMimeType: 'application/pdf',
+        url: null,
+        createdAt: '2026-03-20T02:00:00.000Z',
+        updatedAt: '2026-03-20T02:05:00.000Z',
+      },
+      {
+        id: '30000000-0000-0000-0000-000000000002',
+        templateId: '20000000-0000-0000-0000-000000000002',
+        participationId: '10000000-0000-0000-0000-000000000002',
+        submittedBy: 'member-user',
+        version: 1,
+        fileS3Key: null,
+        fileName: null,
+        fileSizeBytes: null,
+        fileMimeType: null,
+        url: 'https://example.test/demo',
+        createdAt: '2026-03-20T03:00:00.000Z',
+        updatedAt: '2026-03-20T03:00:00.000Z',
+      },
+    ]);
+
+    const res = await app.request(`/api/editions/${statusEditionIds.sharing}/submission-matrix`, {
+      headers: { 'x-role': 'member' },
+    });
+
+    expect(res.status).toBe(200);
+
+    const json = (await res.json()) as {
+      templates: Array<{ id: string; sortOrder: number }>;
+      rows: Array<{
+        participation: { id: string };
+        cells: Array<Record<string, unknown> | null>;
+      }>;
+      pagination: { total: number };
+    };
+
+    expect(json.templates.map((template) => template.sortOrder)).toEqual([1, 2]);
+    expect(json.rows).toHaveLength(2);
+    expect(new Set(json.rows.map((row) => row.participation.id)).size).toBe(json.rows.length);
+
+    for (const row of json.rows) {
+      expect(row.cells).toHaveLength(json.templates.length);
+    }
+
+    const row1 = json.rows.find(
+      (row) => row.participation.id === '10000000-0000-0000-0000-000000000001',
+    );
+    const row2 = json.rows.find(
+      (row) => row.participation.id === '10000000-0000-0000-0000-000000000002',
+    );
+
+    expect(row1).toBeDefined();
+    expect(row2).toBeDefined();
+    expect(row1?.cells[1]).toBeNull();
+    expect(row2?.cells[0]).toBeNull();
+
+    expect(row1?.cells[0]).toMatchObject({
+      id: '30000000-0000-0000-0000-000000000001',
+      templateId: '20000000-0000-0000-0000-000000000001',
+      participationId: '10000000-0000-0000-0000-000000000001',
+      submittedBy: 'member-user',
+      version: 2,
+      fileName: 'design.pdf',
+      fileSizeBytes: 1234,
+      fileMimeType: 'application/pdf',
+      url: null,
+      createdAt: '2026-03-20T02:00:00.000Z',
+      updatedAt: '2026-03-20T02:05:00.000Z',
+    });
+    expect(row1?.cells[0]).not.toHaveProperty('fileS3Key');
+    expect(json.pagination.total).toBe(2);
   });
 
   it('openapi includes major API paths', async () => {
@@ -242,6 +493,7 @@ describe('authorization integration (app.request)', () => {
     expect(json.paths['/api/editions/{id}/my-submissions']).toBeDefined();
     expect(json.paths['/api/submissions']).toBeDefined();
     expect(json.paths['/api/editions/{id}/submissions']).toBeDefined();
+    expect(json.paths['/api/editions/{id}/submission-matrix']).toBeDefined();
     expect(json.paths['/api/participations/{id}/comments']).toBeDefined();
     expect(json.paths['/api/submissions/{id}/history']).toBeDefined();
     expect(json.paths['/api/university/members']).toBeDefined();
@@ -293,6 +545,10 @@ describe('authorization integration (app.request)', () => {
       },
       {
         path: `/api/editions/${statusEditionIds.sharing}/submissions`,
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: `/api/editions/${statusEditionIds.sharing}/submission-matrix`,
         headers: { 'x-role': 'member' },
       },
       {
@@ -350,6 +606,10 @@ describe('authorization integration (app.request)', () => {
       },
       {
         path: `/api/editions/${statusEditionIds.sharing}/submissions`,
+        headers: { 'x-role': 'member' },
+      },
+      {
+        path: `/api/editions/${statusEditionIds.sharing}/submission-matrix`,
         headers: { 'x-role': 'member' },
       },
       {

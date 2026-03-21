@@ -52,4 +52,12 @@ describe('app integration', () => {
     const res = await app.request('/api/editions/00000000-0000-0000-0000-000000000001/templates');
     expect(res.status).toBe(401);
   });
+
+  it('blocks submission matrix route without auth', async () => {
+    const app = createApp();
+    const res = await app.request(
+      '/api/editions/00000000-0000-0000-0000-000000000001/submission-matrix',
+    );
+    expect(res.status).toBe(401);
+  });
 });
