@@ -26,8 +26,7 @@ model: "GPT-5.3-Codex"
 7. 必要に応じてドキュメントを更新する
 8. 実装内容を説明する
 
-## ドキュメント
+## 注意事項
 
-- `docs/`
-- `README.md`
-- `CONTRIBUTING.md`
+- ファイルの変更は #tool:edit を利用し、 #tool:execute を使ったsedなどは使用しない
+- #tool:execute はテストの実行や、コードの動作確認、パッケージマネージャや各種CLIの操作に使用する
