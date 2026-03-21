@@ -140,6 +140,7 @@
 - 大会回詳細への遷移は `editionId` ベースで行う
 
 使用 API:
+
 - `GET /api/series`
 - 必要に応じて `GET /api/editions?series_id=...`
 
@@ -151,6 +152,7 @@
 - 認証済みの場合は、権限に応じて「資料提出」「資料一覧」への導線を表示する
 
 必要な表示項目:
+
 - 大会シリーズ名
 - 開催年
 - 大会回説明
@@ -159,6 +161,7 @@
 - 共有状態
 
 使用 API:
+
 - `GET /api/editions/:id`
 - 必要に応じて `GET /api/series/:id`
 
@@ -226,6 +229,7 @@
 - `closed`: 提出 UI を無効化し、閲覧専用表示にする
 
 使用 API:
+
 - `GET /api/editions/:id/templates`
 - `GET /api/editions/:id/my-participations`
 - `GET /api/editions/:id/my-submission-status`
@@ -249,11 +253,13 @@
 - チーム詳細への導線を持つ
 
 閲覧不可時の主な理由:
+
 - 共有状態が `sharing` または `closed` ではない
 - 自校がまだ資料を 1 件も提出していない
 - 大学コンテキストが未選択または不正
 
 使用 API:
+
 - `GET /api/editions/:id/submissions`
 
 ### 5.7 チーム詳細 `/editions/:id/teams/:participationId`
@@ -280,6 +286,7 @@
 - `admin` は他人のコメントにも削除操作を表示する
 
 使用 API:
+
 - `GET /api/participations/:id`
 - `GET /api/participations/:id/submissions`
 - `GET /api/participations/:id/comments`
@@ -302,6 +309,7 @@
 - file 型はダウンロード操作を、url 型は URL を開く操作を提供する
 
 使用 API:
+
 - `GET /api/submissions/:id/history`
 - `GET /api/submission-history/:historyId/download`
 
@@ -317,6 +325,7 @@
 - 上記制約で `409` が返った場合は、理由を明示したエラーメッセージを表示する
 
 使用 API:
+
 - `GET /api/university/members`
 - `POST /api/university/invite`
 - `PUT /api/university/members/:id/role`
@@ -334,6 +343,7 @@
 - 作成、編集、削除
 
 使用 API:
+
 - `GET /api/series`
 - `POST /api/admin/series`
 - `PUT /api/admin/series/:id`
@@ -347,6 +357,7 @@
 - ルール資料アップロード
 
 使用 API:
+
 - `GET /api/editions`
 - `POST /api/admin/editions`
 - `PUT /api/admin/editions/:id`
@@ -363,6 +374,7 @@
 - 削除
 
 使用 API:
+
 - `POST /api/admin/editions/:id/participations`
 - `PUT /api/admin/participations/:id`
 - `DELETE /api/admin/participations/:id`
@@ -377,6 +389,7 @@
 - `file`/`url` に応じて入力フォームを切り替える
 
 使用 API:
+
 - `GET /api/editions/:id/templates`
 - `POST /api/admin/editions/:id/templates`
 - `PUT /api/admin/templates/:id`
@@ -390,6 +403,7 @@
 - 初期代表者メールを指定した招待
 
 使用 API:
+
 - `GET /api/admin/universities`
 - `POST /api/admin/universities`
 
@@ -450,11 +464,13 @@
 3. 成功後、`POST /api/submissions` または `PUT /api/submissions/:id`
 
 バックエンドは提出登録時に以下を再検証する前提とする。
+
 - `s3Key` が現在の submission context と version に一致すること
 - S3 上の `contentLength` と payload の `fileSizeBytes` が一致すること
 - S3 上の `contentType` と payload の `mimeType` が一致すること
 
 フロントの責務:
+
 - 進捗表示
 - 中断時のリトライ導線
 - presign 完了後に S3 送信が失敗した場合のエラー表示
@@ -525,20 +541,13 @@
   - 並び順
   - 0 件時の表示
 
-### 10.2 ルール資料のダウンロード仕様が不足
-
-- 公開画面ではルール資料を表示する要件がある
-- ただし `rule_documents` は `s3_key` と `mime_type` のみで、公開ダウンロード URL の取得方法が仕様化されていない
-- 現行バックエンドにも公開ルール資料ダウンロード API はない
-- そのためフロントはルール資料を「表示」できても「実際に開く」手段が未定である
-
-### 10.3 招待承認画面の API が不足
+### 10.2 招待承認画面の API が不足
 
 - 画面 `/invite/:invitationId` には招待内容取得と承認操作が必要
 - しかし `spec.md` では Better Auth に委譲されており、フロントから何を呼ぶかが明記されていない
 - Better Auth の組織招待 API をそのまま使うのか、BFF でラップするのかを確定する必要がある
 
-### 10.4 空状態と誘導文が未定義
+### 10.3 空状態と誘導文が未定義
 
 - 閲覧不可時に何を表示するかの文言方針が未確定
 - 特に以下は UX 上重要である
