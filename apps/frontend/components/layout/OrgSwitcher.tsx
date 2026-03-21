@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -13,7 +14,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { Building2Icon, ChevronDownIcon } from 'lucide-react';
 
-// We need a dropdown menu component - install it
 export function OrgSwitcher() {
   const { organizations } = useAuth();
   const { organizationId, setOrganizationId, currentOrg } = useOrganization();
@@ -44,7 +44,9 @@ export function OrgSwitcher() {
         <ChevronDownIcon className='h-3 w-3' />
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>
-        <DropdownMenuLabel>大学を切り替え</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>大学を切り替え</DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         {organizations.map((org) => (
           <DropdownMenuItem

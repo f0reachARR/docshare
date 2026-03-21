@@ -11,6 +11,7 @@ import { adminParticipationRoutes } from './routes/admin/participations.js';
 import { adminSeriesRoutes } from './routes/admin/series.js';
 import { adminTemplateRoutes } from './routes/admin/templates.js';
 import { adminUniversityRoutes } from './routes/admin/universities.js';
+import { adminUserRoutes } from './routes/admin/users.js';
 import { commentRoutes } from './routes/comments.js';
 import { editionProtectedRoutes } from './routes/edition-protected.js';
 import { editionRoutes } from './routes/editions.js';
@@ -93,6 +94,7 @@ export const createApp = (): OpenAPIHono => {
   app.route('/api/admin', adminParticipationRoutes);
   app.route('/api/admin', adminTemplateRoutes);
   app.route('/api/admin', adminUniversityRoutes);
+  app.route('/api/admin', adminUserRoutes);
 
   return app;
 };

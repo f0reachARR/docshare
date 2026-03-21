@@ -12,6 +12,7 @@ const adminNavLinks = [
   { href: '/admin/series', label: '大会シリーズ' },
   { href: '/admin/editions', label: '大会回' },
   { href: '/admin/universities', label: '大学' },
+  { href: '/admin/users', label: 'ユーザー管理' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

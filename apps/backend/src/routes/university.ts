@@ -11,6 +11,7 @@ import {
 } from '../lib/pagination.js';
 import type { AppVariables } from '../middleware/auth.js';
 import { emailService } from '../services/email/index.js';
+import { getScopedMember, isLastOwner } from '../services/membership-management.js';
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -266,25 +267,6 @@ const canManageMembers = async (userId: string, organizationId: string): Promise
     .limit(1);
 
   return ownerRows[0]?.role === 'owner';
-};
-
-const getScopedMember = async (memberId: string, organizationId: string) => {
-  const rows = await db
-    .select({ id: members.id, role: members.role })
-    .from(members)
-    .where(and(eq(members.id, memberId), eq(members.organizationId, organizationId)))
-    .limit(1);
-
-  return rows[0] ?? null;
-};
-
-const isLastOwner = async (organizationId: string): Promise<boolean> => {
-  const rows = await db
-    .select({ total: count() })
-    .from(members)
-    .where(and(eq(members.organizationId, organizationId), eq(members.role, 'owner')));
-
-  return (rows[0]?.total ?? 0) <= 1;
 };
 
 universityRoutes.openapi(listUniversityMembersRoute, async (c) => {

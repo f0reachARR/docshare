@@ -3800,6 +3800,373 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/admin/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          page?: number;
+          pageSize?: number;
+          sort?:
+            | 'name:asc'
+            | 'name:desc'
+            | 'email:asc'
+            | 'email:desc'
+            | 'createdAt:asc'
+            | 'createdAt:desc';
+          q?: string;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description ユーザー一覧 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                id: string;
+                name: string;
+                /** Format: email */
+                email: string;
+                isAdmin: boolean;
+                createdAt?: unknown;
+                organizationCount: number;
+              }[];
+              pagination: {
+                page: number;
+                pageSize: number;
+                total: number;
+                totalPages: number;
+                hasNext: boolean;
+                hasPrev: boolean;
+              };
+            };
+          };
+        };
+        /** @description 不正クエリ */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Invalid query';
+            };
+          };
+        };
+        /** @description 不正ソート */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Invalid sort';
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/users/{userId}/memberships': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          userId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description ユーザー所属一覧 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                memberId: string;
+                organizationId: string;
+                organizationName: string;
+                organizationSlug: string;
+                /** @enum {string} */
+                role: 'owner' | 'member';
+                createdAt?: unknown;
+              }[];
+            };
+          };
+        };
+        /** @description ユーザー未検出 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Not found';
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          userId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          'application/json': {
+            organizationId: string;
+            /** @enum {string} */
+            role: 'owner' | 'member';
+          };
+        };
+      };
+      responses: {
+        /** @description 所属作成 */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                id: string;
+                userId: string;
+                organizationId: string;
+                /** @enum {string} */
+                role: 'owner' | 'member';
+                createdAt?: unknown;
+              };
+            };
+          };
+        };
+        /** @description 不正入力 */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              error?: unknown;
+            };
+          };
+        };
+        /** @description 対象未検出 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Not found';
+            };
+          };
+        };
+        /** @description 重複所属 */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Membership already exists';
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/memberships/{memberId}/role': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          memberId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          'application/json': {
+            /** @enum {string} */
+            role: 'owner' | 'member';
+          };
+        };
+      };
+      responses: {
+        /** @description 所属ロール更新 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                id: string;
+                userId: string;
+                organizationId: string;
+                /** @enum {string} */
+                role: 'owner' | 'member';
+                createdAt?: unknown;
+              };
+            };
+          };
+        };
+        /** @description 不正入力 */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              error?: unknown;
+            };
+          };
+        };
+        /** @description 所属未検出 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Not found';
+            };
+          };
+        };
+        /** @description 最後のowner保護 */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Last owner cannot be removed';
+            };
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/memberships/{memberId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          memberId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 所属解除 */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description 所属未検出 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Not found';
+            };
+          };
+        };
+        /** @description 最後のowner保護 */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Last owner cannot be removed';
+            };
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
