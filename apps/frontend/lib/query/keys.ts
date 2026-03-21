@@ -22,6 +22,8 @@ export const queryKeys = {
       ['editions', id, 'my-submission-status', orgId] as const,
     submissions: (id: string, orgId: string, params: Record<string, unknown>) =>
       ['editions', id, 'submissions', orgId, params] as const,
+    submissionMatrix: (id: string, orgId: string, params: Record<string, unknown>) =>
+      ['editions', id, 'submission-matrix', orgId, params] as const,
   },
 
   participations: {

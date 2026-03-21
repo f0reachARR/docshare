@@ -115,6 +115,25 @@ const editionSubmissionRowSchema = z.object({
   }),
 });
 
+const submissionMatrixTemplateSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  acceptType: z.enum(['file', 'url']),
+  sortOrder: z.number().int(),
+});
+
+const submissionMatrixRowSchema = z.object({
+  participation: z.object({
+    id: z.string().uuid(),
+    editionId: z.string().uuid(),
+    universityId: z.string(),
+    universityName: z.string(),
+    teamName: z.string().nullable(),
+    createdAt: z.any(),
+  }),
+  cells: z.array(submissionSchema.nullable()),
+});
+
 const historySchema = z.object({
   id: z.string().uuid(),
   submissionId: z.string().uuid(),
@@ -138,6 +157,15 @@ const listEditionSubmissionSortValues = [
   'updatedAt:desc',
   'teamName:asc',
   'teamName:desc',
+] as const;
+
+const listEditionSubmissionMatrixSortValues = [
+  'createdAt:asc',
+  'createdAt:desc',
+  'teamName:asc',
+  'teamName:desc',
+  'universityName:asc',
+  'universityName:desc',
 ] as const;
 
 const listHistorySortValues = [
@@ -235,6 +263,60 @@ const listSubmissionHistoriesRoute = createRoute({
       content: {
         'application/json': {
           schema: z.object({ error: z.literal('Not found') }),
+        },
+      },
+    },
+  },
+});
+
+const listEditionSubmissionMatrixRoute = createRoute({
+  method: 'get',
+  path: '/editions/{id}/submission-matrix',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+    query: createPagingQuerySchema(listEditionSubmissionMatrixSortValues, true),
+  },
+  responses: {
+    200: {
+      description: '他大学提出マトリクス',
+      content: {
+        'application/json': {
+          schema: z.object({
+            templates: z.array(submissionMatrixTemplateSchema),
+            rows: z.array(submissionMatrixRowSchema),
+            pagination: z.object({
+              page: z.number().int(),
+              pageSize: z.number().int(),
+              total: z.number().int(),
+              totalPages: z.number().int(),
+              hasNext: z.boolean(),
+              hasPrev: z.boolean(),
+            }),
+          }),
+        },
+      },
+    },
+    400: {
+      description: '不正クエリ',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid query') }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
+        },
+      },
+    },
+    403: {
+      description: '権限なし',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Forbidden') }),
         },
       },
     },
@@ -760,6 +842,138 @@ submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
       data: rows.map((row) => ({
         ...row,
         submission: toPublicSubmission(row.submission),
+      })),
+      pagination: createPaginationMeta({
+        page: parsed.value.page,
+        pageSize: parsed.value.pageSize,
+        total: totalRows[0]?.total ?? 0,
+      }),
+    },
+    200,
+  );
+});
+
+submissionRoutes.openapi(listEditionSubmissionMatrixRoute, async (c) => {
+  const user = c.get('currentUser');
+  const editionId = c.req.param('id');
+
+  const canView = await canViewOtherSubmissions(user.id, editionId);
+  if (!canView) {
+    return c.json({ error: 'Forbidden' as const }, 403);
+  }
+
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: createPagingQuerySchema(listEditionSubmissionMatrixSortValues, true),
+    sortValues: listEditionSubmissionMatrixSortValues,
+    defaultSort: 'createdAt:asc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
+  }
+
+  const participationWhereClause = and(
+    eq(participations.editionId, editionId),
+    parsed.value.q
+      ? or(
+          ilike(participations.teamName, `%${parsed.value.q}%`),
+          ilike(organizations.name, `%${parsed.value.q}%`),
+        )
+      : undefined,
+  );
+
+  const totalRows = await db
+    .select({ total: count() })
+    .from(participations)
+    .innerJoin(organizations, eq(organizations.id, participations.universityId))
+    .where(participationWhereClause);
+
+  const sortColumn =
+    parsed.value.sort.field === 'teamName'
+      ? participations.teamName
+      : parsed.value.sort.field === 'universityName'
+        ? organizations.name
+        : participations.createdAt;
+  const mainOrder = parsed.value.sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
+  const participationRows = await db
+    .select({
+      participation: {
+        id: participations.id,
+        editionId: participations.editionId,
+        universityId: participations.universityId,
+        universityName: organizations.name,
+        teamName: participations.teamName,
+        createdAt: participations.createdAt,
+      },
+    })
+    .from(participations)
+    .innerJoin(organizations, eq(organizations.id, participations.universityId))
+    .where(participationWhereClause)
+    .orderBy(mainOrder, asc(participations.id))
+    .limit(parsed.value.pageSize)
+    .offset(parsed.value.offset);
+
+  const templates = await db
+    .select({
+      template: {
+        id: submissionTemplates.id,
+        name: submissionTemplates.name,
+        acceptType: submissionTemplates.acceptType,
+        sortOrder: submissionTemplates.sortOrder,
+      },
+    })
+    .from(submissionTemplates)
+    .where(eq(submissionTemplates.editionId, editionId))
+    .orderBy(asc(submissionTemplates.sortOrder), asc(submissionTemplates.id));
+
+  const participationIds = participationRows.map((row) => row.participation.id);
+  const templateIds = templates.map((row) => row.template.id);
+
+  const submissionRows =
+    participationIds.length === 0 || templateIds.length === 0
+      ? []
+      : ((await db
+          .select({
+            id: submissions.id,
+            templateId: submissions.templateId,
+            participationId: submissions.participationId,
+            submittedBy: submissions.submittedBy,
+            version: submissions.version,
+            fileS3Key: submissions.fileS3Key,
+            fileName: submissions.fileName,
+            fileSizeBytes: submissions.fileSizeBytes,
+            fileMimeType: submissions.fileMimeType,
+            url: submissions.url,
+            createdAt: submissions.createdAt,
+            updatedAt: submissions.updatedAt,
+          })
+          .from(submissions)
+          .where(
+            and(
+              inArray(submissions.participationId, participationIds),
+              inArray(submissions.templateId, templateIds),
+            ),
+          )) ?? []);
+
+  const submissionMap = new Map<string, (typeof submissionRows)[number]>();
+  for (const row of submissionRows) {
+    submissionMap.set(`${row.participationId}:${row.templateId}`, row);
+  }
+
+  return c.json(
+    {
+      templates: templates.map((row) => row.template),
+      rows: participationRows.map((row) => ({
+        participation: row.participation,
+        cells: templates.map((template) => {
+          const key = `${row.participation.id}:${template.template.id}`;
+          const submission = submissionMap.get(key);
+          return submission ? toPublicSubmission(submission) : null;
+        }),
       })),
       pagination: createPaginationMeta({
         page: parsed.value.page,
