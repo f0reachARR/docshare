@@ -21,6 +21,6 @@
     }
   },
   "files": {
-    "ignore": ["**/dist/**", "**/coverage/**", ".vscode/**"]
+    "ignore": ["**/dist/**", "**/coverage/**", ".vscode/**", "**/.next/**", "next-env.d.ts"]
   }
 }

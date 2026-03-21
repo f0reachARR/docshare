@@ -13,20 +13,28 @@ import {
 
 export const users = pgTable('user', {
   id: text('id').primaryKey(),
-  email: text('email').notNull(),
+  email: text('email').notNull().unique(),
   name: text('name').notNull(),
+  emailVerified: boolean('email_verified').notNull().default(false),
+  image: text('image'),
   isAdmin: boolean('is_admin').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const user = users;
+
 export const organizations = pgTable('organization', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  slug: text('slug').notNull(),
+  slug: text('slug').notNull().unique(),
+  logo: text('logo'),
+  metadata: text('metadata'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const organization = organizations;
 
 export const members = pgTable(
   'member',
@@ -34,31 +42,110 @@ export const members = pgTable(
     id: text('id').primaryKey(),
     organizationId: text('organization_id')
       .notNull()
-      .references(() => organizations.id, { onDelete: 'cascade' }),
+      .references(() => organization.id, { onDelete: 'cascade' }),
     userId: text('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    role: text('role').$type<'owner' | 'member'>().notNull(),
+      .references(() => user.id, { onDelete: 'cascade' }),
+    role: text('role').$type<'owner' | 'member'>().notNull().default('member'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
     memberUnique: uniqueIndex('member_org_user_unique').on(table.organizationId, table.userId),
+    memberOrganizationIdIdx: index('member_organizationId_idx').on(table.organizationId),
+    memberUserIdIdx: index('member_userId_idx').on(table.userId),
   }),
 );
 
-export const invitations = pgTable('invitation', {
-  id: text('id').primaryKey(),
-  organizationId: text('organization_id')
-    .notNull()
-    .references(() => organizations.id, { onDelete: 'cascade' }),
-  email: text('email').notNull(),
-  role: text('role').$type<'owner' | 'member'>().notNull(),
-  invitedBy: text('invited_by')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const member = members;
+
+export const invitations = pgTable(
+  'invitation',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    role: text('role').$type<'owner' | 'member'>().notNull(),
+    status: text('status').notNull().default('pending'),
+    inviterId: text('invited_by')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    invitationOrganizationIdIdx: index('invitation_organizationId_idx').on(table.organizationId),
+    invitationEmailIdx: index('invitation_email_idx').on(table.email),
+  }),
+);
+
+export const invitation = invitations;
+
+export const sessions = pgTable(
+  'session',
+  {
+    id: text('id').primaryKey(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    token: text('token').notNull().unique(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    activeOrganizationId: text('active_organization_id'),
+  },
+  (table) => ({
+    sessionUserIdIdx: index('session_userId_idx').on(table.userId),
+  }),
+);
+
+export const session = sessions;
+
+export const accounts = pgTable(
+  'account',
+  {
+    id: text('id').primaryKey(),
+    accountId: text('account_id').notNull(),
+    providerId: text('provider_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    idToken: text('id_token'),
+    accessTokenExpiresAt: timestamp('access_token_expires_at', { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp('refresh_token_expires_at', { withTimezone: true }),
+    scope: text('scope'),
+    password: text('password'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    accountUserIdIdx: index('account_userId_idx').on(table.userId),
+  }),
+);
+
+export const account = accounts;
+
+export const verifications = pgTable(
+  'verification',
+  {
+    id: text('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    verificationIdentifierIdx: index('verification_identifier_idx').on(table.identifier),
+  }),
+);
+
+export const verification = verifications;
 
 export const competitionSeries = pgTable('competition_series', {
   id: uuid('id').primaryKey().defaultRandom(),

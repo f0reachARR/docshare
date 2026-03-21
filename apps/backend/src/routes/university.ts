@@ -97,7 +97,7 @@ const invitationSchema = z.object({
   organizationId: z.string(),
   email: z.string().email(),
   role: z.enum(['owner', 'member']),
-  invitedBy: z.string(),
+  inviterId: z.string(),
   expiresAt: z.any(),
   createdAt: z.any(),
 });
@@ -392,7 +392,7 @@ universityRoutes.openapi(inviteUniversityRoute, async (c) => {
       organizationId,
       email: body.data.email,
       role: body.data.role,
-      invitedBy: user.id,
+      inviterId: user.id,
       expiresAt,
     })
     .returning();

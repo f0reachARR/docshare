@@ -1,7 +1,13 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { asc, eq } from 'drizzle-orm';
+import { asc, count, desc, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { organizations, participations, submissionTemplates, submissions } from '../db/schema.js';
+import {
+  createPaginatedResponseSchema,
+  createPaginationMeta,
+  createPagingQuerySchema,
+  parsePagingParams,
+} from '../lib/pagination.js';
 import type { AppVariables } from '../middleware/auth.js';
 import { canViewParticipation } from '../services/permissions.js';
 
@@ -26,6 +32,18 @@ const participationSubmissionSchema = z.object({
   url: z.string().nullable(),
   updatedAt: z.any(),
 });
+
+const listParticipationSubmissionSortValues = [
+  'sortOrder:asc',
+  'sortOrder:desc',
+  'updatedAt:asc',
+  'updatedAt:desc',
+] as const;
+
+const listParticipationSubmissionQuerySchema = createPagingQuerySchema(
+  listParticipationSubmissionSortValues,
+  false,
+);
 
 const getParticipationRoute = createRoute({
   method: 'get',
@@ -66,13 +84,30 @@ const listParticipationSubmissionsRoute = createRoute({
   path: '/participations/{id}/submissions',
   request: {
     params: z.object({ id: z.string().uuid() }),
+    query: listParticipationSubmissionQuerySchema,
   },
   responses: {
     200: {
       description: 'participation 提出一覧',
       content: {
         'application/json': {
-          schema: z.object({ data: z.array(participationSubmissionSchema) }),
+          schema: createPaginatedResponseSchema(participationSubmissionSchema),
+        },
+      },
+    },
+    400: {
+      description: '不正クエリ',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid query') }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
         },
       },
     },
@@ -132,6 +167,18 @@ participationRoutes.openapi(getParticipationRoute, async (c) => {
 
 participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
   const participationId = c.req.param('id');
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: listParticipationSubmissionQuerySchema,
+    sortValues: listParticipationSubmissionSortValues,
+    defaultSort: 'sortOrder:asc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
+  }
 
   const existing = await db
     .select({ id: participations.id })
@@ -152,6 +199,16 @@ participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
 
+  const totalRows = await db
+    .select({ total: count() })
+    .from(submissions)
+    .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
+    .where(eq(submissions.participationId, participationId));
+
+  const sortColumn =
+    parsed.value.sort.field === 'updatedAt' ? submissions.updatedAt : submissionTemplates.sortOrder;
+  const mainOrder = parsed.value.sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
   const rows = await db
     .select({
       id: submissions.id,
@@ -166,7 +223,9 @@ participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
     .from(submissions)
     .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
     .where(eq(submissions.participationId, participationId))
-    .orderBy(asc(submissionTemplates.sortOrder), asc(submissionTemplates.id));
+    .orderBy(mainOrder, asc(submissionTemplates.id), asc(submissions.id))
+    .limit(parsed.value.pageSize)
+    .offset(parsed.value.offset);
 
   return c.json(
     {
@@ -182,6 +241,11 @@ participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
         url: row.url,
         updatedAt: row.updatedAt,
       })),
+      pagination: createPaginationMeta({
+        page: parsed.value.page,
+        pageSize: parsed.value.pageSize,
+        total: totalRows[0]?.total ?? 0,
+      }),
     },
     200,
   );

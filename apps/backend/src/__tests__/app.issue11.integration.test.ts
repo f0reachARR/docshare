@@ -351,6 +351,7 @@ describe('issue #11 api integration', () => {
 
     enqueueDb(
       [{ id: 'p1' }],
+      [{ total: 1 }],
       [
         {
           id: 's1',
@@ -387,6 +388,14 @@ describe('issue #11 api integration', () => {
           updatedAt: '2026-03-20T00:00:00.000Z',
         },
       ],
+      pagination: {
+        page: 1,
+        pageSize: 20,
+        total: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
     });
   });
 
@@ -575,6 +584,107 @@ describe('issue #11 api integration', () => {
       name: 'Alice',
       universityName: 'Org One',
       teamName: 'Team A',
+    });
+  });
+
+  it('GET /api/participations/:id/submissions returns paginated rows', async () => {
+    const app = createApp();
+
+    enqueueDb(
+      [{ id: '10000000-0000-0000-0000-000000000001' }],
+      [{ total: 1 }],
+      [
+        {
+          id: '30000000-0000-0000-0000-000000000001',
+          templateId: '20000000-0000-0000-0000-000000000001',
+          templateName: 'Concept',
+          templateAcceptType: 'file',
+          version: 2,
+          fileName: 'concept-v2.pdf',
+          url: null,
+          updatedAt: '2026-03-20T12:00:00.000Z',
+        },
+      ],
+    );
+
+    const res = await app.request(
+      '/api/participations/10000000-0000-0000-0000-000000000001/submissions?page=1&pageSize=10',
+      {
+        headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
+      },
+    );
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      data: [
+        {
+          id: '30000000-0000-0000-0000-000000000001',
+          template: {
+            id: '20000000-0000-0000-0000-000000000001',
+            name: 'Concept',
+            acceptType: 'file',
+          },
+          version: 2,
+          fileName: 'concept-v2.pdf',
+          url: null,
+          updatedAt: '2026-03-20T12:00:00.000Z',
+        },
+      ],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        total: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
+    });
+  });
+
+  it('GET /api/admin/editions/:id/participations returns paginated rows', async () => {
+    const app = createApp();
+
+    enqueueDb(
+      [{ total: 1 }],
+      [
+        {
+          id: '10000000-0000-0000-0000-000000000001',
+          editionId: '00000000-0000-0000-0000-000000000001',
+          universityId: 'org-1',
+          universityName: 'Org One',
+          teamName: 'Team A',
+          createdAt: '2026-03-20T00:00:00.000Z',
+        },
+      ],
+    );
+
+    const res = await app.request(
+      '/api/admin/editions/00000000-0000-0000-0000-000000000001/participations?page=1&pageSize=10',
+      {
+        headers: { 'x-role': 'admin' },
+      },
+    );
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      data: [
+        {
+          id: '10000000-0000-0000-0000-000000000001',
+          editionId: '00000000-0000-0000-0000-000000000001',
+          universityId: 'org-1',
+          universityName: 'Org One',
+          teamName: 'Team A',
+          createdAt: '2026-03-20T00:00:00.000Z',
+        },
+      ],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        total: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
     });
   });
 

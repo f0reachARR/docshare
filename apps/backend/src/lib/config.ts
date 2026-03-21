@@ -4,6 +4,7 @@ type Env = {
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
   APP_URL: string;
+  CORS_ALLOWED_ORIGINS: string[];
   S3_ENDPOINT: string;
   S3_REGION: string;
   S3_ACCESS_KEY: string;
@@ -23,12 +24,26 @@ const toBool = (value: string | undefined, fallback: boolean): boolean => {
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 };
 
+const toStringList = (value: string | undefined, fallback: string[]): string[] => {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+};
+
 export const env: Env = {
   DATABASE_URL: process.env.DATABASE_URL ?? 'postgres://robocon:password@localhost:5432/robocon',
   PORT: Number(process.env.PORT ?? 8787),
   BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? 'dev-secret',
   BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? 'http://localhost:8787',
   APP_URL: process.env.APP_URL ?? 'http://localhost:3000',
+  CORS_ALLOWED_ORIGINS: toStringList(process.env.CORS_ALLOWED_ORIGINS, [
+    process.env.APP_URL ?? 'http://localhost:3000',
+  ]),
   S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:9000',
   S3_REGION: process.env.S3_REGION ?? 'us-east-1',
   S3_ACCESS_KEY: process.env.S3_ACCESS_KEY ?? 'minioadmin',

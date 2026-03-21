@@ -2,6 +2,35 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 
 describe('app integration', () => {
+  it('returns cors headers for allowed origins', async () => {
+    const app = createApp();
+    const res = await app.request('/api/health', {
+      headers: {
+        Origin: 'http://localhost:3000',
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:3000');
+    expect(res.headers.get('access-control-allow-credentials')).toBe('true');
+  });
+
+  it('handles preflight before auth middleware', async () => {
+    const app = createApp();
+    const res = await app.request('/api/submissions', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:3000',
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'content-type,x-organization-id',
+      },
+    });
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:3000');
+    expect(res.headers.get('access-control-allow-credentials')).toBe('true');
+  });
+
   it('returns health', async () => {
     const app = createApp();
     const res = await app.request('/api/health');

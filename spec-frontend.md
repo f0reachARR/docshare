@@ -1,6 +1,6 @@
 # ロボコン情報共有サービス フロントエンド仕様書
 
-**バージョン:** 0.5.1  
+**バージョン:** 0.5.3  
 **元仕様:** `spec.md` v0.3.1（2026-03-21 時点）  
 **対象範囲:** Next.js フロントエンドの画面仕様、画面遷移、UI 状態、クライアント側バリデーション、API 依存
 
@@ -21,6 +21,11 @@
 
 - Next.js App Router を使用する
 - Server Actions は使用しない
+- サーバー状態管理には TanStack Query を使用する
+- UI コンポーネント基盤には shadcn/ui を採用し、プリミティブには Radix UI を使用する
+- スタイリングには Tailwind CSS を使用する
+- テーブル UI は TanStack Table をベースに実装する
+- フォーム実装は TanStack Form を基本とし、バリデーション定義には Zod を使用する
 - すべてのデータ取得・更新は Hono REST API を経由する
 - 認証は Better Auth の `/api/auth/*` を利用する
 - ファイルアップロードは、バックエンドから受け取った署名付き URL を用いてブラウザから S3 互換ストレージへ直接アップロードする
@@ -107,7 +112,7 @@
 | チーム詳細 | `/editions/:id/teams/:participationId` | 対象チームの提出資料一覧、コメント一覧・投稿 |
 | 資料履歴 | `/editions/:id/submissions/:submissionId/history` | 現行資料の履歴一覧 |
 | 大学設定 | `/university/settings` | メンバー一覧、招待、ロール変更 |
-| アカウント設定 | `/account/settings` | プロフィール等 |
+| アカウント設定 | `/account/settings` | Better Auth 標準のアカウント管理 UI に委譲 |
 
 ### 4.3 管理画面
 
@@ -140,6 +145,7 @@
 - 大会回詳細への遷移は `editionId` ベースで行う
 
 使用 API:
+
 - `GET /api/series`
 - 必要に応じて `GET /api/editions?series_id=...`
 
@@ -151,6 +157,7 @@
 - 認証済みの場合は、権限に応じて「資料提出」「資料一覧」への導線を表示する
 
 必要な表示項目:
+
 - 大会シリーズ名
 - 開催年
 - 大会回説明
@@ -159,6 +166,7 @@
 - 共有状態
 
 使用 API:
+
 - `GET /api/editions/:id`
 - 必要に応じて `GET /api/series/:id`
 
@@ -166,6 +174,7 @@
 
 - `GET /api/me` でユーザー情報・所属大学一覧・現在の大学コンテキストを初期化する
 - 現在の大学コンテキストに紐づく大会回一覧を表示する
+- `draft` の大会回は `admin` を除き一覧に含めない
 - 各大会回について以下を確認できる
   - 提出状況
   - 共有状態
@@ -220,12 +229,13 @@
 
 #### 状態別 UI
 
-- `draft`: 提出 UI を非表示にし、「受付前」を表示する
+- `draft`: 出場校向け画面からは非表示とし、通常はこの画面への導線を出さない。直接到達した場合は 404 相当または非表示案内とする
 - `accepting`: 提出 UI を有効化する
 - `sharing`: 提出 UI を有効化する
 - `closed`: 提出 UI を無効化し、閲覧専用表示にする
 
 使用 API:
+
 - `GET /api/editions/:id/templates`
 - `GET /api/editions/:id/my-participations`
 - `GET /api/editions/:id/my-submission-status`
@@ -249,11 +259,14 @@
 - チーム詳細への導線を持つ
 
 閲覧不可時の主な理由:
+
 - 共有状態が `sharing` または `closed` ではない
 - 自校がまだ資料を 1 件も提出していない
+- 現在の大学コンテキストに、この大会回の participation が存在しない
 - 大学コンテキストが未選択または不正
 
 使用 API:
+
 - `GET /api/editions/:id/submissions`
 
 ### 5.7 チーム詳細 `/editions/:id/teams/:participationId`
@@ -262,8 +275,10 @@
   - 大学名
   - チーム名
 - 提出資料一覧を表示する
+- 提出資料一覧はソート・ページングに対応する
 - 資料ごとにダウンロードまたは外部 URL オープン操作を提供する
 - コメント一覧を表示する
+- コメント一覧は検索・ソート・ページングに対応する
 - 権限がある場合はコメント投稿フォームを表示する
 
 #### コメント UI
@@ -280,6 +295,7 @@
 - `admin` は他人のコメントにも削除操作を表示する
 
 使用 API:
+
 - `GET /api/participations/:id`
 - `GET /api/participations/:id/submissions`
 - `GET /api/participations/:id/comments`
@@ -294,6 +310,7 @@
 ### 5.8 資料履歴 `/editions/:id/submissions/:submissionId/history`
 
 - 現行版と過去版の一覧を表示する
+- 一覧はソート・ページングに対応する
 - 各版に以下を表示する
   - バージョン番号
   - 更新者
@@ -302,6 +319,7 @@
 - file 型はダウンロード操作を、url 型は URL を開く操作を提供する
 
 使用 API:
+
 - `GET /api/submissions/:id/history`
 - `GET /api/submission-history/:historyId/download`
 
@@ -317,6 +335,7 @@
 - 上記制約で `409` が返った場合は、理由を明示したエラーメッセージを表示する
 
 使用 API:
+
 - `GET /api/university/members`
 - `POST /api/university/invite`
 - `PUT /api/university/members/:id/role`
@@ -334,6 +353,7 @@
 - 作成、編集、削除
 
 使用 API:
+
 - `GET /api/series`
 - `POST /api/admin/series`
 - `PUT /api/admin/series/:id`
@@ -347,6 +367,7 @@
 - ルール資料アップロード
 
 使用 API:
+
 - `GET /api/editions`
 - `POST /api/admin/editions`
 - `PUT /api/admin/editions/:id`
@@ -363,6 +384,7 @@
 - 削除
 
 使用 API:
+
 - `POST /api/admin/editions/:id/participations`
 - `PUT /api/admin/participations/:id`
 - `DELETE /api/admin/participations/:id`
@@ -377,6 +399,7 @@
 - `file`/`url` に応じて入力フォームを切り替える
 
 使用 API:
+
 - `GET /api/editions/:id/templates`
 - `POST /api/admin/editions/:id/templates`
 - `PUT /api/admin/templates/:id`
@@ -390,6 +413,7 @@
 - 初期代表者メールを指定した招待
 
 使用 API:
+
 - `GET /api/admin/universities`
 - `POST /api/admin/universities`
 
@@ -402,11 +426,12 @@
 - Better Auth の認証 API を呼ぶ
 - メール/パスワード認証を基本とする
 - Google OAuth が有効なら追加導線を表示する
+- `/account/settings` は Better Auth 標準のアカウント管理 UI / SDK に委譲する
 - 認証後は `GET /api/me` を取得し、所属大学と active organization を初期化する
 - 認証後は以下の優先順で遷移する
   - 招待承認フロー中なら招待画面に戻る
   - 認証済みで大学所属があれば `/dashboard`
-  - 大学未所属なら所属待ち案内
+  - 大学未所属なら `/dashboard` に遷移し、所属待ち案内の空状態を表示する
 
 ### 6.2 招待承認 `/invite/:invitationId`
 
@@ -421,7 +446,8 @@
 
 - 未認証で認証必須ページに到達した場合はログインへ遷移する
 - `admin` 以外が `/admin/*` に到達した場合は 403 相当画面またはダッシュボードへ遷移する
-- 大学コンテキストが必須の画面で所属大学が 0 件の場合は案内画面を表示する
+- 大学コンテキストが必須の画面で所属大学が 0 件の場合は `/dashboard` の所属待ち案内へ集約する
+- `draft` の大会回は `admin` を除き出場校向け画面の導線対象外とする
 
 ---
 
@@ -433,11 +459,14 @@
 - Cookie ベース認証を前提とし、必要に応じて認証情報を送信する
 - `X-Organization-Id` が必要なエンドポイントでは、選択中大学 ID を必ず付与する
 - セッションと所属大学一覧の初期取得には `GET /api/me` を使う
+- API レスポンスの取得・キャッシュ・再検証には TanStack Query を利用する
 - OpenAPI から型生成する前提を推奨する
 
 ### 7.2 一覧取得
 
-- すべての一覧 API は `page`, `pageSize`, `sort`, `q` を扱う共通テーブルヘルパーで利用する
+- 一覧 API は API ごとに定義されたクエリを扱う
+- 多くの一覧 API は `page`, `pageSize`, `sort` を共通で扱う
+- `q` は検索対応 API のみ付与する
 - `400` はクエリ不正、`422` はソート不正として扱う
 
 ### 7.3 ファイルアップロード
@@ -450,11 +479,13 @@
 3. 成功後、`POST /api/submissions` または `PUT /api/submissions/:id`
 
 バックエンドは提出登録時に以下を再検証する前提とする。
+
 - `s3Key` が現在の submission context と version に一致すること
 - S3 上の `contentLength` と payload の `fileSizeBytes` が一致すること
 - S3 上の `contentType` と payload の `mimeType` が一致すること
 
 フロントの責務:
+
 - 進捗表示
 - 中断時のリトライ導線
 - presign 完了後に S3 送信が失敗した場合のエラー表示
@@ -478,10 +509,12 @@
 - 一覧の URL クエリ状態
 - アップロード進捗
 - フォーム送信中状態
+- API 由来のキャッシュ済みサーバー状態
 
 ### 8.2 キャッシュ方針
 
-- 一覧画面はクエリキーに `page`, `pageSize`, `sort`, `q`, `organizationId` を含める
+- 一覧画面は対応しているクエリパラメータと `organizationId` をクエリキーに含める
+- サーバー状態のキャッシュと invalidation は TanStack Query を前提とする
 - 作成・更新・削除後は関連一覧を再検証する
 - 組織切り替え時は組織依存データのキャッシュを無効化する
 
@@ -525,27 +558,20 @@
   - 並び順
   - 0 件時の表示
 
-### 10.2 ルール資料のダウンロード仕様が不足
-
-- 公開画面ではルール資料を表示する要件がある
-- ただし `rule_documents` は `s3_key` と `mime_type` のみで、公開ダウンロード URL の取得方法が仕様化されていない
-- 現行バックエンドにも公開ルール資料ダウンロード API はない
-- そのためフロントはルール資料を「表示」できても「実際に開く」手段が未定である
-
-### 10.3 招待承認画面の API が不足
+### 10.2 招待承認画面の API が不足
 
 - 画面 `/invite/:invitationId` には招待内容取得と承認操作が必要
 - しかし `spec.md` では Better Auth に委譲されており、フロントから何を呼ぶかが明記されていない
 - Better Auth の組織招待 API をそのまま使うのか、BFF でラップするのかを確定する必要がある
 
-### 10.4 空状態と誘導文が未定義
+### 10.3 空状態と誘導文が未定義
 
 - 閲覧不可時に何を表示するかの文言方針が未確定
 - 特に以下は UX 上重要である
   - 提出 0 件のため他校資料を見られない場合
-  - 所属大学がない場合
-  - 招待待ちの場合
   - 対象大会に自校 participation がない場合
+  - 所属大学がないため所属待ち案内を表示する場合
+  - 招待待ちの場合
 
 ---
 
@@ -560,4 +586,4 @@
 ## 12. 現時点での結論
 
 追加された `GET /api/me`、`GET /api/editions/:id/my-participations`、`GET /api/editions/:id/my-submission-status`、`GET /api/participations/:id`、`GET /api/participations/:id/submissions`、大学設定 API、管理用 participation 一覧 API により、認証済み主要画面の実装前提はかなり揃った。  
-現時点で特に残っている論点は「ダッシュボード要件」「招待承認フロー」「公開ルール資料ダウンロード」の 3 点である。
+`draft` の非表示方針、`/account/settings` の Better Auth 委譲、一覧 API のクエリ方針はこの版で明確化した。現時点で主に残っている論点は「ダッシュボード要件」「招待承認フロー」「公開ルール資料ダウンロード」の 3 点である。

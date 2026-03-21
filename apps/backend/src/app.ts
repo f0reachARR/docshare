@@ -1,6 +1,8 @@
 import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { cors } from 'hono/cors';
 import { auth } from './auth.js';
+import { env } from './lib/config.js';
 import { requireAdmin } from './middleware/admin.js';
 import { requireAuth } from './middleware/auth.js';
 import { resolveOrganization } from './middleware/organization.js';
@@ -46,6 +48,22 @@ export const createApp = (): OpenAPIHono => {
   });
 
   app.get('/ui', swaggerUI({ url: '/api/openapi.json' }));
+
+  app.use(
+    '/api/*',
+    cors({
+      origin: (origin) => {
+        if (!origin) {
+          return '';
+        }
+
+        return env.CORS_ALLOWED_ORIGINS.includes(origin) ? origin : '';
+      },
+      allowHeaders: ['Content-Type', 'Authorization', 'X-Organization-Id'],
+      allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      credentials: true,
+    }),
+  );
 
   app.openapi(healthRoute, (c) => c.json({ ok: true }));
 

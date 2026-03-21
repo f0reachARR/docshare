@@ -311,6 +311,14 @@ describe('authorization integration (app.request)', () => {
         path: '/api/admin/universities',
         headers: { 'x-role': 'admin' },
       },
+      {
+        path: '/api/participations/00000000-0000-0000-0000-000000000011/submissions',
+        headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
+      },
+      {
+        path: '/api/admin/editions/00000000-0000-0000-0000-000000000010/participations',
+        headers: { 'x-role': 'admin' },
+      },
     ] as const;
 
     for (const testCase of cases) {
@@ -358,6 +366,14 @@ describe('authorization integration (app.request)', () => {
       },
       {
         path: '/api/admin/universities',
+        headers: { 'x-role': 'admin' },
+      },
+      {
+        path: '/api/participations/00000000-0000-0000-0000-000000000011/submissions',
+        headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
+      },
+      {
+        path: '/api/admin/editions/00000000-0000-0000-0000-000000000010/participations',
         headers: { 'x-role': 'admin' },
       },
     ] as const;

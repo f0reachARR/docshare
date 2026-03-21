@@ -1,7 +1,13 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { asc, eq } from 'drizzle-orm';
+import { asc, count, desc, eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import { organizations, participations } from '../../db/schema.js';
+import {
+  createPaginatedResponseSchema,
+  createPaginationMeta,
+  createPagingQuerySchema,
+  parsePagingParams,
+} from '../../lib/pagination.js';
 import type { AppVariables } from '../../middleware/auth.js';
 
 const createSchema = z.object({
@@ -31,18 +37,49 @@ const participationSchema = z.object({
   updatedAt: z.any(),
 });
 
+const listEditionParticipationSortValues = [
+  'createdAt:asc',
+  'createdAt:desc',
+  'universityName:asc',
+  'universityName:desc',
+  'teamName:asc',
+  'teamName:desc',
+] as const;
+
+const listEditionParticipationQuerySchema = createPagingQuerySchema(
+  listEditionParticipationSortValues,
+  false,
+);
+
 const listEditionParticipationsRoute = createRoute({
   method: 'get',
   path: '/editions/{id}/participations',
   request: {
     params: z.object({ id: z.string().uuid() }),
+    query: listEditionParticipationQuerySchema,
   },
   responses: {
     200: {
       description: '大会の参加チーム一覧',
       content: {
         'application/json': {
-          schema: z.object({ data: z.array(participationWithUniversitySchema) }),
+          schema: createPaginatedResponseSchema(participationWithUniversitySchema),
+        },
+      },
+    },
+    400: {
+      description: '不正クエリ',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid query') }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
         },
       },
     },
@@ -140,6 +177,32 @@ export const adminParticipationRoutes = new OpenAPIHono<{ Variables: AppVariable
 
 adminParticipationRoutes.openapi(listEditionParticipationsRoute, async (c) => {
   const editionId = c.req.param('id');
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: listEditionParticipationQuerySchema,
+    sortValues: listEditionParticipationSortValues,
+    defaultSort: 'createdAt:asc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
+  }
+
+  const totalRows = await db
+    .select({ total: count() })
+    .from(participations)
+    .innerJoin(organizations, eq(organizations.id, participations.universityId))
+    .where(eq(participations.editionId, editionId));
+
+  const sortColumn =
+    parsed.value.sort.field === 'universityName'
+      ? organizations.name
+      : parsed.value.sort.field === 'teamName'
+        ? participations.teamName
+        : participations.createdAt;
+  const mainOrder = parsed.value.sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
   const rows = await db
     .select({
@@ -153,9 +216,21 @@ adminParticipationRoutes.openapi(listEditionParticipationsRoute, async (c) => {
     .from(participations)
     .innerJoin(organizations, eq(organizations.id, participations.universityId))
     .where(eq(participations.editionId, editionId))
-    .orderBy(asc(participations.createdAt), asc(participations.id));
+    .orderBy(mainOrder, asc(participations.id))
+    .limit(parsed.value.pageSize)
+    .offset(parsed.value.offset);
 
-  return c.json({ data: rows }, 200);
+  return c.json(
+    {
+      data: rows,
+      pagination: createPaginationMeta({
+        page: parsed.value.page,
+        pageSize: parsed.value.pageSize,
+        total: totalRows[0]?.total ?? 0,
+      }),
+    },
+    200,
+  );
 });
 
 adminParticipationRoutes.openapi(createParticipationRoute, async (c) => {

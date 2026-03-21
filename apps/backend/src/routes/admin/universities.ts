@@ -128,7 +128,7 @@ adminUniversityRoutes.openapi(createUniversityRoute, async (c) => {
       organizationId: inserted[0].id,
       email: body.data.ownerEmail,
       role: 'owner',
-      invitedBy: inviter.id,
+      inviterId: inviter.id,
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     });
 
