@@ -1,7 +1,7 @@
 # ロボコン情報共有サービス 仕様書
 
-**バージョン:** 0.3.0  
-**最終更新:** 2026-03-15
+**バージョン:** 0.3.1  
+**最終更新:** 2026-03-21
 
 ---
 
@@ -695,21 +695,26 @@ submissions/{edition_id}/{participation_id}/{template_id}/v{version}_{uuid}_{fil
 
 ```
 1. フロントエンド → バックエンド: POST /api/upload/presign
-   Body: { participation_id, template_id, filename, content_type }
+   Body: { participationId, templateId, fileName, contentType, fileSizeBytes }
    バックエンドがバリデーション:
      - ユーザーの所属確認
      - テンプレートの accept_type が "file" か
      - 拡張子が allowed_extensions に含まれるか
      - content_type と拡張子の整合性
+     - fileSizeBytes がテンプレート上限以下か
 
-2. バックエンド → フロントエンド: { presigned_url, s3_key, expires_in }
+2. バックエンド → フロントエンド: { presignedUrl, s3Key, expiresIn, templateMaxFileSizeMb }
 
 3. フロントエンド → S3: PUT (署名付きURL で直接アップロード)
-   - Content-Length ヘッダーで 100MB 以下を検証
+   - presign 時に指定した `Content-Length` / `Content-Type` と一致する内容で送信する
    - プログレスバー表示
 
 4. フロントエンド → バックエンド: POST /api/submissions (新規) or PUT /api/submissions/:id (差し替え)
-   Body: { template_id, participation_id, s3_key, file_name, file_size_bytes, mime_type }
+   Body: { templateId, participationId, s3Key, fileName, fileSizeBytes, mimeType }
+   バックエンドが再検証:
+     - `s3Key` が `edition/participation/template/version/fileName` と一致すること
+     - S3 上の `ContentLength` と `fileSizeBytes` が一致すること
+     - S3 上の `ContentType` と `mimeType` が一致すること
    - 差し替えの場合: 現行版を submission_history に退避してから更新
 ```
 
@@ -724,6 +729,7 @@ submissions/{edition_id}/{participation_id}/{template_id}/v{version}_{uuid}_{fil
 ```
 
 旧バージョンも同様に `/api/submission-history/:historyId/download` で取得可能。
+submission / submission_history の API レスポンスには内部管理用の `fileS3Key` を含めない。
 
 ### 9.5 URL 提出の場合
 
