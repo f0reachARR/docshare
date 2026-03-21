@@ -7,7 +7,7 @@
     "build": "pnpm --filter backend build",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "typecheck": "pnpm --filter ./apps/backend typecheck && pnpm --filter ./packages/shared typecheck",
+    "typecheck": "pnpm --filter ./apps/backend typecheck && pnpm --filter ./packages/shared typecheck && pnpm --filter ./apps/frontend typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

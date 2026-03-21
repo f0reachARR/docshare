@@ -25,7 +25,7 @@
 - UI コンポーネント基盤には shadcn/ui を採用し、プリミティブには Radix UI を使用する
 - スタイリングには Tailwind CSS を使用する
 - テーブル UI は TanStack Table をベースに実装する
-- フォーム実装は React Hook Form を基本とし、バリデーション定義には Zod を使用する
+- フォーム実装は TanStack Form を基本とし、バリデーション定義には Zod を使用する
 - すべてのデータ取得・更新は Hono REST API を経由する
 - 認証は Better Auth の `/api/auth/*` を利用する
 - ファイルアップロードは、バックエンドから受け取った署名付き URL を用いてブラウザから S3 互換ストレージへ直接アップロードする

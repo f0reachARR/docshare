@@ -1,0 +1,4078 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Robocon Docshare API", "version": "0.1.0" },
+  "components": { "schemas": {}, "parameters": {} },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "health check",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean", "enum": [true] } },
+                  "required": ["ok"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/series": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "name:asc",
+              "enum": ["name:asc", "name:desc", "createdAt:asc", "createdAt:desc"]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "minLength": 1 },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "シリーズ一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "name": { "type": "string" },
+                          "description": { "type": "string", "nullable": true },
+                          "externalLinks": {
+                            "type": "array",
+                            "nullable": true,
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "label": { "type": "string" },
+                                "url": { "type": "string", "format": "uri" }
+                              },
+                              "required": ["label", "url"]
+                            }
+                          },
+                          "createdAt": { "nullable": true },
+                          "updatedAt": { "nullable": true }
+                        },
+                        "required": ["id", "name", "description", "externalLinks"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid query"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/series/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "シリーズ詳細",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "externalLinks": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "url"]
+                          }
+                        },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": ["id", "name", "description", "externalLinks"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/editions": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "year:asc",
+              "enum": [
+                "year:asc",
+                "year:desc",
+                "name:asc",
+                "name:desc",
+                "createdAt:asc",
+                "createdAt:desc"
+              ]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "minLength": 1 },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": false,
+            "name": "series_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "大会開催回一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "seriesId": { "type": "string", "format": "uuid" },
+                          "year": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "description": { "type": "string", "nullable": true },
+                          "ruleDocuments": {
+                            "type": "array",
+                            "nullable": true,
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "label": { "type": "string" },
+                                "s3_key": { "type": "string" },
+                                "mime_type": { "type": "string" },
+                                "url": { "type": "string", "format": "uri" }
+                              },
+                              "required": ["label", "s3_key", "mime_type", "url"]
+                            }
+                          },
+                          "sharingStatus": {
+                            "type": "string",
+                            "enum": ["draft", "accepting", "sharing", "closed"]
+                          },
+                          "externalLinks": {
+                            "type": "array",
+                            "nullable": true,
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "label": { "type": "string" },
+                                "url": { "type": "string", "format": "uri" }
+                              },
+                              "required": ["label", "url"]
+                            }
+                          },
+                          "createdAt": { "nullable": true },
+                          "updatedAt": { "nullable": true }
+                        },
+                        "required": [
+                          "id",
+                          "seriesId",
+                          "year",
+                          "name",
+                          "description",
+                          "ruleDocuments",
+                          "sharingStatus",
+                          "externalLinks"
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid query"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/editions/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "大会開催回詳細",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "seriesId": { "type": "string", "format": "uuid" },
+                        "year": { "type": "integer" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "ruleDocuments": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "s3_key": { "type": "string" },
+                              "mime_type": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "s3_key", "mime_type", "url"]
+                          }
+                        },
+                        "sharingStatus": {
+                          "type": "string",
+                          "enum": ["draft", "accepting", "sharing", "closed"]
+                        },
+                        "externalLinks": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "url"]
+                          }
+                        },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "seriesId",
+                        "year",
+                        "name",
+                        "description",
+                        "ruleDocuments",
+                        "sharingStatus",
+                        "externalLinks"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "ログイン中ユーザー情報",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string" },
+                            "email": { "type": "string", "format": "email" },
+                            "name": { "type": "string" },
+                            "isAdmin": { "type": "boolean" }
+                          },
+                          "required": ["id", "email", "name", "isAdmin"]
+                        },
+                        "organizations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string" },
+                              "name": { "type": "string" },
+                              "slug": { "type": "string" },
+                              "role": { "type": "string", "enum": ["owner", "member"] }
+                            },
+                            "required": ["id", "name", "slug", "role"]
+                          }
+                        },
+                        "activeOrganizationId": { "type": "string", "nullable": true }
+                      },
+                      "required": ["user", "organizations", "activeOrganizationId"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未認証",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Unauthorized"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/editions/{id}/templates": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "sortOrder:asc",
+              "enum": [
+                "sortOrder:asc",
+                "sortOrder:desc",
+                "name:asc",
+                "name:desc",
+                "createdAt:asc",
+                "createdAt:desc"
+              ]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "minLength": 1 },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "資料種別テンプレート一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "editionId": { "type": "string", "format": "uuid" },
+                          "name": { "type": "string" },
+                          "description": { "type": "string", "nullable": true },
+                          "acceptType": { "type": "string", "enum": ["file", "url"] },
+                          "allowedExtensions": {
+                            "type": "array",
+                            "nullable": true,
+                            "items": { "type": "string" }
+                          },
+                          "urlPattern": { "type": "string", "nullable": true },
+                          "maxFileSizeMb": { "type": "integer" },
+                          "isRequired": { "type": "boolean" },
+                          "sortOrder": { "type": "integer" },
+                          "createdAt": { "nullable": true }
+                        },
+                        "required": [
+                          "id",
+                          "editionId",
+                          "name",
+                          "description",
+                          "acceptType",
+                          "allowedExtensions",
+                          "urlPattern",
+                          "maxFileSizeMb",
+                          "isRequired",
+                          "sortOrder"
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid query"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/editions/{id}/my-submissions": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "updatedAt:desc",
+              "enum": ["updatedAt:desc", "updatedAt:asc", "createdAt:desc", "createdAt:asc"]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "minLength": 1 },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "自大学の提出一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "templateId": { "type": "string", "format": "uuid" },
+                          "participationId": { "type": "string", "format": "uuid" },
+                          "submittedBy": { "type": "string" },
+                          "version": { "type": "integer" },
+                          "fileName": { "type": "string", "nullable": true },
+                          "fileSizeBytes": { "type": "number", "nullable": true },
+                          "fileMimeType": { "type": "string", "nullable": true },
+                          "url": { "type": "string", "nullable": true },
+                          "createdAt": { "nullable": true },
+                          "updatedAt": { "nullable": true }
+                        },
+                        "required": [
+                          "id",
+                          "templateId",
+                          "participationId",
+                          "submittedBy",
+                          "version",
+                          "fileName",
+                          "fileSizeBytes",
+                          "fileMimeType",
+                          "url"
+                        ]
+                      }
+                    },
+                    "organizationId": { "type": "string" },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "organizationId", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["Invalid query"] },
+                        { "type": "string", "enum": ["x-organization-id is required"] }
+                      ]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/editions/{id}/my-participations": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "自大学の参加チーム一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "editionId": { "type": "string", "format": "uuid" },
+                          "universityId": { "type": "string" },
+                          "universityName": { "type": "string" },
+                          "teamName": { "type": "string", "nullable": true },
+                          "createdAt": { "nullable": true }
+                        },
+                        "required": [
+                          "id",
+                          "editionId",
+                          "universityId",
+                          "universityName",
+                          "teamName"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "組織指定不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["x-organization-id is required"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "組織コンテキスト不正",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["Invalid organization context"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/editions/{id}/my-submission-status": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "自大学の提出状況集約",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "edition": {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "format": "uuid" },
+                            "sharingStatus": {
+                              "type": "string",
+                              "enum": ["draft", "accepting", "sharing", "closed"]
+                            }
+                          },
+                          "required": ["id", "sharingStatus"]
+                        },
+                        "participations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string", "format": "uuid" },
+                              "teamName": { "type": "string", "nullable": true }
+                            },
+                            "required": ["id", "teamName"]
+                          }
+                        },
+                        "templates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string", "format": "uuid" },
+                              "name": { "type": "string" },
+                              "acceptType": { "type": "string", "enum": ["file", "url"] },
+                              "isRequired": { "type": "boolean" },
+                              "allowedExtensions": {
+                                "type": "array",
+                                "nullable": true,
+                                "items": { "type": "string" }
+                              },
+                              "urlPattern": { "type": "string", "nullable": true },
+                              "maxFileSizeMb": { "type": "integer" },
+                              "sortOrder": { "type": "integer" }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "acceptType",
+                              "isRequired",
+                              "allowedExtensions",
+                              "urlPattern",
+                              "maxFileSizeMb",
+                              "sortOrder"
+                            ]
+                          }
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "participationId": { "type": "string", "format": "uuid" },
+                              "templateId": { "type": "string", "format": "uuid" },
+                              "submission": {
+                                "type": "object",
+                                "nullable": true,
+                                "properties": {
+                                  "id": { "type": "string", "format": "uuid" },
+                                  "version": { "type": "integer" },
+                                  "fileName": { "type": "string", "nullable": true },
+                                  "url": { "type": "string", "nullable": true },
+                                  "updatedAt": { "nullable": true }
+                                },
+                                "required": ["id", "version", "fileName", "url"]
+                              }
+                            },
+                            "required": ["participationId", "templateId", "submission"]
+                          }
+                        }
+                      },
+                      "required": ["edition", "participations", "templates", "items"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "組織指定不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["x-organization-id is required"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "組織コンテキスト不正",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["Invalid organization context"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "大会未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/participations/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "participation 詳細",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "editionId": { "type": "string", "format": "uuid" },
+                        "universityId": { "type": "string" },
+                        "universityName": { "type": "string" },
+                        "teamName": { "type": "string", "nullable": true },
+                        "createdAt": { "nullable": true }
+                      },
+                      "required": ["id", "editionId", "universityId", "universityName", "teamName"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/participations/{id}/submissions": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "sortOrder:asc",
+              "enum": ["sortOrder:asc", "sortOrder:desc", "updatedAt:asc", "updatedAt:desc"]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "participation 提出一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "template": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string", "format": "uuid" },
+                              "name": { "type": "string" },
+                              "acceptType": { "type": "string", "enum": ["file", "url"] }
+                            },
+                            "required": ["id", "name", "acceptType"]
+                          },
+                          "version": { "type": "integer" },
+                          "fileName": { "type": "string", "nullable": true },
+                          "url": { "type": "string", "nullable": true },
+                          "updatedAt": { "nullable": true }
+                        },
+                        "required": ["id", "template", "version", "fileName", "url"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid query"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/submissions": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "templateId": { "type": "string", "format": "uuid" },
+                  "participationId": { "type": "string", "format": "uuid" },
+                  "s3Key": { "type": "string" },
+                  "fileName": { "type": "string" },
+                  "fileSizeBytes": { "type": "integer", "minimum": 0, "exclusiveMinimum": true },
+                  "mimeType": { "type": "string" },
+                  "url": { "type": "string", "format": "uri" }
+                },
+                "required": ["templateId", "participationId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "提出作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "templateId": { "type": "string", "format": "uuid" },
+                        "participationId": { "type": "string", "format": "uuid" },
+                        "submittedBy": { "type": "string" },
+                        "version": { "type": "integer" },
+                        "fileName": { "type": "string", "nullable": true },
+                        "fileSizeBytes": { "type": "number", "nullable": true },
+                        "fileMimeType": { "type": "string", "nullable": true },
+                        "url": { "type": "string", "nullable": true },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "templateId",
+                        "participationId",
+                        "submittedBy",
+                        "version",
+                        "fileName",
+                        "fileSizeBytes",
+                        "fileMimeType",
+                        "url"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "409": {
+            "description": "状態または重複エラー",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string" } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/submissions/{id}": {
+      "put": {
+        "parameters": [
+          { "schema": { "type": "string" }, "required": true, "name": "id", "in": "path" }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "s3Key": { "type": "string" },
+                  "fileName": { "type": "string" },
+                  "fileSizeBytes": { "type": "integer", "minimum": 0, "exclusiveMinimum": true },
+                  "mimeType": { "type": "string" },
+                  "url": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "提出更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "templateId": { "type": "string", "format": "uuid" },
+                        "participationId": { "type": "string", "format": "uuid" },
+                        "submittedBy": { "type": "string" },
+                        "version": { "type": "integer" },
+                        "fileName": { "type": "string", "nullable": true },
+                        "fileSizeBytes": { "type": "number", "nullable": true },
+                        "fileMimeType": { "type": "string", "nullable": true },
+                        "url": { "type": "string", "nullable": true },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "templateId",
+                        "participationId",
+                        "submittedBy",
+                        "version",
+                        "fileName",
+                        "fileSizeBytes",
+                        "fileMimeType",
+                        "url"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "提出不可状態",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Submissions are not accepted in current sharing_status"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          { "schema": { "type": "string" }, "required": true, "name": "id", "in": "path" }
+        ],
+        "responses": {
+          "204": { "description": "提出削除" },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/editions/{id}/submissions": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "createdAt:asc",
+              "enum": [
+                "createdAt:asc",
+                "createdAt:desc",
+                "updatedAt:asc",
+                "updatedAt:desc",
+                "teamName:asc",
+                "teamName:desc"
+              ]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "minLength": 1 },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "他大学提出一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "submission": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string", "format": "uuid" },
+                              "templateId": { "type": "string", "format": "uuid" },
+                              "participationId": { "type": "string", "format": "uuid" },
+                              "submittedBy": { "type": "string" },
+                              "version": { "type": "integer" },
+                              "fileName": { "type": "string", "nullable": true },
+                              "fileSizeBytes": { "type": "number", "nullable": true },
+                              "fileMimeType": { "type": "string", "nullable": true },
+                              "url": { "type": "string", "nullable": true },
+                              "createdAt": { "nullable": true },
+                              "updatedAt": { "nullable": true }
+                            },
+                            "required": [
+                              "id",
+                              "templateId",
+                              "participationId",
+                              "submittedBy",
+                              "version",
+                              "fileName",
+                              "fileSizeBytes",
+                              "fileMimeType",
+                              "url"
+                            ]
+                          },
+                          "participation": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string", "format": "uuid" },
+                              "editionId": { "type": "string", "format": "uuid" },
+                              "universityId": { "type": "string" },
+                              "universityName": { "type": "string" },
+                              "teamName": { "type": "string", "nullable": true },
+                              "createdAt": { "nullable": true }
+                            },
+                            "required": [
+                              "id",
+                              "editionId",
+                              "universityId",
+                              "universityName",
+                              "teamName"
+                            ]
+                          }
+                        },
+                        "required": ["submission", "participation"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid query"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/submissions/{id}/download": {
+      "get": {
+        "parameters": [
+          { "schema": { "type": "string" }, "required": true, "name": "id", "in": "path" }
+        ],
+        "responses": {
+          "200": {
+            "description": "提出ファイルダウンロードURL発行",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "presignedUrl": { "type": "string", "format": "uri" },
+                        "expiresIn": { "type": "integer" }
+                      },
+                      "required": ["presignedUrl", "expiresIn"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ファイル提出なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["File submission not found"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/submissions/{id}/history": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "version:asc",
+              "enum": ["version:asc", "version:desc", "createdAt:asc", "createdAt:desc"]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "minLength": 1 },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "提出履歴一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "submissionId": { "type": "string", "format": "uuid" },
+                          "version": { "type": "integer" },
+                          "submittedBy": { "type": "string" },
+                          "submittedByUser": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string" },
+                              "name": { "type": "string" }
+                            },
+                            "required": ["id", "name"]
+                          },
+                          "fileName": { "type": "string", "nullable": true },
+                          "fileSizeBytes": { "type": "number", "nullable": true },
+                          "fileMimeType": { "type": "string", "nullable": true },
+                          "url": { "type": "string", "nullable": true },
+                          "createdAt": { "nullable": true }
+                        },
+                        "required": [
+                          "id",
+                          "submissionId",
+                          "version",
+                          "submittedBy",
+                          "submittedByUser",
+                          "fileName",
+                          "fileSizeBytes",
+                          "fileMimeType",
+                          "url"
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid query"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/submission-history/{historyId}/download": {
+      "get": {
+        "parameters": [
+          { "schema": { "type": "string" }, "required": true, "name": "historyId", "in": "path" }
+        ],
+        "responses": {
+          "200": {
+            "description": "提出履歴ファイルダウンロードURL発行",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "presignedUrl": { "type": "string", "format": "uri" },
+                        "expiresIn": { "type": "integer" }
+                      },
+                      "required": ["presignedUrl", "expiresIn"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ファイル提出なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["No file in this history entry"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/participations/{id}/comments": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "createdAt:asc",
+              "enum": ["createdAt:asc", "createdAt:desc", "updatedAt:asc", "updatedAt:desc"]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "minLength": 1 },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "コメント一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "participationId": { "type": "string", "format": "uuid" },
+                          "editionId": { "type": "string", "format": "uuid" },
+                          "body": { "type": "string" },
+                          "createdAt": { "nullable": true },
+                          "updatedAt": { "nullable": true },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string" },
+                              "name": { "type": "string" },
+                              "universityName": { "type": "string", "nullable": true },
+                              "teamName": { "type": "string", "nullable": true }
+                            },
+                            "required": ["id", "name", "universityName", "teamName"]
+                          }
+                        },
+                        "required": ["id", "participationId", "editionId", "body", "author"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid query"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "body": { "type": "string", "minLength": 1, "maxLength": 5000 } },
+                "required": ["body"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "コメント作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "participationId": { "type": "string", "format": "uuid" },
+                        "editionId": { "type": "string", "format": "uuid" },
+                        "authorId": { "type": "string" },
+                        "authorUniversityName": { "type": "string", "nullable": true },
+                        "authorTeamName": { "type": "string", "nullable": true },
+                        "body": { "type": "string" },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true },
+                        "deletedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "participationId",
+                        "editionId",
+                        "authorId",
+                        "authorUniversityName",
+                        "authorTeamName",
+                        "body"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "participation未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["Participation not found"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/comments/{id}": {
+      "put": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "body": { "type": "string", "minLength": 1, "maxLength": 5000 } },
+                "required": ["body"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "コメント更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "participationId": { "type": "string", "format": "uuid" },
+                        "editionId": { "type": "string", "format": "uuid" },
+                        "authorId": { "type": "string" },
+                        "authorUniversityName": { "type": "string", "nullable": true },
+                        "authorTeamName": { "type": "string", "nullable": true },
+                        "body": { "type": "string" },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true },
+                        "deletedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "participationId",
+                        "editionId",
+                        "authorId",
+                        "authorUniversityName",
+                        "authorTeamName",
+                        "body"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": { "description": "コメント削除" },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/upload/presign": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "participationId": { "type": "string", "format": "uuid" },
+                  "templateId": { "type": "string", "format": "uuid" },
+                  "fileName": { "type": "string", "minLength": 1 },
+                  "contentType": { "type": "string", "minLength": 1 },
+                  "fileSizeBytes": { "type": "integer", "minimum": 0, "exclusiveMinimum": true }
+                },
+                "required": [
+                  "participationId",
+                  "templateId",
+                  "fileName",
+                  "contentType",
+                  "fileSizeBytes"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "提出アップロード署名URL発行",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "presignedUrl": { "type": "string", "format": "uri" },
+                        "s3Key": { "type": "string" },
+                        "expiresIn": { "type": "integer" },
+                        "templateMaxFileSizeMb": { "type": "integer" }
+                      },
+                      "required": ["presignedUrl", "s3Key", "expiresIn", "templateMaxFileSizeMb"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "403": {
+            "description": "権限なし",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Forbidden"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string" } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "提出不可状態",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Submissions are not accepted in current sharing_status"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/university/members": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "name:asc",
+              "enum": [
+                "name:asc",
+                "name:desc",
+                "email:asc",
+                "email:desc",
+                "createdAt:asc",
+                "createdAt:desc"
+              ]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "minLength": 1 },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string" },
+            "required": true,
+            "name": "x-organization-id",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "所属メンバー一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "userId": { "type": "string" },
+                          "role": { "type": "string", "enum": ["owner", "member"] },
+                          "name": { "type": "string" },
+                          "email": { "type": "string", "format": "email" }
+                        },
+                        "required": ["id", "userId", "role", "name", "email"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "組織指定不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["x-organization-id is required"] },
+                        { "type": "string", "enum": ["Invalid query"] }
+                      ]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "オーナー限定",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Owner only"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/university/invite": {
+      "post": {
+        "parameters": [
+          {
+            "schema": { "type": "string" },
+            "required": true,
+            "name": "x-organization-id",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "role": { "type": "string", "enum": ["owner", "member"] }
+                },
+                "required": ["email", "role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "招待作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "organizationId": { "type": "string" },
+                        "email": { "type": "string", "format": "email" },
+                        "role": { "type": "string", "enum": ["owner", "member"] },
+                        "invitedBy": { "type": "string" },
+                        "expiresAt": { "nullable": true },
+                        "createdAt": { "nullable": true }
+                      },
+                      "required": ["id", "organizationId", "email", "role", "invitedBy"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "403": {
+            "description": "オーナー限定",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Owner only"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/university/members/{id}/role": {
+      "put": {
+        "parameters": [
+          { "schema": { "type": "string" }, "required": true, "name": "id", "in": "path" },
+          {
+            "schema": { "type": "string" },
+            "required": true,
+            "name": "x-organization-id",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "role": { "type": "string", "enum": ["owner", "member"] } },
+                "required": ["role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "メンバー権限更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "userId": { "type": "string" },
+                        "role": { "type": "string", "enum": ["owner", "member"] }
+                      },
+                      "required": ["id", "userId", "role"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["x-organization-id is required"] },
+                        { "nullable": true },
+                        { "nullable": true }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "オーナー限定",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Owner only"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "対象未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "最後のownerの降格禁止",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["Last owner cannot be removed"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/university/members/{id}": {
+      "delete": {
+        "parameters": [
+          { "schema": { "type": "string" }, "required": true, "name": "id", "in": "path" },
+          {
+            "schema": { "type": "string" },
+            "required": true,
+            "name": "x-organization-id",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "204": { "description": "メンバー削除" },
+          "400": {
+            "description": "組織指定不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["x-organization-id is required"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "オーナー限定",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Owner only"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "最後のownerの削除禁止",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["Last owner cannot be removed"] }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/series": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string" },
+                  "externalLinks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": { "type": "string" },
+                        "url": { "type": "string", "format": "uri" }
+                      },
+                      "required": ["label", "url"]
+                    }
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "シリーズ作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "externalLinks": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "url"]
+                          }
+                        },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": ["id", "name", "description", "externalLinks"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/series/{id}": {
+      "put": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string" },
+                  "externalLinks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": { "type": "string" },
+                        "url": { "type": "string", "format": "uri" }
+                      },
+                      "required": ["label", "url"]
+                    }
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "シリーズ更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "externalLinks": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "url"]
+                          }
+                        },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": ["id", "name", "description", "externalLinks"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": { "204": { "description": "シリーズ削除" } }
+      }
+    },
+    "/api/admin/editions": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "seriesId": { "type": "string", "format": "uuid" },
+                  "year": { "type": "integer" },
+                  "name": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string" },
+                  "sharingStatus": {
+                    "type": "string",
+                    "enum": ["draft", "accepting", "sharing", "closed"],
+                    "default": "draft"
+                  },
+                  "externalLinks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": { "type": "string" },
+                        "url": { "type": "string", "format": "uri" }
+                      },
+                      "required": ["label", "url"]
+                    }
+                  }
+                },
+                "required": ["seriesId", "year", "name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "大会開催回作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "seriesId": { "type": "string", "format": "uuid" },
+                        "year": { "type": "integer" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "ruleDocuments": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "s3_key": { "type": "string" },
+                              "mime_type": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "s3_key", "mime_type", "url"]
+                          }
+                        },
+                        "sharingStatus": {
+                          "type": "string",
+                          "enum": ["draft", "accepting", "sharing", "closed"]
+                        },
+                        "externalLinks": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "url"]
+                          }
+                        },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "seriesId",
+                        "year",
+                        "name",
+                        "description",
+                        "ruleDocuments",
+                        "sharingStatus",
+                        "externalLinks"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/editions/{id}": {
+      "put": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "seriesId": { "type": "string", "format": "uuid" },
+                  "year": { "type": "integer" },
+                  "name": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string" },
+                  "sharingStatus": {
+                    "type": "string",
+                    "enum": ["draft", "accepting", "sharing", "closed"],
+                    "default": "draft"
+                  },
+                  "externalLinks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": { "type": "string" },
+                        "url": { "type": "string", "format": "uri" }
+                      },
+                      "required": ["label", "url"]
+                    }
+                  }
+                },
+                "required": ["seriesId", "year", "name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "大会開催回更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "seriesId": { "type": "string", "format": "uuid" },
+                        "year": { "type": "integer" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "ruleDocuments": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "s3_key": { "type": "string" },
+                              "mime_type": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "s3_key", "mime_type", "url"]
+                          }
+                        },
+                        "sharingStatus": {
+                          "type": "string",
+                          "enum": ["draft", "accepting", "sharing", "closed"]
+                        },
+                        "externalLinks": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "url"]
+                          }
+                        },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "seriesId",
+                        "year",
+                        "name",
+                        "description",
+                        "ruleDocuments",
+                        "sharingStatus",
+                        "externalLinks"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": { "204": { "description": "大会開催回削除" } }
+      }
+    },
+    "/api/admin/editions/{id}/status": {
+      "put": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sharingStatus": {
+                    "type": "string",
+                    "enum": ["draft", "accepting", "sharing", "closed"]
+                  }
+                },
+                "required": ["sharingStatus"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "sharing_status更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "seriesId": { "type": "string", "format": "uuid" },
+                        "year": { "type": "integer" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "ruleDocuments": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "s3_key": { "type": "string" },
+                              "mime_type": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "s3_key", "mime_type", "url"]
+                          }
+                        },
+                        "sharingStatus": {
+                          "type": "string",
+                          "enum": ["draft", "accepting", "sharing", "closed"]
+                        },
+                        "externalLinks": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "url"]
+                          }
+                        },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "seriesId",
+                        "year",
+                        "name",
+                        "description",
+                        "ruleDocuments",
+                        "sharingStatus",
+                        "externalLinks"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/editions/{id}/rules/presign": {
+      "post": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileName": { "type": "string", "minLength": 1 },
+                  "contentType": { "type": "string", "minLength": 1 }
+                },
+                "required": ["fileName", "contentType"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ルール資料アップロード署名URL発行",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "presignedUrl": { "type": "string", "format": "uri" },
+                        "s3Key": { "type": "string" },
+                        "expiresIn": { "type": "integer" }
+                      },
+                      "required": ["presignedUrl", "s3Key", "expiresIn"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/editions/{id}/rules": {
+      "put": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ruleDocuments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": { "type": "string" },
+                        "s3_key": { "type": "string", "minLength": 1 },
+                        "mime_type": { "type": "string", "minLength": 1 }
+                      },
+                      "required": ["label", "s3_key", "mime_type"]
+                    }
+                  }
+                },
+                "required": ["ruleDocuments"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ルール資料更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "seriesId": { "type": "string", "format": "uuid" },
+                        "year": { "type": "integer" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "ruleDocuments": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "s3_key": { "type": "string" },
+                              "mime_type": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "s3_key", "mime_type", "url"]
+                          }
+                        },
+                        "sharingStatus": {
+                          "type": "string",
+                          "enum": ["draft", "accepting", "sharing", "closed"]
+                        },
+                        "externalLinks": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": { "type": "string" },
+                              "url": { "type": "string", "format": "uri" }
+                            },
+                            "required": ["label", "url"]
+                          }
+                        },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "seriesId",
+                        "year",
+                        "name",
+                        "description",
+                        "ruleDocuments",
+                        "sharingStatus",
+                        "externalLinks"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/editions/{id}/participations": {
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "createdAt:asc",
+              "enum": [
+                "createdAt:asc",
+                "createdAt:desc",
+                "universityName:asc",
+                "universityName:desc",
+                "teamName:asc",
+                "teamName:desc"
+              ]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "大会の参加チーム一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "editionId": { "type": "string", "format": "uuid" },
+                          "universityId": { "type": "string" },
+                          "universityName": { "type": "string" },
+                          "teamName": { "type": "string", "nullable": true },
+                          "createdAt": { "nullable": true }
+                        },
+                        "required": [
+                          "id",
+                          "editionId",
+                          "universityId",
+                          "universityName",
+                          "teamName"
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid query"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "universityId": { "type": "string", "minLength": 1 },
+                  "teamName": { "type": "string" }
+                },
+                "required": ["universityId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "参加チーム作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "editionId": { "type": "string", "format": "uuid" },
+                        "universityId": { "type": "string" },
+                        "teamName": { "type": "string", "nullable": true },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": ["id", "editionId", "universityId", "teamName"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/participations/{id}": {
+      "put": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "teamName": { "type": "string", "nullable": true } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "参加チーム更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "editionId": { "type": "string", "format": "uuid" },
+                        "universityId": { "type": "string" },
+                        "teamName": { "type": "string", "nullable": true },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": ["id", "editionId", "universityId", "teamName"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": { "204": { "description": "参加チーム削除" } }
+      }
+    },
+    "/api/admin/editions/{id}/templates": {
+      "post": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string" },
+                  "acceptType": { "type": "string", "enum": ["file", "url"] },
+                  "allowedExtensions": { "type": "array", "items": { "type": "string" } },
+                  "urlPattern": { "type": "string" },
+                  "maxFileSizeMb": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "default": 100
+                  },
+                  "isRequired": { "type": "boolean", "default": false },
+                  "sortOrder": { "type": "integer", "default": 0 }
+                },
+                "required": ["name", "acceptType"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "テンプレート作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "editionId": { "type": "string", "format": "uuid" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "acceptType": { "type": "string", "enum": ["file", "url"] },
+                        "allowedExtensions": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": { "type": "string" }
+                        },
+                        "urlPattern": { "type": "string", "nullable": true },
+                        "maxFileSizeMb": { "type": "integer" },
+                        "isRequired": { "type": "boolean" },
+                        "sortOrder": { "type": "integer" },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "editionId",
+                        "name",
+                        "description",
+                        "acceptType",
+                        "allowedExtensions",
+                        "urlPattern",
+                        "maxFileSizeMb",
+                        "isRequired",
+                        "sortOrder"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/templates/{id}": {
+      "put": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string" },
+                  "acceptType": { "type": "string", "enum": ["file", "url"] },
+                  "allowedExtensions": { "type": "array", "items": { "type": "string" } },
+                  "urlPattern": { "type": "string" },
+                  "maxFileSizeMb": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "default": 100
+                  },
+                  "isRequired": { "type": "boolean", "default": false },
+                  "sortOrder": { "type": "integer", "default": 0 }
+                },
+                "required": ["name", "acceptType"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "テンプレート更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "editionId": { "type": "string", "format": "uuid" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string", "nullable": true },
+                        "acceptType": { "type": "string", "enum": ["file", "url"] },
+                        "allowedExtensions": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": { "type": "string" }
+                        },
+                        "urlPattern": { "type": "string", "nullable": true },
+                        "maxFileSizeMb": { "type": "integer" },
+                        "isRequired": { "type": "boolean" },
+                        "sortOrder": { "type": "integer" },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": [
+                        "id",
+                        "editionId",
+                        "name",
+                        "description",
+                        "acceptType",
+                        "allowedExtensions",
+                        "urlPattern",
+                        "maxFileSizeMb",
+                        "isRequired",
+                        "sortOrder"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Not found"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": { "204": { "description": "テンプレート削除" } }
+      }
+    },
+    "/api/admin/editions/{id}/templates/copy-from/{sourceEditionId}": {
+      "post": {
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "sourceEditionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "テンプレート複製",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "editionId": { "type": "string", "format": "uuid" },
+                          "name": { "type": "string" },
+                          "description": { "type": "string", "nullable": true },
+                          "acceptType": { "type": "string", "enum": ["file", "url"] },
+                          "allowedExtensions": {
+                            "type": "array",
+                            "nullable": true,
+                            "items": { "type": "string" }
+                          },
+                          "urlPattern": { "type": "string", "nullable": true },
+                          "maxFileSizeMb": { "type": "integer" },
+                          "isRequired": { "type": "boolean" },
+                          "sortOrder": { "type": "integer" },
+                          "createdAt": { "nullable": true },
+                          "updatedAt": { "nullable": true }
+                        },
+                        "required": [
+                          "id",
+                          "editionId",
+                          "name",
+                          "description",
+                          "acceptType",
+                          "allowedExtensions",
+                          "urlPattern",
+                          "maxFileSizeMb",
+                          "isRequired",
+                          "sortOrder"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/universities": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "slug": { "type": "string", "minLength": 1 },
+                  "ownerEmail": { "type": "string", "format": "email" }
+                },
+                "required": ["name", "slug"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "大学作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "slug": { "type": "string" },
+                        "createdAt": { "nullable": true },
+                        "updatedAt": { "nullable": true }
+                      },
+                      "required": ["id", "name", "slug"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "nullable": true } } }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "name:asc",
+              "enum": [
+                "name:asc",
+                "name:desc",
+                "slug:asc",
+                "slug:desc",
+                "createdAt:asc",
+                "createdAt:desc"
+              ]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": { "type": "string", "minLength": 1 },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "大学一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "name": { "type": "string" },
+                          "slug": { "type": "string" },
+                          "createdAt": { "nullable": true },
+                          "updatedAt": { "nullable": true }
+                        },
+                        "required": ["id", "name", "slug"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer", "minimum": 1 },
+                        "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+                        "total": { "type": "integer", "minimum": 0 },
+                        "totalPages": { "type": "integer", "minimum": 0 },
+                        "hasNext": { "type": "boolean" },
+                        "hasPrev": { "type": "boolean" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
+                    }
+                  },
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid query"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string", "enum": ["Invalid sort"] } },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
