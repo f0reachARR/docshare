@@ -509,6 +509,10 @@ describe('authorization integration (app.request)', () => {
     expect(json.paths['/api/admin/editions/{id}/rules/presign']).toBeDefined();
     expect(json.paths['/api/admin/editions/{id}/rules']).toBeDefined();
     expect(json.paths['/api/admin/participations/{id}']).toBeDefined();
+    expect(json.paths['/api/admin/users']).toBeDefined();
+    expect(json.paths['/api/admin/users/{userId}/memberships']).toBeDefined();
+    expect(json.paths['/api/admin/memberships/{memberId}/role']).toBeDefined();
+    expect(json.paths['/api/admin/memberships/{memberId}']).toBeDefined();
 
     const seriesGet = json.paths['/api/series'] as {
       get?: { parameters?: Array<{ name?: string; in?: string }> };
@@ -575,6 +579,10 @@ describe('authorization integration (app.request)', () => {
         path: '/api/admin/editions/00000000-0000-0000-0000-000000000010/participations',
         headers: { 'x-role': 'admin' },
       },
+      {
+        path: '/api/admin/users',
+        headers: { 'x-role': 'admin' },
+      },
     ] as const;
 
     for (const testCase of cases) {
@@ -634,6 +642,10 @@ describe('authorization integration (app.request)', () => {
       },
       {
         path: '/api/admin/editions/00000000-0000-0000-0000-000000000010/participations',
+        headers: { 'x-role': 'admin' },
+      },
+      {
+        path: '/api/admin/users',
         headers: { 'x-role': 'admin' },
       },
     ] as const;

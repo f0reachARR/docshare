@@ -52,5 +52,7 @@ export const queryKeys = {
     templates: (editionId: string, params: Record<string, unknown>) =>
       ['admin', 'editions', editionId, 'templates', params] as const,
     universities: (params: Record<string, unknown>) => ['admin', 'universities', params] as const,
+    users: (params: Record<string, unknown>) => ['admin', 'users', params] as const,
+    userMemberships: (userId: string) => ['admin', 'users', userId, 'memberships'] as const,
   },
 };

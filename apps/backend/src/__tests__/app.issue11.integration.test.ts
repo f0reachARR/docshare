@@ -449,6 +449,195 @@ describe('issue #11 api integration', () => {
     expect(deleteRes.status).toBe(409);
   });
 
+  it('admin users API: list and memberships CRUD', async () => {
+    const app = createApp();
+
+    enqueueDb(
+      [{ total: 2 }],
+      [
+        {
+          id: 'u-1',
+          name: 'Alice',
+          email: 'alice@example.com',
+          isAdmin: false,
+          createdAt: '2026-03-20T00:00:00.000Z',
+          organizationCount: 3,
+        },
+        {
+          id: 'u-2',
+          name: 'Bob',
+          email: 'bob@example.com',
+          isAdmin: true,
+          createdAt: '2026-03-21T00:00:00.000Z',
+          organizationCount: 1,
+        },
+      ],
+    );
+
+    const listRes = await app.request('/api/admin/users?page=1&pageSize=10&q=ali&sort=email:asc', {
+      headers: { 'x-role': 'admin' },
+    });
+    expect(listRes.status).toBe(200);
+    expect(await listRes.json()).toEqual({
+      data: [
+        {
+          id: 'u-1',
+          name: 'Alice',
+          email: 'alice@example.com',
+          isAdmin: false,
+          createdAt: '2026-03-20T00:00:00.000Z',
+          organizationCount: 3,
+        },
+        {
+          id: 'u-2',
+          name: 'Bob',
+          email: 'bob@example.com',
+          isAdmin: true,
+          createdAt: '2026-03-21T00:00:00.000Z',
+          organizationCount: 1,
+        },
+      ],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        total: 2,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
+    });
+
+    enqueueDb(
+      [{ id: 'u-1' }],
+      [
+        {
+          memberId: 'm-1',
+          organizationId: 'org-1',
+          organizationName: 'Org One',
+          organizationSlug: 'org-one',
+          role: 'owner',
+          createdAt: '2026-03-20T00:00:00.000Z',
+        },
+      ],
+    );
+
+    const membershipsRes = await app.request('/api/admin/users/u-1/memberships', {
+      headers: { 'x-role': 'admin' },
+    });
+    expect(membershipsRes.status).toBe(200);
+    expect(await membershipsRes.json()).toEqual({
+      data: [
+        {
+          memberId: 'm-1',
+          organizationId: 'org-1',
+          organizationName: 'Org One',
+          organizationSlug: 'org-one',
+          role: 'owner',
+          createdAt: '2026-03-20T00:00:00.000Z',
+        },
+      ],
+    });
+
+    enqueueDb(
+      [{ id: 'u-1' }],
+      [{ id: 'org-2' }],
+      [],
+      [
+        {
+          id: 'm-2',
+          userId: 'u-1',
+          organizationId: 'org-2',
+          role: 'member',
+          createdAt: '2026-03-22T00:00:00.000Z',
+        },
+      ],
+    );
+
+    const createRes = await app.request('/api/admin/users/u-1/memberships', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-role': 'admin',
+      },
+      body: JSON.stringify({ organizationId: 'org-2', role: 'member' }),
+    });
+    expect(createRes.status).toBe(201);
+
+    enqueueDb([{ id: 'u-1' }], [{ id: 'org-2' }], [{ id: 'm-2' }]);
+    const duplicateRes = await app.request('/api/admin/users/u-1/memberships', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-role': 'admin',
+      },
+      body: JSON.stringify({ organizationId: 'org-2', role: 'member' }),
+    });
+    expect(duplicateRes.status).toBe(409);
+
+    enqueueDb(
+      [{ id: 'm-2', userId: 'u-1', organizationId: 'org-2', role: 'member' }],
+      [
+        {
+          id: 'm-2',
+          userId: 'u-1',
+          organizationId: 'org-2',
+          role: 'owner',
+          createdAt: '2026-03-22T00:00:00.000Z',
+        },
+      ],
+    );
+    const updateRes = await app.request('/api/admin/memberships/m-2/role', {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        'x-role': 'admin',
+      },
+      body: JSON.stringify({ role: 'owner' }),
+    });
+    expect(updateRes.status).toBe(200);
+
+    enqueueDb(
+      [{ id: 'm-owner', userId: 'u-1', organizationId: 'org-1', role: 'owner' }],
+      [{ total: 1 }],
+    );
+    const demoteLastOwnerRes = await app.request('/api/admin/memberships/m-owner/role', {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        'x-role': 'admin',
+      },
+      body: JSON.stringify({ role: 'member' }),
+    });
+    expect(demoteLastOwnerRes.status).toBe(409);
+
+    enqueueDb([{ id: 'm-2', userId: 'u-1', organizationId: 'org-2', role: 'member' }], []);
+    const deleteRes = await app.request('/api/admin/memberships/m-2', {
+      method: 'DELETE',
+      headers: { 'x-role': 'admin' },
+    });
+    expect(deleteRes.status).toBe(204);
+
+    enqueueDb(
+      [{ id: 'm-owner', userId: 'u-1', organizationId: 'org-1', role: 'owner' }],
+      [{ total: 1 }],
+    );
+    const deleteLastOwnerRes = await app.request('/api/admin/memberships/m-owner', {
+      method: 'DELETE',
+      headers: { 'x-role': 'admin' },
+    });
+    expect(deleteLastOwnerRes.status).toBe(409);
+  });
+
+  it('admin users API forbids non-admin access', async () => {
+    const app = createApp();
+
+    const res = await app.request('/api/admin/users', {
+      headers: { 'x-role': 'member' },
+    });
+
+    expect(res.status).toBe(403);
+  });
+
   it('GET /api/editions/:id/submissions includes participation.universityName', async () => {
     const app = createApp();
 
@@ -832,6 +1021,10 @@ describe('issue #11 api integration', () => {
     expect(json.paths['/api/admin/editions/{id}/rules']).toBeDefined();
     expect(json.paths['/api/university/members/{id}/role']).toBeDefined();
     expect(json.paths['/api/university/members/{id}']).toBeDefined();
+    expect(json.paths['/api/admin/users']).toBeDefined();
+    expect(json.paths['/api/admin/users/{userId}/memberships']).toBeDefined();
+    expect(json.paths['/api/admin/memberships/{memberId}/role']).toBeDefined();
+    expect(json.paths['/api/admin/memberships/{memberId}']).toBeDefined();
 
     const myParticipationsPath = json.paths['/api/editions/{id}/my-participations'] as {
       get?: { responses?: Record<string, unknown> };

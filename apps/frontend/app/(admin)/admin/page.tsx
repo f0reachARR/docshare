@@ -17,6 +17,11 @@ const adminSections = [
     title: '大学管理',
     description: '大学の作成・代表者招待',
   },
+  {
+    href: '/admin/users',
+    title: 'ユーザー管理',
+    description: 'ユーザー所属の追加・ロール変更・所属解除',
+  },
 ];
 
 export default function AdminDashboardPage() {
