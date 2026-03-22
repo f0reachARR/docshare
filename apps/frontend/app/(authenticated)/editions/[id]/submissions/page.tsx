@@ -1,6 +1,5 @@
 'use client';
 
-import { DateTimeDisplay } from '@/components/common/DateTimeDisplay';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +9,11 @@ import type { paths } from '@/lib/api/schema';
 import { queryKeys } from '@/lib/query/keys';
 import { buildTeamDetailHref } from '@/lib/teams/navigation';
 import {
-  getDenyReasonLabel,
-  getSubmissionDenyReasonLabel,
-} from '@/lib/teams/submission-visibility';
+  SubmissionMatrixCell,
+  type SubmissionMatrixCellData,
+} from '@/lib/teams/submission-matrix-cell';
+import { getDenyReasonLabel } from '@/lib/teams/submission-visibility';
 import { useQuery } from '@tanstack/react-query';
-import { Download, ExternalLink, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { parseAsInteger, parseAsString, parseAsStringEnum, useQueryStates } from 'nuqs';
 import { use, useState } from 'react';
@@ -98,69 +97,25 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
     }
   };
 
-  const renderCell = (cell: SubmissionCell) => {
-    if (!cell.submitted) {
-      return <span className='text-muted-foreground'>—</span>;
-    }
-
-    if (!cell.viewable || !cell.submission) {
-      const reason = getSubmissionDenyReasonLabel({
-        submitted: cell.submitted,
-        viewable: cell.viewable,
-        denyReason: cell.denyReason,
-      });
-
-      return (
-        <output
-          className='rounded-md border border-dashed border-amber-400/60 bg-amber-50 px-2 py-2 text-xs text-amber-900'
-          aria-live='polite'
-        >
-          <p className='inline-flex items-center gap-1 font-medium'>
-            <Lock className='h-3.5 w-3.5' aria-hidden='true' />
-            閲覧不可
-          </p>
-          <p className='mt-1'>
-            {reason ?? getDenyReasonLabel('access_denied', '権限不足のため閲覧できません')}
-          </p>
-        </output>
-      );
-    }
-
-    const submission = cell.submission;
+  const renderCell = (cell: SubmissionCell | null | undefined) => {
+    const normalizedCell: SubmissionMatrixCellData | null | undefined = cell
+      ? {
+          ...cell,
+          submission: cell.submission
+            ? {
+                ...cell.submission,
+                updatedAt: String(cell.submission.updatedAt ?? ''),
+              }
+            : null,
+        }
+      : cell;
 
     return (
-      <div className='space-y-1'>
-        {submission.fileName ? (
-          <p className='text-xs font-medium break-all'>{submission.fileName}</p>
-        ) : null}
-        <div className='flex items-center gap-2 flex-wrap'>
-          {submission.url ? (
-            <a
-              href={submission.url}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='inline-flex items-center gap-1 text-primary hover:underline text-xs'
-            >
-              <ExternalLink className='h-3.5 w-3.5' />
-              閲覧
-            </a>
-          ) : null}
-          {submission.fileName ? (
-            <Button
-              variant='outline'
-              size='xs'
-              disabled={downloadingSubmissionId === submission.id}
-              onClick={() => handleDownload(submission.id)}
-            >
-              <Download className='h-3.5 w-3.5' />
-              ダウンロード
-            </Button>
-          ) : null}
-        </div>
-        <p className='text-[11px] text-muted-foreground'>
-          v{submission.version} <DateTimeDisplay value={String(submission.updatedAt)} />
-        </p>
-      </div>
+      <SubmissionMatrixCell
+        cell={normalizedCell}
+        downloadingSubmissionId={downloadingSubmissionId}
+        onDownload={handleDownload}
+      />
     );
   };
 
