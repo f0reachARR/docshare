@@ -830,7 +830,9 @@ export interface paths {
     };
     get: {
       parameters: {
-        query?: never;
+        query?: {
+          templateId?: string;
+        };
         header?: never;
         path: {
           id: string;
@@ -868,6 +870,8 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason: 'context_required' | 'access_denied';
             };
           };
         };
@@ -906,6 +910,7 @@ export interface paths {
           page?: number;
           pageSize?: number;
           sort?: 'sortOrder:asc' | 'sortOrder:desc' | 'updatedAt:asc' | 'updatedAt:desc';
+          templateId?: string;
         };
         header?: never;
         path: {
@@ -969,6 +974,8 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason: 'context_required' | 'access_denied';
             };
           };
         };
@@ -1216,6 +1223,8 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason: 'context_required' | 'access_denied';
             };
           };
         };
@@ -1235,7 +1244,7 @@ export interface paths {
     };
     get: {
       parameters: {
-        query?: {
+        query: {
           page?: number;
           pageSize?: number;
           sort?:
@@ -1246,6 +1255,7 @@ export interface paths {
             | 'teamName:asc'
             | 'teamName:desc';
           q?: string;
+          templateId: string;
         };
         header?: never;
         path: {
@@ -1322,6 +1332,8 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason: 'context_required' | 'access_denied';
             };
           };
         };
@@ -1402,22 +1414,28 @@ export interface paths {
                   teamName: string | null;
                   createdAt?: unknown;
                 };
-                cells: ({
-                  /** Format: uuid */
-                  id: string;
-                  /** Format: uuid */
-                  templateId: string;
-                  /** Format: uuid */
-                  participationId: string;
-                  submittedBy: string;
-                  version: number;
-                  fileName: string | null;
-                  fileSizeBytes: number | null;
-                  fileMimeType: string | null;
-                  url: string | null;
-                  createdAt?: unknown;
-                  updatedAt?: unknown;
-                } | null)[];
+                cells: {
+                  submitted: boolean;
+                  viewable: boolean;
+                  /** @enum {string|null} */
+                  denyReason: 'context_required' | 'access_denied' | null;
+                  submission: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    templateId: string;
+                    /** Format: uuid */
+                    participationId: string;
+                    submittedBy: string;
+                    version: number;
+                    fileName: string | null;
+                    fileSizeBytes: number | null;
+                    fileMimeType: string | null;
+                    url: string | null;
+                    createdAt?: unknown;
+                    updatedAt?: unknown;
+                  } | null;
+                }[];
               }[];
               pagination: {
                 page: number;
@@ -1451,6 +1469,8 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason: 'context_required' | 'access_denied';
             };
           };
         };
@@ -1530,6 +1550,8 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason: 'context_required' | 'access_denied';
             };
           };
         };
@@ -1634,6 +1656,8 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason: 'context_required' | 'access_denied';
             };
           };
         };
@@ -1764,6 +1788,7 @@ export interface paths {
           pageSize?: number;
           sort?: 'createdAt:asc' | 'createdAt:desc' | 'updatedAt:asc' | 'updatedAt:desc';
           q?: string;
+          templateId?: string;
         };
         header?: never;
         path: {
@@ -1829,6 +1854,8 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason: 'context_required' | 'access_denied';
             };
           };
         };
@@ -1860,6 +1887,8 @@ export interface paths {
         content: {
           'application/json': {
             body: string;
+            /** Format: uuid */
+            templateId?: string;
           };
         };
       };
@@ -1909,6 +1938,8 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason: 'context_required' | 'access_denied';
             };
           };
         };
@@ -1953,6 +1984,8 @@ export interface paths {
         content: {
           'application/json': {
             body: string;
+            /** Format: uuid */
+            templateId?: string;
           };
         };
       };

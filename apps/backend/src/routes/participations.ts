@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { asc, count, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { organizations, participations, submissionTemplates, submissions } from '../db/schema.js';
 import {
@@ -9,7 +9,11 @@ import {
   parsePagingParams,
 } from '../lib/pagination.js';
 import type { AppVariables } from '../middleware/auth.js';
-import { canViewParticipation } from '../services/permissions.js';
+import {
+  canViewParticipationWithReason,
+  publicForbiddenReasonCodes,
+  toPublicForbiddenReason,
+} from '../services/permissions.js';
 
 const participationSchema = z.object({
   id: z.string().uuid(),
@@ -43,13 +47,21 @@ const listParticipationSubmissionSortValues = [
 const listParticipationSubmissionQuerySchema = createPagingQuerySchema(
   listParticipationSubmissionSortValues,
   false,
-);
+).extend({
+  templateId: z.string().uuid().optional(),
+});
+
+const forbiddenResponseSchema = z.object({
+  error: z.literal('Forbidden'),
+  reason: z.enum(publicForbiddenReasonCodes),
+});
 
 const getParticipationRoute = createRoute({
   method: 'get',
   path: '/participations/{id}',
   request: {
     params: z.object({ id: z.string().uuid() }),
+    query: z.object({ templateId: z.string().uuid().optional() }),
   },
   responses: {
     200: {
@@ -64,7 +76,7 @@ const getParticipationRoute = createRoute({
       description: '権限なし',
       content: {
         'application/json': {
-          schema: z.object({ error: z.literal('Forbidden') }),
+          schema: forbiddenResponseSchema,
         },
       },
     },
@@ -115,7 +127,7 @@ const listParticipationSubmissionsRoute = createRoute({
       description: '権限なし',
       content: {
         'application/json': {
-          schema: z.object({ error: z.literal('Forbidden') }),
+          schema: forbiddenResponseSchema,
         },
       },
     },
@@ -134,6 +146,7 @@ export const participationRoutes = new OpenAPIHono<{ Variables: AppVariables }>(
 
 participationRoutes.openapi(getParticipationRoute, async (c) => {
   const participationId = c.req.param('id');
+  const templateId = c.req.query('templateId') ?? undefined;
 
   const rows = await db
     .select({
@@ -153,13 +166,17 @@ participationRoutes.openapi(getParticipationRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
+  const canView = await canViewParticipationWithReason(
     c.get('currentUser').id,
     participationId,
     c.get('organizationId'),
+    templateId,
   );
-  if (!canView) {
-    return c.json({ error: 'Forbidden' as const }, 403);
+  if (!canView.allowed) {
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   return c.json({ data: rows[0] }, 200);
@@ -180,6 +197,8 @@ participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
     return c.json({ error: 'Invalid sort' as const }, 422);
   }
 
+  const templateId = c.req.query('templateId') ?? undefined;
+
   const existing = await db
     .select({ id: participations.id })
     .from(participations)
@@ -190,20 +209,29 @@ participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
+  const canView = await canViewParticipationWithReason(
     c.get('currentUser').id,
     participationId,
     c.get('organizationId'),
+    templateId,
   );
-  if (!canView) {
-    return c.json({ error: 'Forbidden' as const }, 403);
+  if (!canView.allowed) {
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   const totalRows = await db
     .select({ total: count() })
     .from(submissions)
     .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
-    .where(eq(submissions.participationId, participationId));
+    .where(
+      and(
+        eq(submissions.participationId, participationId),
+        templateId ? eq(submissionTemplates.id, templateId) : undefined,
+      ),
+    );
 
   const sortColumn =
     parsed.value.sort.field === 'updatedAt' ? submissions.updatedAt : submissionTemplates.sortOrder;
@@ -222,7 +250,12 @@ participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
     })
     .from(submissions)
     .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
-    .where(eq(submissions.participationId, participationId))
+    .where(
+      and(
+        eq(submissions.participationId, participationId),
+        templateId ? eq(submissionTemplates.id, templateId) : undefined,
+      ),
+    )
     .orderBy(mainOrder, asc(submissionTemplates.id), asc(submissions.id))
     .limit(parsed.value.pageSize)
     .offset(parsed.value.offset);

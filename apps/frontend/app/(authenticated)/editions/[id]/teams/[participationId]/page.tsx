@@ -3,6 +3,7 @@
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataTable } from '@/components/common/DataTable';
 import { DateTimeDisplay } from '@/components/common/DateTimeDisplay';
+import { EmptyState } from '@/components/common/EmptyState';
 import { MarkdownContent } from '@/components/common/MarkdownContent';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,10 +12,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
 import { queryKeys } from '@/lib/query/keys';
+import { resolveTeamCommentAccessState } from '@/lib/teams/comment-access';
+import { hasTemplateContext } from '@/lib/teams/navigation';
+import { getDenyReasonLabel } from '@/lib/teams/submission-visibility';
 import { getApiErrorMessage } from '@/lib/utils/errors';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DownloadIcon, ExternalLinkIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { parseAsInteger, useQueryStates } from 'nuqs';
 import { use, useState } from 'react';
 import { toast } from 'sonner';
@@ -33,57 +38,101 @@ export default function TeamDetailPage({
   const { organizationId } = useOrganization();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const templateIdParam = searchParams.get('templateId') ?? undefined;
+  const hasTemplateId = hasTemplateContext(templateIdParam);
 
   const [subQueryParams, setSubQueryParams] = useQueryStates(paginationParsers);
   const [commentBody, setCommentBody] = useState('');
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState('');
 
-  const { data: participation, isLoading: participationLoading } = useQuery({
-    queryKey: queryKeys.participations.detail(participationId, organizationId ?? ''),
+  const {
+    data: participation,
+    isLoading: participationLoading,
+    error: participationError,
+  } = useQuery({
+    queryKey: queryKeys.participations.detail(participationId, organizationId ?? '', {
+      templateId: templateIdParam,
+    }),
     queryFn: async () => {
       const result = await apiClient.GET('/api/participations/{id}', {
-        params: { path: { id: participationId } },
+        params: { path: { id: participationId }, query: { templateId: templateIdParam } },
         headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
       });
       return throwIfError(result);
     },
+    enabled: hasTemplateId,
   });
 
+  const participationApiError = participationError instanceof ApiError ? participationError : null;
+  const participationErrorReason =
+    participationApiError &&
+    typeof participationApiError.body === 'object' &&
+    participationApiError.body !== null &&
+    'reason' in participationApiError.body &&
+    typeof (participationApiError.body as { reason?: unknown }).reason === 'string'
+      ? (participationApiError.body as { reason: string }).reason
+      : null;
+  const denyReasonLabel =
+    participationApiError?.status === 403
+      ? getDenyReasonLabel(participationErrorReason, '権限不足のため閲覧できません')
+      : null;
+
+  const isTemplateViewable = Boolean(participation?.data);
+  const commentAccess = resolveTeamCommentAccessState({
+    hasTemplateContext: hasTemplateId,
+    isTemplateViewable,
+    hasTemplateAccessError: Boolean(participationApiError),
+    denyReasonLabel,
+  });
+  const canShowComments = commentAccess.canShowComments;
+  const canPostComments = commentAccess.canPostComments;
+
   const { data: submissions, isLoading: submissionsLoading } = useQuery({
-    queryKey: queryKeys.participations.submissions(
-      participationId,
-      organizationId ?? '',
-      subQueryParams,
-    ),
+    queryKey: queryKeys.participations.submissions(participationId, organizationId ?? '', {
+      ...subQueryParams,
+      templateId: templateIdParam,
+    }),
     queryFn: async () => {
       const result = await apiClient.GET('/api/participations/{id}/submissions', {
         params: {
           path: { id: participationId },
-          query: { page: subQueryParams.page, pageSize: subQueryParams.pageSize },
+          query: {
+            page: subQueryParams.page,
+            pageSize: subQueryParams.pageSize,
+            templateId: templateIdParam,
+          },
         },
         headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
       });
       return throwIfError(result);
     },
+    enabled: hasTemplateId && isTemplateViewable,
   });
 
   const { data: comments, isLoading: commentsLoading } = useQuery({
-    queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
+    queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {
+      templateId: templateIdParam,
+    }),
     queryFn: async () => {
       const result = await apiClient.GET('/api/participations/{id}/comments', {
-        params: { path: { id: participationId }, query: { pageSize: 100 } },
+        params: {
+          path: { id: participationId },
+          query: { pageSize: 100, templateId: templateIdParam },
+        },
         headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
       });
       return throwIfError(result);
     },
+    enabled: canShowComments,
   });
 
   const postCommentMutation = useMutation({
     mutationFn: async (body: string) => {
       const result = await apiClient.POST('/api/participations/{id}/comments', {
         params: { path: { id: participationId } },
-        body: { body },
+        body: { body, templateId: templateIdParam },
         headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
       });
       return throwIfError(result);
@@ -91,7 +140,9 @@ export default function TeamDetailPage({
     onSuccess: () => {
       setCommentBody('');
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
+        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {
+          templateId: templateIdParam,
+        }),
       });
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -109,7 +160,9 @@ export default function TeamDetailPage({
     onSuccess: () => {
       setEditingCommentId(null);
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
+        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {
+          templateId: templateIdParam,
+        }),
       });
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -125,7 +178,9 @@ export default function TeamDetailPage({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
+        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {
+          templateId: templateIdParam,
+        }),
       });
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -194,6 +249,15 @@ export default function TeamDetailPage({
     return <Skeleton className='h-64 w-full' />;
   }
 
+  if (!hasTemplateId) {
+    return (
+      <EmptyState
+        title='資料種別の指定が必要です'
+        description='資料一覧から対象資料を選んで、この画面へ遷移してください。'
+      />
+    );
+  }
+
   const p = participation?.data;
   type CommentItem = {
     id: string;
@@ -228,7 +292,11 @@ export default function TeamDetailPage({
       <section className='space-y-4'>
         <h2 className='text-lg font-semibold'>コメント</h2>
 
-        {commentsLoading ? (
+        {!canShowComments ? (
+          <p className='text-sm text-muted-foreground'>
+            {commentAccess.reason ?? 'この資料種別ではコメントできません'}
+          </p>
+        ) : commentsLoading ? (
           <Skeleton className='h-32 w-full' />
         ) : (
           <div className='space-y-4'>
@@ -315,25 +383,28 @@ export default function TeamDetailPage({
         )}
 
         {/* Comment form */}
-        <div className='space-y-2 border-t pt-4'>
-          <Textarea
-            placeholder='コメントを入力（Markdown対応、最大5000文字）'
-            value={commentBody}
-            onChange={(e) => setCommentBody(e.target.value)}
-            rows={3}
-            maxLength={5000}
-          />
-          <div className='flex items-center justify-between'>
-            <span className='text-xs text-muted-foreground'>{commentBody.length} / 5000</span>
-            <Button
-              size='sm'
-              onClick={() => postCommentMutation.mutate(commentBody)}
-              disabled={!commentBody.trim() || postCommentMutation.isPending}
-            >
-              コメントを投稿
-            </Button>
+        {canShowComments && (
+          <div className='space-y-2 border-t pt-4'>
+            <Textarea
+              placeholder='コメントを入力（Markdown対応、最大5000文字）'
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value)}
+              rows={3}
+              maxLength={5000}
+              disabled={!canPostComments}
+            />
+            <div className='flex items-center justify-between'>
+              <span className='text-xs text-muted-foreground'>{commentBody.length} / 5000</span>
+              <Button
+                size='sm'
+                onClick={() => postCommentMutation.mutate(commentBody)}
+                disabled={!canPostComments || !commentBody.trim() || postCommentMutation.isPending}
+              >
+                コメントを投稿
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

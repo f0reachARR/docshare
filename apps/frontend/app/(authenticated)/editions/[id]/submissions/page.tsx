@@ -1,6 +1,5 @@
 'use client';
 
-import { DateTimeDisplay } from '@/components/common/DateTimeDisplay';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,8 +7,13 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
 import type { paths } from '@/lib/api/schema';
 import { queryKeys } from '@/lib/query/keys';
+import { buildTeamDetailHref } from '@/lib/teams/navigation';
+import {
+  SubmissionMatrixCell,
+  type SubmissionMatrixCellData,
+} from '@/lib/teams/submission-matrix-cell';
+import { getDenyReasonLabel } from '@/lib/teams/submission-visibility';
 import { useQuery } from '@tanstack/react-query';
-import { Download, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { parseAsInteger, parseAsString, parseAsStringEnum, useQueryStates } from 'nuqs';
 import { use, useState } from 'react';
@@ -71,6 +75,7 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
   });
 
   const matrix = data as SubmissionMatrixData | undefined;
+  const teamDetailTemplateId = matrix?.templates[0]?.id;
 
   const handleDownload = async (submissionId: string) => {
     if (!organizationId) {
@@ -92,53 +97,42 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
     }
   };
 
-  const renderCell = (cell: SubmissionCell) => {
-    if (!cell) {
-      return <span className='text-muted-foreground'>—</span>;
-    }
+  const renderCell = (cell: SubmissionCell | null | undefined) => {
+    const normalizedCell: SubmissionMatrixCellData | null | undefined = cell
+      ? {
+          ...cell,
+          submission: cell.submission
+            ? {
+                ...cell.submission,
+                updatedAt: String(cell.submission.updatedAt ?? ''),
+              }
+            : null,
+        }
+      : cell;
 
     return (
-      <div className='space-y-1'>
-        {cell.fileName ? <p className='text-xs font-medium break-all'>{cell.fileName}</p> : null}
-        <div className='flex items-center gap-2 flex-wrap'>
-          {cell.url ? (
-            <a
-              href={cell.url}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='inline-flex items-center gap-1 text-primary hover:underline text-xs'
-            >
-              <ExternalLink className='h-3.5 w-3.5' />
-              閲覧
-            </a>
-          ) : null}
-          {cell.fileName ? (
-            <Button
-              variant='outline'
-              size='xs'
-              disabled={downloadingSubmissionId === cell.id}
-              onClick={() => handleDownload(cell.id)}
-            >
-              <Download className='h-3.5 w-3.5' />
-              ダウンロード
-            </Button>
-          ) : null}
-        </div>
-        <p className='text-[11px] text-muted-foreground'>
-          v{cell.version} <DateTimeDisplay value={String(cell.updatedAt)} />
-        </p>
-      </div>
+      <SubmissionMatrixCell
+        cell={normalizedCell}
+        downloadingSubmissionId={downloadingSubmissionId}
+        onDownload={handleDownload}
+      />
     );
   };
 
   if (error instanceof ApiError && error.status === 403) {
+    const apiReason =
+      typeof error.body === 'object' &&
+      error.body !== null &&
+      'reason' in error.body &&
+      typeof (error.body as { reason?: unknown }).reason === 'string'
+        ? (error.body as { reason: string }).reason
+        : null;
+    const reason = getDenyReasonLabel(apiReason, '権限不足のため閲覧できません');
+
     return (
       <div className='space-y-4'>
         <h1 className='text-2xl font-bold'>資料一覧</h1>
-        <EmptyState
-          title='資料を閲覧できません'
-          description='以下のいずれかに該当する可能性があります：共有状態でない / 自校がまだ資料を提出していない / この大会に自校の出場登録がない'
-        />
+        <EmptyState title='資料を閲覧できません' description={reason} />
       </div>
     );
   }
@@ -216,12 +210,22 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
                     <p className='text-xs text-muted-foreground'>
                       {row.participation.universityName}
                     </p>
-                    <Link
-                      href={`/editions/${id}/teams/${row.participation.id}`}
-                      className='text-primary hover:underline font-medium'
-                    >
-                      {row.participation.teamName ?? '(チーム名なし)'}
-                    </Link>
+                    {teamDetailTemplateId ? (
+                      <Link
+                        href={buildTeamDetailHref({
+                          editionId: id,
+                          participationId: row.participation.id,
+                          templateId: teamDetailTemplateId,
+                        })}
+                        className='text-primary hover:underline font-medium'
+                      >
+                        {row.participation.teamName ?? '(チーム名なし)'}
+                      </Link>
+                    ) : (
+                      <span className='font-medium'>
+                        {row.participation.teamName ?? '(チーム名なし)'}
+                      </span>
+                    )}
                   </th>
                   {row.cells.map((cell, index) => {
                     const template = matrix.templates[index];
@@ -258,12 +262,22 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
             <div key={row.participation.id} className='border rounded-lg p-4 space-y-3'>
               <div>
                 <p className='text-xs text-muted-foreground'>{row.participation.universityName}</p>
-                <Link
-                  href={`/editions/${id}/teams/${row.participation.id}`}
-                  className='text-primary hover:underline font-medium'
-                >
-                  {row.participation.teamName ?? '(チーム名なし)'}
-                </Link>
+                {teamDetailTemplateId ? (
+                  <Link
+                    href={buildTeamDetailHref({
+                      editionId: id,
+                      participationId: row.participation.id,
+                      templateId: teamDetailTemplateId,
+                    })}
+                    className='text-primary hover:underline font-medium'
+                  >
+                    {row.participation.teamName ?? '(チーム名なし)'}
+                  </Link>
+                ) : (
+                  <span className='font-medium'>
+                    {row.participation.teamName ?? '(チーム名なし)'}
+                  </span>
+                )}
               </div>
               <div className='space-y-3'>
                 {(matrix.templates ?? []).map((template, index) => (

@@ -124,7 +124,8 @@ vi.mock('../middleware/admin.js', () => ({
 }));
 
 const mockCanViewParticipation = vi.fn(async () => true);
-const mockCanViewOtherSubmissions = vi.fn(async () => true);
+const mockCanViewOtherSubmissionsByTemplate = vi.fn(async () => ({ allowed: true as const }));
+const mockCanViewParticipationWithReason = vi.fn(async () => ({ allowed: true as const }));
 const mockGetObjectMetadata = vi.fn(async () => ({
   contentLength: 1024,
   contentType: 'application/pdf',
@@ -136,13 +137,29 @@ const mockPresignDownload = vi.fn(async (_bucket: string, key: string) => ({
 
 vi.mock('../services/permissions.js', () => ({
   canDeleteSubmission: vi.fn(async () => true),
-  canViewOtherSubmissions: mockCanViewOtherSubmissions,
+  canViewOtherSubmissionsByTemplate: mockCanViewOtherSubmissionsByTemplate,
   canViewParticipation: mockCanViewParticipation,
+  canViewParticipationWithReason: mockCanViewParticipationWithReason,
   canComment: vi.fn(async () => true),
+  canCommentWithReason: vi.fn(async () => ({ allowed: true as const })),
   canDeleteComment: vi.fn(async () => true),
   canEditComment: vi.fn(async () => true),
   getUserUniversityIds: vi.fn(async () => ['org-1']),
   isAdmin: vi.fn(async (userId: string) => userId === 'admin-user'),
+  forbiddenReasonCodes: [
+    'organization_context_required',
+    'sharing_status_not_viewable',
+    'organization_not_participating',
+    'template_not_submitted',
+    'template_context_required',
+    'participation_not_found',
+  ],
+  publicForbiddenReasonCodes: ['context_required', 'access_denied'],
+  toPublicForbiddenReason: vi.fn((reason: string) =>
+    reason === 'organization_context_required' || reason === 'template_context_required'
+      ? 'context_required'
+      : 'access_denied',
+  ),
 }));
 
 vi.mock('../services/storage.js', () => ({
@@ -161,6 +178,7 @@ describe('issue #11 api integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dbQueue.length = 0;
+    mockCanViewParticipationWithReason.mockResolvedValue({ allowed: true as const });
     mockGetObjectMetadata.mockResolvedValue({
       contentLength: 1024,
       contentType: 'application/pdf',
@@ -397,6 +415,36 @@ describe('issue #11 api integration', () => {
         hasPrev: false,
       },
     });
+  });
+
+  it('GET /api/participations/:id forwards templateId query to permission check', async () => {
+    const app = createApp();
+
+    enqueueDb([
+      {
+        id: 'p1',
+        editionId: 'e1',
+        universityId: 'org-1',
+        universityName: 'Org One',
+        teamName: 'Team A',
+        createdAt: '2026-03-20T00:00:00.000Z',
+      },
+    ]);
+
+    const res = await app.request(
+      '/api/participations/10000000-0000-0000-0000-000000000001?templateId=20000000-0000-0000-0000-000000000001',
+      {
+        headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
+      },
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockCanViewParticipationWithReason).toHaveBeenCalledWith(
+      'member-user',
+      '10000000-0000-0000-0000-000000000001',
+      'org-1',
+      '20000000-0000-0000-0000-000000000001',
+    );
   });
 
   it('P1 endpoints: admin participations and last-owner guard', async () => {
@@ -689,7 +737,7 @@ describe('issue #11 api integration', () => {
     );
 
     const res = await app.request(
-      '/api/editions/00000000-0000-0000-0000-000000000001/submissions',
+      '/api/editions/00000000-0000-0000-0000-000000000001/submissions?templateId=20000000-0000-0000-0000-000000000001',
       {
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
@@ -700,6 +748,28 @@ describe('issue #11 api integration', () => {
       data: Array<{ participation: { universityName?: string } }>;
     };
     expect(json.data[0]?.participation.universityName).toBe('Org One');
+    expect(mockCanViewOtherSubmissionsByTemplate).toHaveBeenCalledWith(
+      'member-user',
+      '00000000-0000-0000-0000-000000000001',
+      '20000000-0000-0000-0000-000000000001',
+      'org-1',
+    );
+  });
+
+  it('GET /api/editions/:id/submissions returns 400 when templateId is missing', async () => {
+    const app = createApp();
+
+    const res = await app.request(
+      '/api/editions/00000000-0000-0000-0000-000000000001/submissions',
+      {
+        headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
+      },
+    );
+
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error?: unknown };
+    expect(body.error).toBeDefined();
+    expect(mockCanViewOtherSubmissionsByTemplate).not.toHaveBeenCalled();
   });
 
   it('GET /api/submissions/:id/history returns submittedByUser with id and name', async () => {

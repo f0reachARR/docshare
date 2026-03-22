@@ -21,10 +21,12 @@ import {
 import type { AppVariables } from '../middleware/auth.js';
 import {
   canDeleteSubmission,
-  canViewOtherSubmissions,
-  canViewParticipation,
+  canViewOtherSubmissionsByTemplate,
+  canViewParticipationWithReason,
   getUserUniversityIds,
   isAdmin,
+  publicForbiddenReasonCodes,
+  toPublicForbiddenReason,
 } from '../services/permissions.js';
 import { getObjectMetadata, presignDownload } from '../services/storage.js';
 import { validateUploadedFileReference } from '../services/submission-files.js';
@@ -131,7 +133,19 @@ const submissionMatrixRowSchema = z.object({
     teamName: z.string().nullable(),
     createdAt: z.any(),
   }),
-  cells: z.array(submissionSchema.nullable()),
+  cells: z.array(
+    z.object({
+      submitted: z.boolean(),
+      viewable: z.boolean(),
+      denyReason: z.enum(publicForbiddenReasonCodes).nullable(),
+      submission: submissionSchema.nullable(),
+    }),
+  ),
+});
+
+const forbiddenResponseSchema = z.object({
+  error: z.literal('Forbidden'),
+  reason: z.enum(publicForbiddenReasonCodes),
 });
 
 const historySchema = z.object({
@@ -180,7 +194,9 @@ const listEditionSubmissionsRoute = createRoute({
   path: '/editions/{id}/submissions',
   request: {
     params: z.object({ id: z.string().uuid() }),
-    query: createPagingQuerySchema(listEditionSubmissionSortValues, true),
+    query: createPagingQuerySchema(listEditionSubmissionSortValues, true).extend({
+      templateId: z.string().uuid(),
+    }),
   },
   responses: {
     200: {
@@ -211,7 +227,7 @@ const listEditionSubmissionsRoute = createRoute({
       description: '権限なし',
       content: {
         'application/json': {
-          schema: z.object({ error: z.literal('Forbidden') }),
+          schema: forbiddenResponseSchema,
         },
       },
     },
@@ -254,7 +270,7 @@ const listSubmissionHistoriesRoute = createRoute({
       description: '権限なし',
       content: {
         'application/json': {
-          schema: z.object({ error: z.literal('Forbidden') }),
+          schema: forbiddenResponseSchema,
         },
       },
     },
@@ -316,7 +332,7 @@ const listEditionSubmissionMatrixRoute = createRoute({
       description: '権限なし',
       content: {
         'application/json': {
-          schema: z.object({ error: z.literal('Forbidden') }),
+          schema: forbiddenResponseSchema,
         },
       },
     },
@@ -388,7 +404,7 @@ const deleteSubmissionRoute = createRoute({
       description: '権限なし',
       content: {
         'application/json': {
-          schema: z.object({ error: z.literal('Forbidden') }),
+          schema: forbiddenResponseSchema,
         },
       },
     },
@@ -427,7 +443,7 @@ const downloadSubmissionRoute = createRoute({
       description: '権限なし',
       content: {
         'application/json': {
-          schema: z.object({ error: z.literal('Forbidden') }),
+          schema: forbiddenResponseSchema,
         },
       },
     },
@@ -772,14 +788,11 @@ submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
   const user = c.get('currentUser');
   const editionId = c.req.param('id');
 
-  const canView = await canViewOtherSubmissions(user.id, editionId);
-  if (!canView) {
-    return c.json({ error: 'Forbidden' as const }, 403);
-  }
-
   const parsed = parsePagingParams({
     query: c.req.query(),
-    schema: createPagingQuerySchema(listEditionSubmissionSortValues, true),
+    schema: createPagingQuerySchema(listEditionSubmissionSortValues, true).extend({
+      templateId: z.string().uuid(),
+    }),
     sortValues: listEditionSubmissionSortValues,
     defaultSort: 'createdAt:asc',
   });
@@ -790,8 +803,24 @@ submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
     return c.json({ error: 'Invalid sort' as const }, 422);
   }
 
+  const templateId = c.req.query('templateId') as string;
+
+  const decision = await canViewOtherSubmissionsByTemplate(
+    user.id,
+    editionId,
+    templateId,
+    c.get('organizationId'),
+  );
+  if (!decision.allowed) {
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(decision.reason) },
+      403,
+    );
+  }
+
   const whereClause = and(
     eq(submissionTemplates.editionId, editionId),
+    templateId ? eq(submissionTemplates.id, templateId) : undefined,
     parsed.value.q
       ? or(
           ilike(submissions.fileName, `%${parsed.value.q}%`),
@@ -856,11 +885,6 @@ submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
 submissionRoutes.openapi(listEditionSubmissionMatrixRoute, async (c) => {
   const user = c.get('currentUser');
   const editionId = c.req.param('id');
-
-  const canView = await canViewOtherSubmissions(user.id, editionId);
-  if (!canView) {
-    return c.json({ error: 'Forbidden' as const }, 403);
-  }
 
   const parsed = parsePagingParams({
     query: c.req.query(),
@@ -964,6 +988,25 @@ submissionRoutes.openapi(listEditionSubmissionMatrixRoute, async (c) => {
     submissionMap.set(`${row.participationId}:${row.templateId}`, row);
   }
 
+  const currentOrganizationId = c.get('organizationId');
+  const userUniversityIds = user.isAdmin ? [] : await getUserUniversityIds(user.id);
+  const templatePermissionMap = new Map<
+    string,
+    Awaited<ReturnType<typeof canViewOtherSubmissionsByTemplate>>
+  >();
+
+  for (const template of templates) {
+    templatePermissionMap.set(
+      template.template.id,
+      await canViewOtherSubmissionsByTemplate(
+        user.id,
+        editionId,
+        template.template.id,
+        currentOrganizationId,
+      ),
+    );
+  }
+
   return c.json(
     {
       templates: templates.map((row) => row.template),
@@ -971,8 +1014,23 @@ submissionRoutes.openapi(listEditionSubmissionMatrixRoute, async (c) => {
         participation: row.participation,
         cells: templates.map((template) => {
           const key = `${row.participation.id}:${template.template.id}`;
-          const submission = submissionMap.get(key);
-          return submission ? toPublicSubmission(submission) : null;
+          const submission = submissionMap.get(key) ?? null;
+          const isOwnParticipation = userUniversityIds.includes(row.participation.universityId);
+          const templateDecision = templatePermissionMap.get(template.template.id) ?? {
+            allowed: false as const,
+            reason: 'template_not_submitted' as const,
+          };
+          const canViewSubmission = user.isAdmin || isOwnParticipation || templateDecision.allowed;
+
+          return {
+            submitted: submission !== null,
+            viewable: canViewSubmission,
+            denyReason:
+              submission && !canViewSubmission && !templateDecision.allowed
+                ? toPublicForbiddenReason(templateDecision.reason)
+                : null,
+            submission: submission && canViewSubmission ? toPublicSubmission(submission) : null,
+          };
         }),
       })),
       pagination: createPaginationMeta({
@@ -1006,13 +1064,17 @@ submissionRoutes.openapi(downloadSubmissionRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
+  const canView = await canViewParticipationWithReason(
     user.id,
     row[0].participationId,
     c.get('organizationId'),
+    row[0].submission.templateId,
   );
-  if (!canView) {
-    return c.json({ error: 'Forbidden' as const }, 403);
+  if (!canView.allowed) {
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   if (!row[0].submission.fileS3Key) {
@@ -1028,7 +1090,7 @@ submissionRoutes.openapi(listSubmissionHistoriesRoute, async (c) => {
   const submissionId = c.req.param('id');
 
   const row = await db
-    .select({ participationId: submissions.participationId })
+    .select({ participationId: submissions.participationId, templateId: submissions.templateId })
     .from(submissions)
     .where(eq(submissions.id, submissionId))
     .limit(1);
@@ -1036,13 +1098,17 @@ submissionRoutes.openapi(listSubmissionHistoriesRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
+  const canView = await canViewParticipationWithReason(
     user.id,
     row[0].participationId,
     c.get('organizationId'),
+    row[0].templateId,
   );
-  if (!canView) {
-    return c.json({ error: 'Forbidden' as const }, 403);
+  if (!canView.allowed) {
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   const parsed = parsePagingParams({
@@ -1123,6 +1189,7 @@ submissionRoutes.openapi(downloadSubmissionHistoryRoute, async (c) => {
     .select({
       history: submissionHistories,
       participationId: submissions.participationId,
+      templateId: submissions.templateId,
     })
     .from(submissionHistories)
     .innerJoin(submissions, eq(submissions.id, submissionHistories.submissionId))
@@ -1133,13 +1200,17 @@ submissionRoutes.openapi(downloadSubmissionHistoryRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
+  const canView = await canViewParticipationWithReason(
     user.id,
     row[0].participationId,
     c.get('organizationId'),
+    row[0].templateId,
   );
-  if (!canView) {
-    return c.json({ error: 'Forbidden' as const }, 403);
+  if (!canView.allowed) {
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   if (!row[0].history.fileS3Key) {

@@ -5,9 +5,35 @@ import {
   competitionEditions,
   members,
   participations,
+  submissionTemplates,
   submissions,
   users,
 } from '../db/schema.js';
+
+export const forbiddenReasonCodes = [
+  'organization_context_required',
+  'sharing_status_not_viewable',
+  'organization_not_participating',
+  'template_not_submitted',
+  'template_context_required',
+  'participation_not_found',
+] as const;
+
+export const publicForbiddenReasonCodes = ['context_required', 'access_denied'] as const;
+
+export type ForbiddenReasonCode = (typeof forbiddenReasonCodes)[number];
+export type PublicForbiddenReasonCode = (typeof publicForbiddenReasonCodes)[number];
+
+export type PermissionDecision =
+  | { allowed: true }
+  | { allowed: false; reason: ForbiddenReasonCode };
+
+export const toPublicForbiddenReason = (reason: ForbiddenReasonCode): PublicForbiddenReasonCode => {
+  if (reason === 'organization_context_required' || reason === 'template_context_required') {
+    return 'context_required';
+  }
+  return 'access_denied';
+};
 
 export const isAdmin = async (userId: string): Promise<boolean> => {
   const rows = await db
@@ -26,27 +52,18 @@ export const getUserUniversityIds = async (userId: string): Promise<string[]> =>
   return rows.map((row) => row.organizationId);
 };
 
-export const hasAnySubmission = async (
-  universityId: string,
-  editionId: string,
-): Promise<boolean> => {
-  const result = await db
-    .select({ value: sql<number>`count(*)` })
-    .from(participations)
-    .innerJoin(submissions, eq(submissions.participationId, participations.id))
-    .where(
-      and(eq(participations.universityId, universityId), eq(participations.editionId, editionId)),
-    );
-
-  return Number(result[0]?.value ?? 0) > 0;
-};
-
-export const canViewOtherSubmissions = async (
+export const canViewOtherSubmissionsByTemplate = async (
   userId: string,
   editionId: string,
-): Promise<boolean> => {
+  templateId: string,
+  organizationIdHeader: string | null,
+): Promise<PermissionDecision> => {
   if (await isAdmin(userId)) {
-    return true;
+    return { allowed: true };
+  }
+
+  if (!organizationIdHeader) {
+    return { allowed: false, reason: 'organization_context_required' };
   }
 
   const editionRows = await db
@@ -57,30 +74,52 @@ export const canViewOtherSubmissions = async (
 
   const sharingStatus = editionRows[0]?.sharingStatus;
   if (!sharingStatus || !['sharing', 'closed'].includes(sharingStatus)) {
-    return false;
+    return { allowed: false, reason: 'sharing_status_not_viewable' };
   }
 
-  const universityIds = await getUserUniversityIds(userId);
-  if (universityIds.length === 0) {
-    return false;
+  const participationRows = await db
+    .select({ id: participations.id })
+    .from(participations)
+    .where(
+      and(
+        eq(participations.editionId, editionId),
+        eq(participations.universityId, organizationIdHeader),
+      ),
+    );
+
+  if (participationRows.length === 0) {
+    return { allowed: false, reason: 'organization_not_participating' };
   }
 
-  for (const universityId of universityIds) {
-    if (await hasAnySubmission(universityId, editionId)) {
-      return true;
-    }
+  const hasSubmissionRows = await db
+    .select({ value: sql<number>`count(*)` })
+    .from(submissions)
+    .innerJoin(participations, eq(participations.id, submissions.participationId))
+    .innerJoin(submissionTemplates, eq(submissionTemplates.id, submissions.templateId))
+    .where(
+      and(
+        eq(participations.editionId, editionId),
+        eq(participations.universityId, organizationIdHeader),
+        eq(submissionTemplates.id, templateId),
+        eq(submissionTemplates.editionId, editionId),
+      ),
+    );
+
+  if (Number(hasSubmissionRows[0]?.value ?? 0) <= 0) {
+    return { allowed: false, reason: 'template_not_submitted' };
   }
 
-  return false;
+  return { allowed: true };
 };
 
-export const canViewParticipation = async (
+export const canViewParticipationWithReason = async (
   userId: string,
   participationId: string,
   organizationIdHeader: string | null,
-): Promise<boolean> => {
+  templateId?: string,
+): Promise<PermissionDecision> => {
   if (await isAdmin(userId)) {
-    return true;
+    return { allowed: true };
   }
 
   const participationRows = await db
@@ -94,19 +133,53 @@ export const canViewParticipation = async (
     .limit(1);
   const participation = participationRows[0];
   if (!participation) {
-    return false;
+    return { allowed: false, reason: 'participation_not_found' };
   }
 
   const universityIds = await getUserUniversityIds(userId);
   if (universityIds.includes(participation.universityId)) {
-    return true;
+    return { allowed: true };
   }
 
-  if (!organizationIdHeader || !universityIds.includes(organizationIdHeader)) {
-    return false;
+  if (!templateId) {
+    return { allowed: false, reason: 'template_context_required' };
   }
 
-  return canViewOtherSubmissions(userId, participation.editionId);
+  return canViewOtherSubmissionsByTemplate(
+    userId,
+    participation.editionId,
+    templateId,
+    organizationIdHeader,
+  );
+};
+
+export const canViewParticipation = async (
+  userId: string,
+  participationId: string,
+  organizationIdHeader: string | null,
+  templateId?: string,
+): Promise<boolean> => {
+  const decision = await canViewParticipationWithReason(
+    userId,
+    participationId,
+    organizationIdHeader,
+    templateId,
+  );
+  return decision.allowed;
+};
+
+export const canCommentWithReason = async (
+  userId: string,
+  _editionId: string,
+  participationId: string,
+  organizationIdHeader: string | null,
+  templateId?: string,
+): Promise<PermissionDecision> => {
+  if (await isAdmin(userId)) {
+    return { allowed: true };
+  }
+
+  return canViewParticipationWithReason(userId, participationId, organizationIdHeader, templateId);
 };
 
 export const canComment = async (
@@ -114,12 +187,16 @@ export const canComment = async (
   _editionId: string,
   participationId: string,
   organizationIdHeader: string | null,
+  templateId?: string,
 ): Promise<boolean> => {
-  if (await isAdmin(userId)) {
-    return true;
-  }
-
-  return canViewParticipation(userId, participationId, organizationIdHeader);
+  const decision = await canCommentWithReason(
+    userId,
+    _editionId,
+    participationId,
+    organizationIdHeader,
+    templateId,
+  );
+  return decision.allowed;
 };
 
 const getActiveCommentAuthor = async (commentId: string): Promise<string | null> => {
