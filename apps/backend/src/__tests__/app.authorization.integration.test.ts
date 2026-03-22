@@ -79,7 +79,8 @@ const mockDb = {
       typeof selection === 'object' &&
       selection !== null &&
       'participationId' in selection &&
-      !('templateId' in selection);
+      !('submission' in selection) &&
+      !('fileName' in selection);
     const isAdminSelect =
       typeof selection === 'object' && selection !== null && 'isAdmin' in selection;
 
@@ -244,15 +245,40 @@ const mockCanViewOtherSubmissions = vi.fn(async (_userId: string, editionId: str
   return editionId === statusEditionIds.sharing || editionId === statusEditionIds.closed;
 });
 
+const mockCanViewOtherSubmissionsByTemplate = vi.fn(
+  async (_userId: string, editionId: string, templateId: string) => {
+    if (editionId === statusEditionIds.draft || editionId === statusEditionIds.accepting) {
+      return { allowed: false as const, reason: 'sharing_status_not_viewable' as const };
+    }
+
+    if (templateId === '20000000-0000-0000-0000-000000000002') {
+      return { allowed: false as const, reason: 'template_not_submitted' as const };
+    }
+
+    return { allowed: true as const };
+  },
+);
+
 vi.mock('../services/permissions.js', () => ({
   canDeleteSubmission: mockCanDeleteSubmission,
   canViewOtherSubmissions: mockCanViewOtherSubmissions,
+  canViewOtherSubmissionsByTemplate: mockCanViewOtherSubmissionsByTemplate,
   canViewParticipation: vi.fn(async () => true),
+  canViewParticipationWithReason: vi.fn(async () => ({ allowed: true as const })),
   canComment: vi.fn(async () => true),
+  canCommentWithReason: vi.fn(async () => ({ allowed: true as const })),
   canDeleteComment: vi.fn(async () => true),
   canEditComment: vi.fn(async () => true),
   getUserUniversityIds: vi.fn(async () => ['org-1']),
   isAdmin: vi.fn(async (userId: string) => userId === 'admin-user'),
+  forbiddenReasonCodes: [
+    'organization_context_required',
+    'sharing_status_not_viewable',
+    'organization_not_participating',
+    'template_not_submitted',
+    'template_context_required',
+    'participation_not_found',
+  ],
 }));
 
 const { createApp } = await import('../app.js');
@@ -326,7 +352,7 @@ describe('authorization integration (app.request)', () => {
         headers: { 'x-role': 'member' },
       },
     );
-    expect(matrixDraftRes.status).toBe(403);
+    expect(matrixDraftRes.status).toBe(200);
 
     const matrixAcceptingRes = await app.request(
       `/api/editions/${statusEditionIds.accepting}/submission-matrix`,
@@ -334,7 +360,7 @@ describe('authorization integration (app.request)', () => {
         headers: { 'x-role': 'member' },
       },
     );
-    expect(matrixAcceptingRes.status).toBe(403);
+    expect(matrixAcceptingRes.status).toBe(200);
 
     const matrixSharingRes = await app.request(
       `/api/editions/${statusEditionIds.sharing}/submission-matrix`,
@@ -438,7 +464,12 @@ describe('authorization integration (app.request)', () => {
       templates: Array<{ id: string; sortOrder: number }>;
       rows: Array<{
         participation: { id: string };
-        cells: Array<Record<string, unknown> | null>;
+        cells: Array<{
+          submitted: boolean;
+          viewable: boolean;
+          denyReason: string | null;
+          submission: Record<string, unknown> | null;
+        }>;
       }>;
       pagination: { total: number };
     };
@@ -460,23 +491,44 @@ describe('authorization integration (app.request)', () => {
 
     expect(row1).toBeDefined();
     expect(row2).toBeDefined();
-    expect(row1?.cells[1]).toBeNull();
-    expect(row2?.cells[0]).toBeNull();
+    expect(row1?.cells[1]).toEqual({
+      submitted: false,
+      viewable: true,
+      denyReason: null,
+      submission: null,
+    });
+    expect(row2?.cells[0]).toEqual({
+      submitted: false,
+      viewable: true,
+      denyReason: null,
+      submission: null,
+    });
 
     expect(row1?.cells[0]).toMatchObject({
-      id: '30000000-0000-0000-0000-000000000001',
-      templateId: '20000000-0000-0000-0000-000000000001',
-      participationId: '10000000-0000-0000-0000-000000000001',
-      submittedBy: 'member-user',
-      version: 2,
-      fileName: 'design.pdf',
-      fileSizeBytes: 1234,
-      fileMimeType: 'application/pdf',
-      url: null,
-      createdAt: '2026-03-20T02:00:00.000Z',
-      updatedAt: '2026-03-20T02:05:00.000Z',
+      submitted: true,
+      viewable: true,
+      denyReason: null,
+      submission: {
+        id: '30000000-0000-0000-0000-000000000001',
+        templateId: '20000000-0000-0000-0000-000000000001',
+        participationId: '10000000-0000-0000-0000-000000000001',
+        submittedBy: 'member-user',
+        version: 2,
+        fileName: 'design.pdf',
+        fileSizeBytes: 1234,
+        fileMimeType: 'application/pdf',
+        url: null,
+        createdAt: '2026-03-20T02:00:00.000Z',
+        updatedAt: '2026-03-20T02:05:00.000Z',
+      },
     });
-    expect(row1?.cells[0]).not.toHaveProperty('fileS3Key');
+    expect(row1?.cells[0]?.submission).not.toHaveProperty('fileS3Key');
+    expect(row2?.cells[1]).toMatchObject({
+      submitted: true,
+      viewable: false,
+      denyReason: 'template_not_submitted',
+      submission: null,
+    });
     expect(json.pagination.total).toBe(2);
   });
 

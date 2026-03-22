@@ -137,12 +137,23 @@ const mockPresignDownload = vi.fn(async (_bucket: string, key: string) => ({
 vi.mock('../services/permissions.js', () => ({
   canDeleteSubmission: vi.fn(async () => true),
   canViewOtherSubmissions: mockCanViewOtherSubmissions,
+  canViewOtherSubmissionsByTemplate: vi.fn(async () => ({ allowed: true as const })),
   canViewParticipation: mockCanViewParticipation,
+  canViewParticipationWithReason: vi.fn(async () => ({ allowed: true as const })),
   canComment: vi.fn(async () => true),
+  canCommentWithReason: vi.fn(async () => ({ allowed: true as const })),
   canDeleteComment: vi.fn(async () => true),
   canEditComment: vi.fn(async () => true),
   getUserUniversityIds: vi.fn(async () => ['org-1']),
   isAdmin: vi.fn(async (userId: string) => userId === 'admin-user'),
+  forbiddenReasonCodes: [
+    'organization_context_required',
+    'sharing_status_not_viewable',
+    'organization_not_participating',
+    'template_not_submitted',
+    'template_context_required',
+    'participation_not_found',
+  ],
 }));
 
 vi.mock('../services/storage.js', () => ({

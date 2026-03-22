@@ -868,6 +868,14 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason:
+                | 'organization_context_required'
+                | 'sharing_status_not_viewable'
+                | 'organization_not_participating'
+                | 'template_not_submitted'
+                | 'template_context_required'
+                | 'participation_not_found';
             };
           };
         };
@@ -906,6 +914,7 @@ export interface paths {
           page?: number;
           pageSize?: number;
           sort?: 'sortOrder:asc' | 'sortOrder:desc' | 'updatedAt:asc' | 'updatedAt:desc';
+          templateId?: string;
         };
         header?: never;
         path: {
@@ -969,6 +978,14 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason:
+                | 'organization_context_required'
+                | 'sharing_status_not_viewable'
+                | 'organization_not_participating'
+                | 'template_not_submitted'
+                | 'template_context_required'
+                | 'participation_not_found';
             };
           };
         };
@@ -1216,6 +1233,14 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason:
+                | 'organization_context_required'
+                | 'sharing_status_not_viewable'
+                | 'organization_not_participating'
+                | 'template_not_submitted'
+                | 'template_context_required'
+                | 'participation_not_found';
             };
           };
         };
@@ -1246,6 +1271,7 @@ export interface paths {
             | 'teamName:asc'
             | 'teamName:desc';
           q?: string;
+          templateId?: string;
         };
         header?: never;
         path: {
@@ -1322,6 +1348,14 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason:
+                | 'organization_context_required'
+                | 'sharing_status_not_viewable'
+                | 'organization_not_participating'
+                | 'template_not_submitted'
+                | 'template_context_required'
+                | 'participation_not_found';
             };
           };
         };
@@ -1402,22 +1436,35 @@ export interface paths {
                   teamName: string | null;
                   createdAt?: unknown;
                 };
-                cells: ({
-                  /** Format: uuid */
-                  id: string;
-                  /** Format: uuid */
-                  templateId: string;
-                  /** Format: uuid */
-                  participationId: string;
-                  submittedBy: string;
-                  version: number;
-                  fileName: string | null;
-                  fileSizeBytes: number | null;
-                  fileMimeType: string | null;
-                  url: string | null;
-                  createdAt?: unknown;
-                  updatedAt?: unknown;
-                } | null)[];
+                cells: {
+                  submitted: boolean;
+                  viewable: boolean;
+                  /** @enum {string|null} */
+                  denyReason:
+                    | 'organization_context_required'
+                    | 'sharing_status_not_viewable'
+                    | 'organization_not_participating'
+                    | 'template_not_submitted'
+                    | 'template_context_required'
+                    | 'participation_not_found'
+                    | null;
+                  submission: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    templateId: string;
+                    /** Format: uuid */
+                    participationId: string;
+                    submittedBy: string;
+                    version: number;
+                    fileName: string | null;
+                    fileSizeBytes: number | null;
+                    fileMimeType: string | null;
+                    url: string | null;
+                    createdAt?: unknown;
+                    updatedAt?: unknown;
+                  } | null;
+                }[];
               }[];
               pagination: {
                 page: number;
@@ -1451,6 +1498,14 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason:
+                | 'organization_context_required'
+                | 'sharing_status_not_viewable'
+                | 'organization_not_participating'
+                | 'template_not_submitted'
+                | 'template_context_required'
+                | 'participation_not_found';
             };
           };
         };
@@ -1530,6 +1585,14 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason:
+                | 'organization_context_required'
+                | 'sharing_status_not_viewable'
+                | 'organization_not_participating'
+                | 'template_not_submitted'
+                | 'template_context_required'
+                | 'participation_not_found';
             };
           };
         };
@@ -1634,6 +1697,14 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason:
+                | 'organization_context_required'
+                | 'sharing_status_not_viewable'
+                | 'organization_not_participating'
+                | 'template_not_submitted'
+                | 'template_context_required'
+                | 'participation_not_found';
             };
           };
         };
@@ -1764,6 +1835,7 @@ export interface paths {
           pageSize?: number;
           sort?: 'createdAt:asc' | 'createdAt:desc' | 'updatedAt:asc' | 'updatedAt:desc';
           q?: string;
+          templateId?: string;
         };
         header?: never;
         path: {
@@ -1829,6 +1901,14 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason:
+                | 'organization_context_required'
+                | 'sharing_status_not_viewable'
+                | 'organization_not_participating'
+                | 'template_not_submitted'
+                | 'template_context_required'
+                | 'participation_not_found';
             };
           };
         };
@@ -1860,6 +1940,8 @@ export interface paths {
         content: {
           'application/json': {
             body: string;
+            /** Format: uuid */
+            templateId?: string;
           };
         };
       };
@@ -1909,6 +1991,14 @@ export interface paths {
             'application/json': {
               /** @enum {string} */
               error: 'Forbidden';
+              /** @enum {string} */
+              reason:
+                | 'organization_context_required'
+                | 'sharing_status_not_viewable'
+                | 'organization_not_participating'
+                | 'template_not_submitted'
+                | 'template_context_required'
+                | 'participation_not_found';
             };
           };
         };
@@ -1953,6 +2043,8 @@ export interface paths {
         content: {
           'application/json': {
             body: string;
+            /** Format: uuid */
+            templateId?: string;
           };
         };
       };

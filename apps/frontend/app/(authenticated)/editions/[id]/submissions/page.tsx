@@ -9,7 +9,7 @@ import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
 import type { paths } from '@/lib/api/schema';
 import { queryKeys } from '@/lib/query/keys';
 import { useQuery } from '@tanstack/react-query';
-import { Download, ExternalLink } from 'lucide-react';
+import { Download, ExternalLink, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { parseAsInteger, parseAsString, parseAsStringEnum, useQueryStates } from 'nuqs';
 import { use, useState } from 'react';
@@ -17,6 +17,15 @@ import { use, useState } from 'react';
 type SubmissionMatrixData =
   paths['/api/editions/{id}/submission-matrix']['get']['responses'][200]['content']['application/json'];
 type SubmissionCell = SubmissionMatrixData['rows'][number]['cells'][number];
+
+const denyReasonLabels: Record<string, string> = {
+  organization_context_required: '所属大学の選択が必要です',
+  sharing_status_not_viewable: '共有期間外のため閲覧できません',
+  organization_not_participating: '選択中大学が未出場のため閲覧できません',
+  template_not_submitted: '選択中大学が未提出の資料種別です',
+  template_context_required: '資料種別を指定して閲覧してください',
+  participation_not_found: '対象チームが見つかりません',
+};
 
 const matrixSortValues = [
   'createdAt:asc',
@@ -93,17 +102,39 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
   };
 
   const renderCell = (cell: SubmissionCell) => {
-    if (!cell) {
+    if (!cell.submitted) {
       return <span className='text-muted-foreground'>—</span>;
     }
 
+    if (!cell.viewable || !cell.submission) {
+      const reason =
+        (cell.denyReason ? denyReasonLabels[cell.denyReason] : null) ?? '条件未達のため閲覧不可';
+
+      return (
+        <output
+          className='rounded-md border border-dashed border-amber-400/60 bg-amber-50 px-2 py-2 text-xs text-amber-900'
+          aria-live='polite'
+        >
+          <p className='inline-flex items-center gap-1 font-medium'>
+            <Lock className='h-3.5 w-3.5' aria-hidden='true' />
+            閲覧不可
+          </p>
+          <p className='mt-1'>{reason}</p>
+        </output>
+      );
+    }
+
+    const submission = cell.submission;
+
     return (
       <div className='space-y-1'>
-        {cell.fileName ? <p className='text-xs font-medium break-all'>{cell.fileName}</p> : null}
+        {submission.fileName ? (
+          <p className='text-xs font-medium break-all'>{submission.fileName}</p>
+        ) : null}
         <div className='flex items-center gap-2 flex-wrap'>
-          {cell.url ? (
+          {submission.url ? (
             <a
-              href={cell.url}
+              href={submission.url}
               target='_blank'
               rel='noopener noreferrer'
               className='inline-flex items-center gap-1 text-primary hover:underline text-xs'
@@ -112,12 +143,12 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
               閲覧
             </a>
           ) : null}
-          {cell.fileName ? (
+          {submission.fileName ? (
             <Button
               variant='outline'
               size='xs'
-              disabled={downloadingSubmissionId === cell.id}
-              onClick={() => handleDownload(cell.id)}
+              disabled={downloadingSubmissionId === submission.id}
+              onClick={() => handleDownload(submission.id)}
             >
               <Download className='h-3.5 w-3.5' />
               ダウンロード
@@ -125,20 +156,26 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
           ) : null}
         </div>
         <p className='text-[11px] text-muted-foreground'>
-          v{cell.version} <DateTimeDisplay value={String(cell.updatedAt)} />
+          v{submission.version} <DateTimeDisplay value={String(submission.updatedAt)} />
         </p>
       </div>
     );
   };
 
   if (error instanceof ApiError && error.status === 403) {
+    const reason =
+      typeof error.body === 'object' &&
+      error.body !== null &&
+      'reason' in error.body &&
+      typeof (error.body as { reason?: unknown }).reason === 'string'
+        ? (denyReasonLabels[(error.body as { reason: string }).reason] ??
+          '権限不足のため閲覧できません')
+        : '権限不足のため閲覧できません';
+
     return (
       <div className='space-y-4'>
         <h1 className='text-2xl font-bold'>資料一覧</h1>
-        <EmptyState
-          title='資料を閲覧できません'
-          description='以下のいずれかに該当する可能性があります：共有状態でない / 自校がまだ資料を提出していない / この大会に自校の出場登録がない'
-        />
+        <EmptyState title='資料を閲覧できません' description={reason} />
       </div>
     );
   }
@@ -269,7 +306,7 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
                 {(matrix.templates ?? []).map((template, index) => (
                   <div key={`${row.participation.id}:${template.id}`} className='space-y-1'>
                     <p className='text-xs text-muted-foreground'>{template.name}</p>
-                    {renderCell(row.cells[index] ?? null)}
+                    {renderCell(row.cells[index])}
                   </div>
                 ))}
               </div>
@@ -323,21 +360,21 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
               ))}
             </select>
             <Button
-              variant='outline'
               size='sm'
+              variant='outline'
+              onClick={() => setQueryParams({ page: Math.max(1, queryParams.page - 1) })}
               disabled={!matrix.pagination.hasPrev}
-              onClick={() => setQueryParams({ page: queryParams.page - 1 })}
             >
               前へ
             </Button>
-            <span className='text-sm text-muted-foreground min-w-20 text-center'>
-              {matrix.pagination.page} / {matrix.pagination.totalPages}
+            <span className='text-sm'>
+              {matrix.pagination.page} / {Math.max(matrix.pagination.totalPages, 1)}
             </span>
             <Button
-              variant='outline'
               size='sm'
-              disabled={!matrix.pagination.hasNext}
+              variant='outline'
               onClick={() => setQueryParams({ page: queryParams.page + 1 })}
+              disabled={!matrix.pagination.hasNext}
             >
               次へ
             </Button>

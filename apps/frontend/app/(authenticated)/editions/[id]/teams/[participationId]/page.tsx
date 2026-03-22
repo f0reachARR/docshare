@@ -15,6 +15,7 @@ import { getApiErrorMessage } from '@/lib/utils/errors';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DownloadIcon, ExternalLinkIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { parseAsInteger, useQueryStates } from 'nuqs';
 import { use, useState } from 'react';
 import { toast } from 'sonner';
@@ -33,6 +34,8 @@ export default function TeamDetailPage({
   const { organizationId } = useOrganization();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const templateIdParam = searchParams.get('templateId') ?? undefined;
 
   const [subQueryParams, setSubQueryParams] = useQueryStates(paginationParsers);
   const [commentBody, setCommentBody] = useState('');
@@ -69,10 +72,15 @@ export default function TeamDetailPage({
   });
 
   const { data: comments, isLoading: commentsLoading } = useQuery({
-    queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
+    queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {
+      templateId: templateIdParam,
+    }),
     queryFn: async () => {
       const result = await apiClient.GET('/api/participations/{id}/comments', {
-        params: { path: { id: participationId }, query: { pageSize: 100 } },
+        params: {
+          path: { id: participationId },
+          query: { pageSize: 100, templateId: templateIdParam },
+        },
         headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
       });
       return throwIfError(result);
@@ -83,7 +91,7 @@ export default function TeamDetailPage({
     mutationFn: async (body: string) => {
       const result = await apiClient.POST('/api/participations/{id}/comments', {
         params: { path: { id: participationId } },
-        body: { body },
+        body: { body, templateId: templateIdParam },
         headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
       });
       return throwIfError(result);
@@ -91,7 +99,9 @@ export default function TeamDetailPage({
     onSuccess: () => {
       setCommentBody('');
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
+        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {
+          templateId: templateIdParam,
+        }),
       });
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -109,7 +119,9 @@ export default function TeamDetailPage({
     onSuccess: () => {
       setEditingCommentId(null);
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
+        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {
+          templateId: templateIdParam,
+        }),
       });
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -125,7 +137,9 @@ export default function TeamDetailPage({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
+        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {
+          templateId: templateIdParam,
+        }),
       });
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),

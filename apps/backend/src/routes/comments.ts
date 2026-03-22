@@ -10,14 +10,16 @@ import {
 } from '../lib/pagination.js';
 import type { AppVariables } from '../middleware/auth.js';
 import {
-  canComment,
+  canCommentWithReason,
   canDeleteComment,
   canEditComment,
-  canViewParticipation,
+  canViewParticipationWithReason,
+  forbiddenReasonCodes,
 } from '../services/permissions.js';
 
 const bodySchema = z.object({
   body: z.string().min(1).max(5000),
+  templateId: z.string().uuid().optional(),
 });
 
 const commentSchema = z.object({
@@ -57,12 +59,21 @@ const listCommentSortValues = [
 
 const listCommentQuerySchema = createPagingQuerySchema(listCommentSortValues, true);
 
+const listCommentQuerySchemaWithTemplate = listCommentQuerySchema.extend({
+  templateId: z.string().uuid().optional(),
+});
+
+const forbiddenResponseSchema = z.object({
+  error: z.literal('Forbidden'),
+  reason: z.enum(forbiddenReasonCodes),
+});
+
 const listCommentsRoute = createRoute({
   method: 'get',
   path: '/participations/{id}/comments',
   request: {
     params: z.object({ id: z.string().uuid() }),
-    query: listCommentQuerySchema,
+    query: listCommentQuerySchemaWithTemplate,
   },
   responses: {
     200: {
@@ -93,7 +104,7 @@ const listCommentsRoute = createRoute({
       description: '権限なし',
       content: {
         'application/json': {
-          schema: z.object({ error: z.literal('Forbidden') }),
+          schema: forbiddenResponseSchema,
         },
       },
     },
@@ -134,7 +145,7 @@ const createCommentRoute = createRoute({
       description: '権限なし',
       content: {
         'application/json': {
-          schema: z.object({ error: z.literal('Forbidden') }),
+          schema: forbiddenResponseSchema,
         },
       },
     },
@@ -271,14 +282,9 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
   const user = c.get('currentUser');
   const participationId = c.req.param('id');
 
-  const canView = await canViewParticipation(user.id, participationId, c.get('organizationId'));
-  if (!canView) {
-    return c.json({ error: 'Forbidden' as const }, 403);
-  }
-
   const parsed = parsePagingParams({
     query: c.req.query(),
-    schema: listCommentQuerySchema,
+    schema: listCommentQuerySchemaWithTemplate,
     sortValues: listCommentSortValues,
     defaultSort: 'createdAt:asc',
   });
@@ -287,6 +293,18 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
       return c.json({ error: 'Invalid query' as const }, 400);
     }
     return c.json({ error: 'Invalid sort' as const }, 422);
+  }
+
+  const templateId = c.req.query('templateId') ?? undefined;
+
+  const canView = await canViewParticipationWithReason(
+    user.id,
+    participationId,
+    c.get('organizationId'),
+    templateId,
+  );
+  if (!canView.allowed) {
+    return c.json({ error: 'Forbidden' as const, reason: canView.reason }, 403);
   }
 
   const whereClause = and(
@@ -369,15 +387,16 @@ commentRoutes.openapi(createCommentRoute, async (c) => {
     return c.json({ error: 'Participation not found' as const }, 404);
   }
 
-  const can = await canComment(
+  const can = await canCommentWithReason(
     user.id,
     participationRows[0].editionId,
     participationId,
     c.get('organizationId'),
+    body.data.templateId,
   );
 
-  if (!can) {
-    return c.json({ error: 'Forbidden' as const }, 403);
+  if (!can.allowed) {
+    return c.json({ error: 'Forbidden' as const, reason: can.reason }, 403);
   }
 
   const authorAffiliation = await resolveCommentAuthorAffiliation({
