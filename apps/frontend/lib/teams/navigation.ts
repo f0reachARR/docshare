@@ -10,3 +10,21 @@ export function buildTeamDetailHref(params: {
 export function hasTemplateContext(templateId: string | null | undefined): boolean {
   return Boolean(templateId);
 }
+
+export function selectViewableTemplateId(params: {
+  templates: ReadonlyArray<{ id: string }>;
+  cells: ReadonlyArray<{ viewable: boolean } | null | undefined>;
+}): string | null {
+  for (const [index, cell] of params.cells.entries()) {
+    if (!cell?.viewable) {
+      continue;
+    }
+
+    const templateId = params.templates[index]?.id;
+    if (templateId) {
+      return templateId;
+    }
+  }
+
+  return null;
+}
