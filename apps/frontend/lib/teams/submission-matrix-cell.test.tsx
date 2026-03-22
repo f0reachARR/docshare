@@ -76,7 +76,36 @@ describe('SubmissionMatrixCell', () => {
     );
 
     expect(screen.getByText('閲覧不可')).toBeTruthy();
-    expect(screen.getByText('資料種別または所属大学を指定して閲覧してください')).toBeTruthy();
+    const reasonText = '資料種別または所属大学を指定して閲覧してください';
+    expect(screen.getByText(reasonText)).toBeTruthy();
+
+    const reasonElement = screen.getByRole('button', { name: '閲覧不可理由' });
+    expect(reasonElement.getAttribute('title')).toBe(reasonText);
+  });
+
+  it('閲覧不可理由は title ツールチップ追加後も常時テキスト導線として表示される', () => {
+    render(
+      <SubmissionMatrixCell
+        cell={buildCell({
+          viewable: false,
+          denyReason: 'access_denied',
+          submission: {
+            id: 'sub-5',
+            fileName: 'private.pdf',
+            url: null,
+            version: 1,
+            updatedAt: '2026-03-10T00:00:00.000Z',
+          },
+        })}
+      />,
+    );
+
+    const reasonText = '権限不足のため閲覧できません';
+    const reasonElement = screen.getByRole('button', { name: '閲覧不可理由' });
+
+    expect(reasonElement).toBeTruthy();
+    expect(screen.getByText(reasonText)).toBeTruthy();
+    expect(reasonElement.getAttribute('title')).toBe(reasonText);
   });
 
   it('閲覧不可理由がキーボード操作で到達可能', async () => {

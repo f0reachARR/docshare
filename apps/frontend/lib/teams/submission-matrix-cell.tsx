@@ -79,6 +79,8 @@ export function SubmissionMatrixCell({
       viewable: cell.viewable,
       denyReason: cell.denyReason,
     });
+    const reasonText =
+      reason ?? getDenyReasonLabel('access_denied', '権限不足のため閲覧できません');
 
     return (
       <button
@@ -87,13 +89,14 @@ export function SubmissionMatrixCell({
         aria-live='polite'
         aria-label='閲覧不可理由'
         aria-describedby={reasonId}
+        title={reasonText}
       >
         <p className='inline-flex items-center gap-1 font-medium'>
           <Lock className='h-3.5 w-3.5' aria-hidden='true' />
           閲覧不可
         </p>
         <p id={reasonId} className='mt-1'>
-          {reason ?? getDenyReasonLabel('access_denied', '権限不足のため閲覧できません')}
+          {reasonText}
         </p>
       </button>
     );
