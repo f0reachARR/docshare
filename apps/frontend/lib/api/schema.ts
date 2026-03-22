@@ -823,14 +823,18 @@ export interface paths {
   };
   '/api/participations/{id}': {
     parameters: {
-      query?: never;
+      query?: {
+        templateId?: string;
+      };
       header?: never;
       path?: never;
       cookie?: never;
     };
     get: {
       parameters: {
-        query?: never;
+        query?: {
+          templateId?: string;
+        };
         header?: never;
         path: {
           id: string;

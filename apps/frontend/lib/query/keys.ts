@@ -27,7 +27,8 @@ export const queryKeys = {
   },
 
   participations: {
-    detail: (id: string, orgId: string) => ['participations', id, orgId] as const,
+    detail: (id: string, orgId: string, params: Record<string, unknown>) =>
+      ['participations', id, orgId, params] as const,
     submissions: (id: string, orgId: string, params: Record<string, unknown>) =>
       ['participations', id, 'submissions', orgId, params] as const,
     comments: (id: string, orgId: string, params: Record<string, unknown>) =>

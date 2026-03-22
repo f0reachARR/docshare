@@ -14,7 +14,8 @@ import {
   canDeleteComment,
   canEditComment,
   canViewParticipationWithReason,
-  forbiddenReasonCodes,
+  publicForbiddenReasonCodes,
+  toPublicForbiddenReason,
 } from '../services/permissions.js';
 
 const bodySchema = z.object({
@@ -65,7 +66,7 @@ const listCommentQuerySchemaWithTemplate = listCommentQuerySchema.extend({
 
 const forbiddenResponseSchema = z.object({
   error: z.literal('Forbidden'),
-  reason: z.enum(forbiddenReasonCodes),
+  reason: z.enum(publicForbiddenReasonCodes),
 });
 
 const listCommentsRoute = createRoute({
@@ -304,7 +305,10 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
     templateId,
   );
   if (!canView.allowed) {
-    return c.json({ error: 'Forbidden' as const, reason: canView.reason }, 403);
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   const whereClause = and(
@@ -396,7 +400,10 @@ commentRoutes.openapi(createCommentRoute, async (c) => {
   );
 
   if (!can.allowed) {
-    return c.json({ error: 'Forbidden' as const, reason: can.reason }, 403);
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(can.reason) },
+      403,
+    );
   }
 
   const authorAffiliation = await resolveCommentAuthorAffiliation({

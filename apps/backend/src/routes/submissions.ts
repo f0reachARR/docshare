@@ -24,9 +24,10 @@ import {
   canViewOtherSubmissions,
   canViewOtherSubmissionsByTemplate,
   canViewParticipationWithReason,
-  forbiddenReasonCodes,
   getUserUniversityIds,
   isAdmin,
+  publicForbiddenReasonCodes,
+  toPublicForbiddenReason,
 } from '../services/permissions.js';
 import { getObjectMetadata, presignDownload } from '../services/storage.js';
 import { validateUploadedFileReference } from '../services/submission-files.js';
@@ -137,7 +138,7 @@ const submissionMatrixRowSchema = z.object({
     z.object({
       submitted: z.boolean(),
       viewable: z.boolean(),
-      denyReason: z.enum(forbiddenReasonCodes).nullable(),
+      denyReason: z.enum(publicForbiddenReasonCodes).nullable(),
       submission: submissionSchema.nullable(),
     }),
   ),
@@ -145,7 +146,7 @@ const submissionMatrixRowSchema = z.object({
 
 const forbiddenResponseSchema = z.object({
   error: z.literal('Forbidden'),
-  reason: z.enum(forbiddenReasonCodes),
+  reason: z.enum(publicForbiddenReasonCodes),
 });
 
 const historySchema = z.object({
@@ -813,12 +814,15 @@ submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
       c.get('organizationId'),
     );
     if (!decision.allowed) {
-      return c.json({ error: 'Forbidden' as const, reason: decision.reason }, 403);
+      return c.json(
+        { error: 'Forbidden' as const, reason: toPublicForbiddenReason(decision.reason) },
+        403,
+      );
     }
   } else {
     const canView = await canViewOtherSubmissions(user.id, editionId);
     if (!canView) {
-      return c.json({ error: 'Forbidden' as const, reason: 'template_context_required' }, 403);
+      return c.json({ error: 'Forbidden' as const, reason: 'context_required' }, 403);
     }
   }
 
@@ -1031,7 +1035,7 @@ submissionRoutes.openapi(listEditionSubmissionMatrixRoute, async (c) => {
             viewable: canViewSubmission,
             denyReason:
               submission && !canViewSubmission && !templateDecision.allowed
-                ? templateDecision.reason
+                ? toPublicForbiddenReason(templateDecision.reason)
                 : null,
             submission: submission && canViewSubmission ? toPublicSubmission(submission) : null,
           };
@@ -1075,7 +1079,10 @@ submissionRoutes.openapi(downloadSubmissionRoute, async (c) => {
     row[0].submission.templateId,
   );
   if (!canView.allowed) {
-    return c.json({ error: 'Forbidden' as const, reason: canView.reason }, 403);
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   if (!row[0].submission.fileS3Key) {
@@ -1106,7 +1113,10 @@ submissionRoutes.openapi(listSubmissionHistoriesRoute, async (c) => {
     row[0].templateId,
   );
   if (!canView.allowed) {
-    return c.json({ error: 'Forbidden' as const, reason: canView.reason }, 403);
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   const parsed = parsePagingParams({
@@ -1205,7 +1215,10 @@ submissionRoutes.openapi(downloadSubmissionHistoryRoute, async (c) => {
     row[0].templateId,
   );
   if (!canView.allowed) {
-    return c.json({ error: 'Forbidden' as const, reason: canView.reason }, 403);
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   if (!row[0].history.fileS3Key) {

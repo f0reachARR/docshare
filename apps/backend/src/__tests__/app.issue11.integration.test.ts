@@ -125,6 +125,7 @@ vi.mock('../middleware/admin.js', () => ({
 
 const mockCanViewParticipation = vi.fn(async () => true);
 const mockCanViewOtherSubmissions = vi.fn(async () => true);
+const mockCanViewParticipationWithReason = vi.fn(async () => ({ allowed: true as const }));
 const mockGetObjectMetadata = vi.fn(async () => ({
   contentLength: 1024,
   contentType: 'application/pdf',
@@ -139,7 +140,7 @@ vi.mock('../services/permissions.js', () => ({
   canViewOtherSubmissions: mockCanViewOtherSubmissions,
   canViewOtherSubmissionsByTemplate: vi.fn(async () => ({ allowed: true as const })),
   canViewParticipation: mockCanViewParticipation,
-  canViewParticipationWithReason: vi.fn(async () => ({ allowed: true as const })),
+  canViewParticipationWithReason: mockCanViewParticipationWithReason,
   canComment: vi.fn(async () => true),
   canCommentWithReason: vi.fn(async () => ({ allowed: true as const })),
   canDeleteComment: vi.fn(async () => true),
@@ -154,6 +155,12 @@ vi.mock('../services/permissions.js', () => ({
     'template_context_required',
     'participation_not_found',
   ],
+  publicForbiddenReasonCodes: ['context_required', 'access_denied'],
+  toPublicForbiddenReason: vi.fn((reason: string) =>
+    reason === 'organization_context_required' || reason === 'template_context_required'
+      ? 'context_required'
+      : 'access_denied',
+  ),
 }));
 
 vi.mock('../services/storage.js', () => ({
@@ -172,6 +179,7 @@ describe('issue #11 api integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dbQueue.length = 0;
+    mockCanViewParticipationWithReason.mockResolvedValue({ allowed: true as const });
     mockGetObjectMetadata.mockResolvedValue({
       contentLength: 1024,
       contentType: 'application/pdf',
@@ -408,6 +416,36 @@ describe('issue #11 api integration', () => {
         hasPrev: false,
       },
     });
+  });
+
+  it('GET /api/participations/:id forwards templateId query to permission check', async () => {
+    const app = createApp();
+
+    enqueueDb([
+      {
+        id: 'p1',
+        editionId: 'e1',
+        universityId: 'org-1',
+        universityName: 'Org One',
+        teamName: 'Team A',
+        createdAt: '2026-03-20T00:00:00.000Z',
+      },
+    ]);
+
+    const res = await app.request(
+      '/api/participations/10000000-0000-0000-0000-000000000001?templateId=20000000-0000-0000-0000-000000000001',
+      {
+        headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
+      },
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockCanViewParticipationWithReason).toHaveBeenCalledWith(
+      'member-user',
+      '10000000-0000-0000-0000-000000000001',
+      'org-1',
+      '20000000-0000-0000-0000-000000000001',
+    );
   });
 
   it('P1 endpoints: admin participations and last-owner guard', async () => {

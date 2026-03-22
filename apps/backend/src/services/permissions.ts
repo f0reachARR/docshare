@@ -19,11 +19,21 @@ export const forbiddenReasonCodes = [
   'participation_not_found',
 ] as const;
 
+export const publicForbiddenReasonCodes = ['context_required', 'access_denied'] as const;
+
 export type ForbiddenReasonCode = (typeof forbiddenReasonCodes)[number];
+export type PublicForbiddenReasonCode = (typeof publicForbiddenReasonCodes)[number];
 
 export type PermissionDecision =
   | { allowed: true }
   | { allowed: false; reason: ForbiddenReasonCode };
+
+export const toPublicForbiddenReason = (reason: ForbiddenReasonCode): PublicForbiddenReasonCode => {
+  if (reason === 'organization_context_required' || reason === 'template_context_required') {
+    return 'context_required';
+  }
+  return 'access_denied';
+};
 
 export const isAdmin = async (userId: string): Promise<boolean> => {
   const rows = await db

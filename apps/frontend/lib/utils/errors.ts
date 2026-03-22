@@ -1,12 +1,8 @@
 import { ApiError } from '../api/client';
 
 const forbiddenReasonMessages: Record<string, string> = {
-  organization_context_required: '所属大学のコンテキストが未選択です',
-  sharing_status_not_viewable: '現在は他校資料の共有期間外です',
-  organization_not_participating: '選択中の大学はこの大会回に出場登録されていません',
-  template_not_submitted: '選択中の大学がこの資料種別を提出していないため閲覧できません',
-  template_context_required: '資料種別の指定が必要です',
-  participation_not_found: '対象チームが見つかりません',
+  context_required: '所属大学または資料種別の指定が必要です',
+  access_denied: '権限不足のため閲覧できません',
 };
 
 function getForbiddenReasonMessage(body: unknown): string | null {

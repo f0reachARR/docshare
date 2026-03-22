@@ -279,6 +279,12 @@ vi.mock('../services/permissions.js', () => ({
     'template_context_required',
     'participation_not_found',
   ],
+  publicForbiddenReasonCodes: ['context_required', 'access_denied'],
+  toPublicForbiddenReason: vi.fn((reason: string) =>
+    reason === 'organization_context_required' || reason === 'template_context_required'
+      ? 'context_required'
+      : 'access_denied',
+  ),
 }));
 
 const { createApp } = await import('../app.js');
@@ -526,7 +532,7 @@ describe('authorization integration (app.request)', () => {
     expect(row2?.cells[1]).toMatchObject({
       submitted: true,
       viewable: false,
-      denyReason: 'template_not_submitted',
+      denyReason: 'access_denied',
       submission: null,
     });
     expect(json.pagination.total).toBe(2);

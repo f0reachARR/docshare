@@ -9,7 +9,11 @@ import {
   parsePagingParams,
 } from '../lib/pagination.js';
 import type { AppVariables } from '../middleware/auth.js';
-import { canViewParticipationWithReason, forbiddenReasonCodes } from '../services/permissions.js';
+import {
+  canViewParticipationWithReason,
+  publicForbiddenReasonCodes,
+  toPublicForbiddenReason,
+} from '../services/permissions.js';
 
 const participationSchema = z.object({
   id: z.string().uuid(),
@@ -49,7 +53,7 @@ const listParticipationSubmissionQuerySchema = createPagingQuerySchema(
 
 const forbiddenResponseSchema = z.object({
   error: z.literal('Forbidden'),
-  reason: z.enum(forbiddenReasonCodes),
+  reason: z.enum(publicForbiddenReasonCodes),
 });
 
 const getParticipationRoute = createRoute({
@@ -57,6 +61,7 @@ const getParticipationRoute = createRoute({
   path: '/participations/{id}',
   request: {
     params: z.object({ id: z.string().uuid() }),
+    query: z.object({ templateId: z.string().uuid().optional() }),
   },
   responses: {
     200: {
@@ -141,6 +146,7 @@ export const participationRoutes = new OpenAPIHono<{ Variables: AppVariables }>(
 
 participationRoutes.openapi(getParticipationRoute, async (c) => {
   const participationId = c.req.param('id');
+  const templateId = c.req.query('templateId') ?? undefined;
 
   const rows = await db
     .select({
@@ -164,9 +170,13 @@ participationRoutes.openapi(getParticipationRoute, async (c) => {
     c.get('currentUser').id,
     participationId,
     c.get('organizationId'),
+    templateId,
   );
   if (!canView.allowed) {
-    return c.json({ error: 'Forbidden' as const, reason: canView.reason }, 403);
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   return c.json({ data: rows[0] }, 200);
@@ -206,7 +216,10 @@ participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
     templateId,
   );
   if (!canView.allowed) {
-    return c.json({ error: 'Forbidden' as const, reason: canView.reason }, 403);
+    return c.json(
+      { error: 'Forbidden' as const, reason: toPublicForbiddenReason(canView.reason) },
+      403,
+    );
   }
 
   const totalRows = await db

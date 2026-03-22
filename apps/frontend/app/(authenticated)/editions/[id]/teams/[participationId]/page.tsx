@@ -3,6 +3,7 @@
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataTable } from '@/components/common/DataTable';
 import { DateTimeDisplay } from '@/components/common/DateTimeDisplay';
+import { EmptyState } from '@/components/common/EmptyState';
 import { MarkdownContent } from '@/components/common/MarkdownContent';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
 import { queryKeys } from '@/lib/query/keys';
+import { hasTemplateContext } from '@/lib/teams/navigation';
 import { getApiErrorMessage } from '@/lib/utils/errors';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -36,6 +38,7 @@ export default function TeamDetailPage({
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const templateIdParam = searchParams.get('templateId') ?? undefined;
+  const hasTemplateId = hasTemplateContext(templateIdParam);
 
   const [subQueryParams, setSubQueryParams] = useQueryStates(paginationParsers);
   const [commentBody, setCommentBody] = useState('');
@@ -43,32 +46,39 @@ export default function TeamDetailPage({
   const [editingBody, setEditingBody] = useState('');
 
   const { data: participation, isLoading: participationLoading } = useQuery({
-    queryKey: queryKeys.participations.detail(participationId, organizationId ?? ''),
+    queryKey: queryKeys.participations.detail(participationId, organizationId ?? '', {
+      templateId: templateIdParam,
+    }),
     queryFn: async () => {
       const result = await apiClient.GET('/api/participations/{id}', {
-        params: { path: { id: participationId } },
+        params: { path: { id: participationId }, query: { templateId: templateIdParam } },
         headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
       });
       return throwIfError(result);
     },
+    enabled: hasTemplateId,
   });
 
   const { data: submissions, isLoading: submissionsLoading } = useQuery({
-    queryKey: queryKeys.participations.submissions(
-      participationId,
-      organizationId ?? '',
-      subQueryParams,
-    ),
+    queryKey: queryKeys.participations.submissions(participationId, organizationId ?? '', {
+      ...subQueryParams,
+      templateId: templateIdParam,
+    }),
     queryFn: async () => {
       const result = await apiClient.GET('/api/participations/{id}/submissions', {
         params: {
           path: { id: participationId },
-          query: { page: subQueryParams.page, pageSize: subQueryParams.pageSize },
+          query: {
+            page: subQueryParams.page,
+            pageSize: subQueryParams.pageSize,
+            templateId: templateIdParam,
+          },
         },
         headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
       });
       return throwIfError(result);
     },
+    enabled: hasTemplateId,
   });
 
   const { data: comments, isLoading: commentsLoading } = useQuery({
@@ -85,6 +95,7 @@ export default function TeamDetailPage({
       });
       return throwIfError(result);
     },
+    enabled: hasTemplateId,
   });
 
   const postCommentMutation = useMutation({
@@ -206,6 +217,15 @@ export default function TeamDetailPage({
 
   if (participationLoading) {
     return <Skeleton className='h-64 w-full' />;
+  }
+
+  if (!hasTemplateId) {
+    return (
+      <EmptyState
+        title='資料種別の指定が必要です'
+        description='資料一覧から対象資料を選んで、この画面へ遷移してください。'
+      />
+    );
   }
 
   const p = participation?.data;
