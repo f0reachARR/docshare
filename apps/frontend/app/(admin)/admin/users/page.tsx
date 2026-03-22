@@ -91,6 +91,8 @@ function MembershipDialog({
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.userMemberships(user.id) }),
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),
+      queryClient.invalidateQueries({ queryKey: ['university', 'members'] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.me }),
     ]);
   };
 

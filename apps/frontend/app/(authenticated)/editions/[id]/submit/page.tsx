@@ -230,6 +230,22 @@ function TemplateCard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [urlValue, setUrlValue] = useState(submission?.url ?? '');
+  const invalidateSubmissionQueries = () => {
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.editions.mySubmissionStatus(editionId, organizationId),
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['editions', editionId, 'submission-matrix', organizationId],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['participations', participationId, 'submissions', organizationId],
+    });
+    if (submission) {
+      queryClient.invalidateQueries({
+        queryKey: ['submissions', submission.id, 'history', organizationId],
+      });
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -242,6 +258,7 @@ function TemplateCard({
     },
     onSuccess: () => {
       toast.success('資料を削除しました');
+      invalidateSubmissionQueries();
       onSuccess();
     },
     onError: (err) => {
@@ -297,6 +314,7 @@ function TemplateCard({
     onSuccess: () => {
       setUploadProgress(null);
       toast.success('資料をアップロードしました');
+      invalidateSubmissionQueries();
       onSuccess();
     },
     onError: (err) => {
@@ -324,6 +342,7 @@ function TemplateCard({
     },
     onSuccess: () => {
       toast.success('URLを登録しました');
+      invalidateSubmissionQueries();
       onSuccess();
     },
     onError: (err) => {

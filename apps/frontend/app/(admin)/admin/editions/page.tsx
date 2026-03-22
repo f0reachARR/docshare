@@ -124,6 +124,7 @@ function EditionFormDialog({ editing, onClose }: { editing: Edition | null; onCl
       return throwIfError(r);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'editions'] });
       queryClient.invalidateQueries({ queryKey: ['editions'] });
       toast.success(editing ? '更新しました' : '作成しました');
       onClose();
@@ -335,6 +336,7 @@ export default function AdminEditionsPage() {
       if (!result.response.ok) throw new ApiError(result.response.status, result.error);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'editions'] });
       queryClient.invalidateQueries({ queryKey: ['editions'] });
       toast.success('削除しました');
     },
@@ -349,7 +351,10 @@ export default function AdminEditionsPage() {
       });
       return throwIfError(result);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['editions'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'editions'] });
+      queryClient.invalidateQueries({ queryKey: ['editions'] });
+    },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   });
 
@@ -379,6 +384,7 @@ export default function AdminEditionsPage() {
         },
       });
 
+      queryClient.invalidateQueries({ queryKey: ['admin', 'editions'] });
       queryClient.invalidateQueries({ queryKey: ['editions'] });
       toast.success('ルール資料をアップロードしました');
     } catch (err) {

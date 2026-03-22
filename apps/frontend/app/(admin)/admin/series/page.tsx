@@ -80,7 +80,9 @@ function SeriesFormDialog({
       return throwIfError(r);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'series'] });
       queryClient.invalidateQueries({ queryKey: ['series'] });
+      queryClient.invalidateQueries({ queryKey: ['series-all'] });
       toast.success(editing ? '更新しました' : '作成しました');
       onClose();
     },
@@ -219,7 +221,9 @@ export default function AdminSeriesPage() {
       if (!result.response.ok) throw new ApiError(result.response.status, result.error);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'series'] });
       queryClient.invalidateQueries({ queryKey: ['series'] });
+      queryClient.invalidateQueries({ queryKey: ['series-all'] });
       toast.success('削除しました');
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
