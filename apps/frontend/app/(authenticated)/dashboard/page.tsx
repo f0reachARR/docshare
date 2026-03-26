@@ -119,7 +119,7 @@ export default function DashboardPage() {
                       <Button
                         size='sm'
                         variant='outline'
-                        render={<Link href={`/editions/${edition.id}/submissions`} />}
+                        render={<Link href={`/competitions/${edition.id}`} />}
                       >
                         資料一覧
                       </Button>
