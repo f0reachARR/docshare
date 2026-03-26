@@ -5,6 +5,7 @@ import { DateTimeDisplay } from '@/components/common/DateTimeDisplay';
 import { Button } from '@/components/ui/button';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { apiClient, throwIfError } from '@/lib/api/client';
+import type { paths } from '@/lib/api/schema';
 import { queryKeys } from '@/lib/query/keys';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -17,18 +18,10 @@ const paginationParsers = {
   pageSize: parseAsInteger.withDefault(20),
 };
 
-type HistoryRow = {
-  id: string;
-  submissionId: string;
-  version: number;
-  submittedBy: string;
-  submittedByUser: { id: string; name: string };
-  fileName: string | null;
-  fileSizeBytes: number | null;
-  fileMimeType: string | null;
-  url: string | null;
-  createdAt: unknown;
-};
+type SubmissionHistoryPath = paths['/api/submissions/{id}/history'];
+type SubmissionHistoryResponse =
+  SubmissionHistoryPath['get']['responses'][200]['content']['application/json'];
+type HistoryRow = SubmissionHistoryResponse['data'][number];
 
 export default function SubmissionHistoryPage({
   params,
@@ -39,9 +32,9 @@ export default function SubmissionHistoryPage({
   const { organizationId } = useOrganization();
   const [queryParams, setQueryParams] = useQueryStates(paginationParsers);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<SubmissionHistoryResponse>({
     queryKey: queryKeys.submissions.history(submissionId, organizationId ?? '', queryParams),
-    queryFn: async () => {
+    queryFn: async (): Promise<SubmissionHistoryResponse> => {
       const result = await apiClient.GET('/api/submissions/{id}/history', {
         params: {
           path: { id: submissionId },
@@ -52,6 +45,8 @@ export default function SubmissionHistoryPage({
       return throwIfError(result);
     },
   });
+
+  const historyRows = data?.data ?? [];
 
   const handleDownload = async (historyId: string) => {
     const result = await apiClient.GET('/api/submission-history/{historyId}/download', {
@@ -112,7 +107,7 @@ export default function SubmissionHistoryPage({
       <h1 className='text-2xl font-bold'>資料履歴</h1>
       <DataTable
         columns={columns}
-        data={(data?.data ?? []) as HistoryRow[]}
+        data={historyRows}
         isLoading={isLoading}
         pagination={data?.pagination}
         onPageChange={(page) => setQueryParams({ page })}

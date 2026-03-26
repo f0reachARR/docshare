@@ -33,5 +33,8 @@ export function throwIfError<T>(result: { data?: T; error?: unknown; response: R
   if (result.error !== undefined || !result.response.ok) {
     throw new ApiError(result.response.status, result.error);
   }
-  return result.data as T;
+  if (result.data === undefined) {
+    throw new ApiError(result.response.status, null);
+  }
+  return result.data;
 }
