@@ -6,6 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
+    "openapi:generate": "tsc -p tsconfig.build.json >/dev/null && node scripts/generate-openapi.mjs && pnpm exec biome format --write openapi.json",
+    "openapi:print": "tsc -p tsconfig.build.json >/dev/null && node scripts/generate-openapi.mjs --stdout",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

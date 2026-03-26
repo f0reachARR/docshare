@@ -13,7 +13,7 @@ import {
   canComment,
   canDeleteComment,
   canEditComment,
-  canViewParticipation,
+  canViewParticipationComments,
 } from '../services/permissions.js';
 
 const bodySchema = z.object({
@@ -271,7 +271,11 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
   const user = c.get('currentUser');
   const participationId = c.req.param('id');
 
-  const canView = await canViewParticipation(user.id, participationId, c.get('organizationId'));
+  const canView = await canViewParticipationComments(
+    user.id,
+    participationId,
+    c.get('organizationId'),
+  );
   if (!canView) {
     return c.json({ error: 'Forbidden' as const }, 403);
   }

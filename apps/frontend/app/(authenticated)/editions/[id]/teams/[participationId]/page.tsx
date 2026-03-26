@@ -10,11 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
+import type { paths } from '@/lib/api/schema';
 import { queryKeys } from '@/lib/query/keys';
 import { getApiErrorMessage } from '@/lib/utils/errors';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { DownloadIcon, ExternalLinkIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { DownloadIcon, ExternalLinkIcon, LockIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 import { parseAsInteger, useQueryStates } from 'nuqs';
 import { use, useState } from 'react';
 import { toast } from 'sonner';
@@ -23,6 +24,13 @@ const paginationParsers = {
   page: parseAsInteger.withDefault(1),
   pageSize: parseAsInteger.withDefault(20),
 };
+
+type ParticipationSubmissionListResponse =
+  paths['/api/participations/{id}/submissions']['get']['responses'][200]['content']['application/json'];
+type ParticipationSubmissionItem = ParticipationSubmissionListResponse['data'][number];
+type CommentListResponse =
+  paths['/api/participations/{id}/comments']['get']['responses'][200]['content']['application/json'];
+type CommentItem = CommentListResponse['data'][number];
 
 export default function TeamDetailPage({
   params,
@@ -68,7 +76,11 @@ export default function TeamDetailPage({
     },
   });
 
-  const { data: comments, isLoading: commentsLoading } = useQuery({
+  const {
+    data: comments,
+    isLoading: commentsLoading,
+    error: commentsError,
+  } = useQuery({
     queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
     queryFn: async () => {
       const result = await apiClient.GET('/api/participations/{id}/comments', {
@@ -140,22 +152,38 @@ export default function TeamDetailPage({
     window.open(data.data.presignedUrl, '_blank');
   };
 
-  type SubmissionRow = {
-    id: string;
-    template: { id: string; name: string; acceptType: 'file' | 'url' };
-    version: number;
-    fileName: string | null;
-    url: string | null;
-    updatedAt: unknown;
-  };
-
-  const submissionColumns: ColumnDef<SubmissionRow>[] = [
-    { header: 'テンプレート', cell: ({ row }) => row.original.template.name },
-    { header: 'バージョン', cell: ({ row }) => `v${row.original.version}` },
+  const submissionColumns: ColumnDef<ParticipationSubmissionItem>[] = [
+    {
+      header: 'テンプレート',
+      cell: ({ row }) =>
+        row.original.state === 'viewable'
+          ? row.original.submission.template.name
+          : row.original.template.name,
+    },
+    {
+      header: '状態',
+      cell: ({ row }) =>
+        row.original.state === 'viewable' ? (
+          `v${row.original.submission.version}`
+        ) : (
+          <span className='inline-flex items-center gap-1 text-muted-foreground'>
+            <LockIcon className='h-3 w-3' />
+            閲覧不可
+          </span>
+        ),
+    },
     {
       header: 'ファイル / URL',
       cell: ({ row }) => {
-        const { id, template, fileName, url } = row.original;
+        if (row.original.state === 'locked') {
+          return (
+            <span className='text-sm text-muted-foreground'>
+              提出済み / この資料種別は自校未提出のため閲覧できません
+            </span>
+          );
+        }
+
+        const { id, template, fileName, url } = row.original.submission;
         if (template.acceptType === 'file') {
           return (
             <Button
@@ -186,7 +214,15 @@ export default function TeamDetailPage({
     },
     {
       header: '更新日時',
-      cell: ({ row }) => <DateTimeDisplay value={String(row.original.updatedAt)} />,
+      cell: ({ row }) => (
+        <DateTimeDisplay
+          value={String(
+            row.original.state === 'viewable'
+              ? row.original.submission.updatedAt
+              : row.original.updatedAt,
+          )}
+        />
+      ),
     },
   ];
 
@@ -195,13 +231,7 @@ export default function TeamDetailPage({
   }
 
   const p = participation?.data;
-  type CommentItem = {
-    id: string;
-    body: string;
-    createdAt: unknown;
-    updatedAt: unknown;
-    author: { id: string; name: string; universityName: string; teamName: string | null };
-  };
+  const canViewComments = !(commentsError instanceof ApiError && commentsError.status === 403);
 
   return (
     <div className='space-y-8'>
@@ -216,7 +246,7 @@ export default function TeamDetailPage({
         <h2 className='text-lg font-semibold'>提出資料</h2>
         <DataTable
           columns={submissionColumns}
-          data={(submissions?.data ?? []) as SubmissionRow[]}
+          data={submissions?.data ?? []}
           isLoading={submissionsLoading}
           pagination={submissions?.pagination}
           onPageChange={(page) => setSubQueryParams({ page })}
@@ -230,6 +260,10 @@ export default function TeamDetailPage({
 
         {commentsLoading ? (
           <Skeleton className='h-32 w-full' />
+        ) : !canViewComments ? (
+          <div className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>
+            この大学はまだ今大会で資料を提出していないため、他校コメントは閲覧できません。
+          </div>
         ) : (
           <div className='space-y-4'>
             {(comments?.data ?? []).map((comment) => {
@@ -315,25 +349,27 @@ export default function TeamDetailPage({
         )}
 
         {/* Comment form */}
-        <div className='space-y-2 border-t pt-4'>
-          <Textarea
-            placeholder='コメントを入力（Markdown対応、最大5000文字）'
-            value={commentBody}
-            onChange={(e) => setCommentBody(e.target.value)}
-            rows={3}
-            maxLength={5000}
-          />
-          <div className='flex items-center justify-between'>
-            <span className='text-xs text-muted-foreground'>{commentBody.length} / 5000</span>
-            <Button
-              size='sm'
-              onClick={() => postCommentMutation.mutate(commentBody)}
-              disabled={!commentBody.trim() || postCommentMutation.isPending}
-            >
-              コメントを投稿
-            </Button>
+        {canViewComments ? (
+          <div className='space-y-2 border-t pt-4'>
+            <Textarea
+              placeholder='コメントを入力（Markdown対応、最大5000文字）'
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value)}
+              rows={3}
+              maxLength={5000}
+            />
+            <div className='flex items-center justify-between'>
+              <span className='text-xs text-muted-foreground'>{commentBody.length} / 5000</span>
+              <Button
+                size='sm'
+                onClick={() => postCommentMutation.mutate(commentBody)}
+                disabled={!commentBody.trim() || postCommentMutation.isPending}
+              >
+                コメントを投稿
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : null}
       </section>
     </div>
   );

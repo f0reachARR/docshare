@@ -9,7 +9,7 @@ import {
   parsePagingParams,
 } from '../lib/pagination.js';
 import type { AppVariables } from '../middleware/auth.js';
-import { canViewParticipation } from '../services/permissions.js';
+import { getParticipationAccess } from '../services/permissions.js';
 
 const participationSchema = z.object({
   id: z.string().uuid(),
@@ -32,6 +32,22 @@ const participationSubmissionSchema = z.object({
   url: z.string().nullable(),
   updatedAt: z.any(),
 });
+
+const participationSubmissionListItemSchema = z.discriminatedUnion('state', [
+  z.object({
+    state: z.literal('viewable'),
+    submission: participationSubmissionSchema,
+  }),
+  z.object({
+    state: z.literal('locked'),
+    template: z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+      acceptType: z.enum(['file', 'url']),
+    }),
+    updatedAt: z.any(),
+  }),
+]);
 
 const listParticipationSubmissionSortValues = [
   'sortOrder:asc',
@@ -91,7 +107,7 @@ const listParticipationSubmissionsRoute = createRoute({
       description: 'participation 提出一覧',
       content: {
         'application/json': {
-          schema: createPaginatedResponseSchema(participationSubmissionSchema),
+          schema: createPaginatedResponseSchema(participationSubmissionListItemSchema),
         },
       },
     },
@@ -153,12 +169,12 @@ participationRoutes.openapi(getParticipationRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
+  const access = await getParticipationAccess(
     c.get('currentUser').id,
     participationId,
     c.get('organizationId'),
   );
-  if (!canView) {
+  if (!access?.canViewParticipation) {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
 
@@ -190,12 +206,12 @@ participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
+  const access = await getParticipationAccess(
     c.get('currentUser').id,
     participationId,
     c.get('organizationId'),
   );
-  if (!canView) {
+  if (!access?.canViewParticipation) {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
 
@@ -229,18 +245,33 @@ participationRoutes.openapi(listParticipationSubmissionsRoute, async (c) => {
 
   return c.json(
     {
-      data: rows.map((row) => ({
-        id: row.id,
-        template: {
+      data: rows.map((row) => {
+        const template = {
           id: row.templateId,
           name: row.templateName,
           acceptType: row.templateAcceptType,
-        },
-        version: row.version,
-        fileName: row.fileName,
-        url: row.url,
-        updatedAt: row.updatedAt,
-      })),
+        };
+
+        if (access.canViewAllSubmissions || access.viewableTemplateIds.has(row.templateId)) {
+          return {
+            state: 'viewable' as const,
+            submission: {
+              id: row.id,
+              template,
+              version: row.version,
+              fileName: row.fileName,
+              url: row.url,
+              updatedAt: row.updatedAt,
+            },
+          };
+        }
+
+        return {
+          state: 'locked' as const,
+          template,
+          updatedAt: row.updatedAt,
+        };
+      }),
       pagination: createPaginationMeta({
         page: parsed.value.page,
         pageSize: parsed.value.pageSize,

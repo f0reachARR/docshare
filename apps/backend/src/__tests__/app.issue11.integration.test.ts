@@ -125,6 +125,21 @@ vi.mock('../middleware/admin.js', () => ({
 
 const mockCanViewParticipation = vi.fn(async () => true);
 const mockCanViewOtherSubmissions = vi.fn(async () => true);
+const mockGetEditionViewAccess = vi.fn(async () => ({
+  canAccessEdition: true,
+  canViewComments: true,
+  canViewAllSubmissions: true,
+  viewableTemplateIds: new Set<string>(),
+}));
+const mockGetParticipationAccess = vi.fn(async () => ({
+  canViewParticipation: true,
+  canAccessEdition: true,
+  canViewComments: true,
+  canViewAllSubmissions: true,
+  viewableTemplateIds: new Set<string>(),
+  participationUniversityId: 'org-1',
+  editionId: '00000000-0000-0000-0000-000000000001',
+}));
 const mockGetObjectMetadata = vi.fn(async () => ({
   contentLength: 1024,
   contentType: 'application/pdf',
@@ -138,9 +153,14 @@ vi.mock('../services/permissions.js', () => ({
   canDeleteSubmission: vi.fn(async () => true),
   canViewOtherSubmissions: mockCanViewOtherSubmissions,
   canViewParticipation: mockCanViewParticipation,
+  canViewParticipationComments: vi.fn(async () => true),
+  canViewSubmissionByTemplate: vi.fn(async () => true),
+  canViewSubmissionHistoryByTemplate: vi.fn(async () => true),
   canComment: vi.fn(async () => true),
   canDeleteComment: vi.fn(async () => true),
   canEditComment: vi.fn(async () => true),
+  getEditionViewAccess: mockGetEditionViewAccess,
+  getParticipationAccess: mockGetParticipationAccess,
   getUserUniversityIds: vi.fn(async () => ['org-1']),
   isAdmin: vi.fn(async (userId: string) => userId === 'admin-user'),
 }));
@@ -376,16 +396,19 @@ describe('issue #11 api integration', () => {
     expect(await submissionsRes.json()).toEqual({
       data: [
         {
-          id: 's1',
-          template: {
-            id: 't1',
-            name: 'Concept',
-            acceptType: 'file',
+          state: 'viewable',
+          submission: {
+            id: 's1',
+            template: {
+              id: 't1',
+              name: 'Concept',
+              acceptType: 'file',
+            },
+            version: 3,
+            fileName: 'concept-v3.pdf',
+            url: null,
+            updatedAt: '2026-03-20T00:00:00.000Z',
           },
-          version: 3,
-          fileName: 'concept-v3.pdf',
-          url: null,
-          updatedAt: '2026-03-20T00:00:00.000Z',
         },
       ],
       pagination: {
@@ -824,16 +847,19 @@ describe('issue #11 api integration', () => {
     expect(await res.json()).toEqual({
       data: [
         {
-          id: '30000000-0000-0000-0000-000000000001',
-          template: {
-            id: '20000000-0000-0000-0000-000000000001',
-            name: 'Concept',
-            acceptType: 'file',
+          state: 'viewable',
+          submission: {
+            id: '30000000-0000-0000-0000-000000000001',
+            template: {
+              id: '20000000-0000-0000-0000-000000000001',
+              name: 'Concept',
+              acceptType: 'file',
+            },
+            version: 2,
+            fileName: 'concept-v2.pdf',
+            url: null,
+            updatedAt: '2026-03-20T12:00:00.000Z',
           },
-          version: 2,
-          fileName: 'concept-v2.pdf',
-          url: null,
-          updatedAt: '2026-03-20T12:00:00.000Z',
         },
       ],
       pagination: {

@@ -21,8 +21,9 @@ import {
 import type { AppVariables } from '../middleware/auth.js';
 import {
   canDeleteSubmission,
-  canViewOtherSubmissions,
-  canViewParticipation,
+  canViewSubmissionByTemplate,
+  canViewSubmissionHistoryByTemplate,
+  getEditionViewAccess,
   getUserUniversityIds,
   isAdmin,
 } from '../services/permissions.js';
@@ -131,7 +132,20 @@ const submissionMatrixRowSchema = z.object({
     teamName: z.string().nullable(),
     createdAt: z.any(),
   }),
-  cells: z.array(submissionSchema.nullable()),
+  cells: z.array(
+    z.discriminatedUnion('state', [
+      z.object({
+        state: z.literal('empty'),
+      }),
+      z.object({
+        state: z.literal('locked'),
+      }),
+      z.object({
+        state: z.literal('viewable'),
+        submission: submissionSchema,
+      }),
+    ]),
+  ),
 });
 
 const historySchema = z.object({
@@ -771,8 +785,10 @@ submissionRoutes.openapi(deleteSubmissionRoute, async (c) => {
 submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
   const user = c.get('currentUser');
   const editionId = c.req.param('id');
+  const organizationId = c.get('organizationId');
 
-  const canView = await canViewOtherSubmissions(user.id, editionId);
+  const access = await getEditionViewAccess(user.id, editionId, organizationId);
+  const canView = access.canAccessEdition;
   if (!canView) {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
@@ -792,6 +808,11 @@ submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
 
   const whereClause = and(
     eq(submissionTemplates.editionId, editionId),
+    !access.canViewAllSubmissions && access.viewableTemplateIds.size > 0
+      ? inArray(submissions.templateId, [...access.viewableTemplateIds])
+      : !access.canViewAllSubmissions
+        ? eq(submissions.id, '00000000-0000-0000-0000-000000000000')
+        : undefined,
     parsed.value.q
       ? or(
           ilike(submissions.fileName, `%${parsed.value.q}%`),
@@ -856,9 +877,10 @@ submissionRoutes.openapi(listEditionSubmissionsRoute, async (c) => {
 submissionRoutes.openapi(listEditionSubmissionMatrixRoute, async (c) => {
   const user = c.get('currentUser');
   const editionId = c.req.param('id');
+  const organizationId = c.get('organizationId');
 
-  const canView = await canViewOtherSubmissions(user.id, editionId);
-  if (!canView) {
+  const access = await getEditionViewAccess(user.id, editionId, organizationId);
+  if (!access.canAccessEdition) {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
 
@@ -972,7 +994,23 @@ submissionRoutes.openapi(listEditionSubmissionMatrixRoute, async (c) => {
         cells: templates.map((template) => {
           const key = `${row.participation.id}:${template.template.id}`;
           const submission = submissionMap.get(key);
-          return submission ? toPublicSubmission(submission) : null;
+          if (!submission) {
+            return { state: 'empty' as const };
+          }
+
+          if (
+            access.canViewAllSubmissions ||
+            access.viewableTemplateIds.has(template.template.id)
+          ) {
+            return {
+              state: 'viewable' as const,
+              submission: toPublicSubmission(submission),
+            };
+          }
+
+          return {
+            state: 'locked' as const,
+          };
         }),
       })),
       pagination: createPaginationMeta({
@@ -1006,11 +1044,7 @@ submissionRoutes.openapi(downloadSubmissionRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
-    user.id,
-    row[0].participationId,
-    c.get('organizationId'),
-  );
+  const canView = await canViewSubmissionByTemplate(user.id, submissionId, c.get('organizationId'));
   if (!canView) {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
@@ -1036,11 +1070,7 @@ submissionRoutes.openapi(listSubmissionHistoriesRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
-    user.id,
-    row[0].participationId,
-    c.get('organizationId'),
-  );
+  const canView = await canViewSubmissionByTemplate(user.id, submissionId, c.get('organizationId'));
   if (!canView) {
     return c.json({ error: 'Forbidden' as const }, 403);
   }
@@ -1133,9 +1163,9 @@ submissionRoutes.openapi(downloadSubmissionHistoryRoute, async (c) => {
     return c.json({ error: 'Not found' as const }, 404);
   }
 
-  const canView = await canViewParticipation(
+  const canView = await canViewSubmissionHistoryByTemplate(
     user.id,
-    row[0].participationId,
+    historyId,
     c.get('organizationId'),
   );
   if (!canView) {

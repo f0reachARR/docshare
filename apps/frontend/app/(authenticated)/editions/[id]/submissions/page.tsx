@@ -9,7 +9,7 @@ import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
 import type { paths } from '@/lib/api/schema';
 import { queryKeys } from '@/lib/query/keys';
 import { useQuery } from '@tanstack/react-query';
-import { Download, ExternalLink } from 'lucide-react';
+import { Download, ExternalLink, LockIcon } from 'lucide-react';
 import Link from 'next/link';
 import { parseAsInteger, parseAsString, parseAsStringEnum, useQueryStates } from 'nuqs';
 import { use, useState } from 'react';
@@ -93,17 +93,35 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
   };
 
   const renderCell = (cell: SubmissionCell) => {
-    if (!cell) {
+    if (cell.state === 'empty') {
       return <span className='text-muted-foreground'>—</span>;
     }
 
+    if (cell.state === 'locked') {
+      return (
+        <div className='space-y-1'>
+          <p className='inline-flex items-center gap-1 text-xs font-medium text-muted-foreground'>
+            <LockIcon className='h-3.5 w-3.5' />
+            提出済み
+          </p>
+          <p className='text-[11px] text-muted-foreground'>
+            この資料種別は自校未提出のため閲覧できません
+          </p>
+        </div>
+      );
+    }
+
+    const submission = cell.submission;
+
     return (
       <div className='space-y-1'>
-        {cell.fileName ? <p className='text-xs font-medium break-all'>{cell.fileName}</p> : null}
+        {submission.fileName ? (
+          <p className='text-xs font-medium break-all'>{submission.fileName}</p>
+        ) : null}
         <div className='flex items-center gap-2 flex-wrap'>
-          {cell.url ? (
+          {submission.url ? (
             <a
-              href={cell.url}
+              href={submission.url}
               target='_blank'
               rel='noopener noreferrer'
               className='inline-flex items-center gap-1 text-primary hover:underline text-xs'
@@ -112,12 +130,12 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
               閲覧
             </a>
           ) : null}
-          {cell.fileName ? (
+          {submission.fileName ? (
             <Button
               variant='outline'
               size='xs'
-              disabled={downloadingSubmissionId === cell.id}
-              onClick={() => handleDownload(cell.id)}
+              disabled={downloadingSubmissionId === submission.id}
+              onClick={() => handleDownload(submission.id)}
             >
               <Download className='h-3.5 w-3.5' />
               ダウンロード
@@ -125,7 +143,7 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
           ) : null}
         </div>
         <p className='text-[11px] text-muted-foreground'>
-          v{cell.version} <DateTimeDisplay value={String(cell.updatedAt)} />
+          v{submission.version} <DateTimeDisplay value={String(submission.updatedAt)} />
         </p>
       </div>
     );
@@ -137,7 +155,7 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
         <h1 className='text-2xl font-bold'>資料一覧</h1>
         <EmptyState
           title='資料を閲覧できません'
-          description='以下のいずれかに該当する可能性があります：共有状態でない / 自校がまだ資料を提出していない / この大会に自校の出場登録がない'
+          description='以下のいずれかに該当する可能性があります：共有状態でない / この大会に自校の出場登録がない / 選択中の大学に切り替わっていない'
         />
       </div>
     );
@@ -269,7 +287,7 @@ export default function SubmissionsListPage({ params }: { params: Promise<{ id: 
                 {(matrix.templates ?? []).map((template, index) => (
                   <div key={`${row.participation.id}:${template.id}`} className='space-y-1'>
                     <p className='text-xs text-muted-foreground'>{template.name}</p>
-                    {renderCell(row.cells[index] ?? null)}
+                    {renderCell(row.cells[index])}
                   </div>
                 ))}
               </div>

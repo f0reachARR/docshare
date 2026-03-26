@@ -922,21 +922,39 @@ export interface paths {
           };
           content: {
             'application/json': {
-              data: {
-                /** Format: uuid */
-                id: string;
-                template: {
-                  /** Format: uuid */
-                  id: string;
-                  name: string;
-                  /** @enum {string} */
-                  acceptType: 'file' | 'url';
-                };
-                version: number;
-                fileName: string | null;
-                url: string | null;
-                updatedAt?: unknown;
-              }[];
+              data: (
+                | {
+                    /** @enum {string} */
+                    state: 'viewable';
+                    submission: {
+                      /** Format: uuid */
+                      id: string;
+                      template: {
+                        /** Format: uuid */
+                        id: string;
+                        name: string;
+                        /** @enum {string} */
+                        acceptType: 'file' | 'url';
+                      };
+                      version: number;
+                      fileName: string | null;
+                      url: string | null;
+                      updatedAt?: unknown;
+                    };
+                  }
+                | {
+                    /** @enum {string} */
+                    state: 'locked';
+                    template: {
+                      /** Format: uuid */
+                      id: string;
+                      name: string;
+                      /** @enum {string} */
+                      acceptType: 'file' | 'url';
+                    };
+                    updatedAt?: unknown;
+                  }
+              )[];
               pagination: {
                 page: number;
                 pageSize: number;
@@ -1402,22 +1420,36 @@ export interface paths {
                   teamName: string | null;
                   createdAt?: unknown;
                 };
-                cells: ({
-                  /** Format: uuid */
-                  id: string;
-                  /** Format: uuid */
-                  templateId: string;
-                  /** Format: uuid */
-                  participationId: string;
-                  submittedBy: string;
-                  version: number;
-                  fileName: string | null;
-                  fileSizeBytes: number | null;
-                  fileMimeType: string | null;
-                  url: string | null;
-                  createdAt?: unknown;
-                  updatedAt?: unknown;
-                } | null)[];
+                cells: (
+                  | {
+                      /** @enum {string} */
+                      state: 'empty';
+                    }
+                  | {
+                      /** @enum {string} */
+                      state: 'locked';
+                    }
+                  | {
+                      /** @enum {string} */
+                      state: 'viewable';
+                      submission: {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        templateId: string;
+                        /** Format: uuid */
+                        participationId: string;
+                        submittedBy: string;
+                        version: number;
+                        fileName: string | null;
+                        fileSizeBytes: number | null;
+                        fileMimeType: string | null;
+                        url: string | null;
+                        createdAt?: unknown;
+                        updatedAt?: unknown;
+                      };
+                    }
+                )[];
               }[];
               pagination: {
                 page: number;

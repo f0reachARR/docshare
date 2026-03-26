@@ -240,17 +240,40 @@ const mockCanDeleteSubmission = vi.fn(async (userId: string) => {
   return userId === 'admin-user' || userId === 'owner-user';
 });
 
-const mockCanViewOtherSubmissions = vi.fn(async (_userId: string, editionId: string) => {
-  return editionId === statusEditionIds.sharing || editionId === statusEditionIds.closed;
+const mockGetEditionViewAccess = vi.fn(async (_userId: string, editionId: string) => {
+  const canAccessEdition =
+    editionId === statusEditionIds.sharing || editionId === statusEditionIds.closed;
+
+  return {
+    canAccessEdition,
+    canViewComments: canAccessEdition,
+    canViewAllSubmissions: true,
+    viewableTemplateIds: new Set<string>(),
+  };
 });
+
+const mockGetParticipationAccess = vi.fn(async () => ({
+  canViewParticipation: true,
+  canAccessEdition: true,
+  canViewComments: true,
+  canViewAllSubmissions: true,
+  viewableTemplateIds: new Set<string>(),
+  participationUniversityId: 'org-1',
+  editionId: statusEditionIds.sharing,
+}));
 
 vi.mock('../services/permissions.js', () => ({
   canDeleteSubmission: mockCanDeleteSubmission,
-  canViewOtherSubmissions: mockCanViewOtherSubmissions,
+  canViewOtherSubmissions: vi.fn(async () => true),
   canViewParticipation: vi.fn(async () => true),
+  canViewParticipationComments: vi.fn(async () => true),
+  canViewSubmissionByTemplate: vi.fn(async () => true),
+  canViewSubmissionHistoryByTemplate: vi.fn(async () => true),
   canComment: vi.fn(async () => true),
   canDeleteComment: vi.fn(async () => true),
   canEditComment: vi.fn(async () => true),
+  getEditionViewAccess: mockGetEditionViewAccess,
+  getParticipationAccess: mockGetParticipationAccess,
   getUserUniversityIds: vi.fn(async () => ['org-1']),
   isAdmin: vi.fn(async (userId: string) => userId === 'admin-user'),
 }));
@@ -438,7 +461,7 @@ describe('authorization integration (app.request)', () => {
       templates: Array<{ id: string; sortOrder: number }>;
       rows: Array<{
         participation: { id: string };
-        cells: Array<Record<string, unknown> | null>;
+        cells: Array<Record<string, unknown>>;
       }>;
       pagination: { total: number };
     };
@@ -460,23 +483,28 @@ describe('authorization integration (app.request)', () => {
 
     expect(row1).toBeDefined();
     expect(row2).toBeDefined();
-    expect(row1?.cells[1]).toBeNull();
-    expect(row2?.cells[0]).toBeNull();
+    expect(row1?.cells[1]).toEqual({ state: 'empty' });
+    expect(row2?.cells[0]).toEqual({ state: 'empty' });
 
     expect(row1?.cells[0]).toMatchObject({
-      id: '30000000-0000-0000-0000-000000000001',
-      templateId: '20000000-0000-0000-0000-000000000001',
-      participationId: '10000000-0000-0000-0000-000000000001',
-      submittedBy: 'member-user',
-      version: 2,
-      fileName: 'design.pdf',
-      fileSizeBytes: 1234,
-      fileMimeType: 'application/pdf',
-      url: null,
-      createdAt: '2026-03-20T02:00:00.000Z',
-      updatedAt: '2026-03-20T02:05:00.000Z',
+      state: 'viewable',
+      submission: {
+        id: '30000000-0000-0000-0000-000000000001',
+        templateId: '20000000-0000-0000-0000-000000000001',
+        participationId: '10000000-0000-0000-0000-000000000001',
+        submittedBy: 'member-user',
+        version: 2,
+        fileName: 'design.pdf',
+        fileSizeBytes: 1234,
+        fileMimeType: 'application/pdf',
+        url: null,
+        createdAt: '2026-03-20T02:00:00.000Z',
+        updatedAt: '2026-03-20T02:05:00.000Z',
+      },
     });
-    expect(row1?.cells[0]).not.toHaveProperty('fileS3Key');
+    expect(
+      (row1?.cells[0] as { submission?: Record<string, unknown> }).submission,
+    ).not.toHaveProperty('fileS3Key');
     expect(json.pagination.total).toBe(2);
   });
 
