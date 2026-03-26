@@ -1,9 +1,9 @@
 'use client';
 
-import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
+import { apiClient, throwIfError } from '@/lib/api/client';
 import { queryKeys } from '@/lib/query/keys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useMemo } from 'react';
+import { type ReactNode, createContext, useContext, useMemo } from 'react';
 
 export interface AuthUser {
   id: string;
@@ -35,7 +35,7 @@ const AuthContext = createContext<AuthContextValue>({
   isAuthenticated: false,
 });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.me,
     queryFn: async () => {

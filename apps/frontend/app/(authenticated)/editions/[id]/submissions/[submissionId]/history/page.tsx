@@ -35,7 +35,7 @@ export default function SubmissionHistoryPage({
 }: {
   params: Promise<{ id: string; submissionId: string }>;
 }) {
-  const { id: editionId, submissionId } = use(params);
+  const { submissionId } = use(params);
   const { organizationId } = useOrganization();
   const [queryParams, setQueryParams] = useQueryStates(paginationParsers);
 

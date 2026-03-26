@@ -18,7 +18,6 @@ import {
 import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
 import { queryKeys } from '@/lib/query/keys';
 import { getApiErrorMessage } from '@/lib/utils/errors';
-import { ROLE_LABELS } from '@/lib/utils/status';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';

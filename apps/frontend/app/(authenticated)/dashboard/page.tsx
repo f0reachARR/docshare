@@ -5,15 +5,13 @@ import { StatusBadge } from '@/components/common/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
+import { apiClient, throwIfError } from '@/lib/api/client';
 import { queryKeys } from '@/lib/query/keys';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
   const { organizationId, currentOrg } = useOrganization();
 
   // Fetch all non-draft editions

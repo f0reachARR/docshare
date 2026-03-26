@@ -37,7 +37,7 @@ export default function TeamDetailPage({
 }: {
   params: Promise<{ id: string; participationId: string }>;
 }) {
-  const { id: editionId, participationId } = use(params);
+  const { participationId } = use(params);
   const { organizationId } = useOrganization();
   const { user } = useAuth();
   const queryClient = useQueryClient();
