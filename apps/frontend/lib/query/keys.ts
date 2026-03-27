@@ -5,12 +5,16 @@ export const queryKeys = {
   me: ['me'] as const,
 
   series: {
+    prefix: () => ['series'] as const,
     all: (params: Record<string, unknown>) => ['series', params] as const,
+    allForSelection: () => ['series', { pageSize: 100 }] as const,
     detail: (id: string) => ['series', id] as const,
   },
 
   editions: {
+    prefix: () => ['editions'] as const,
     all: (params: Record<string, unknown>) => ['editions', params] as const,
+    allForSelection: () => ['editions', { pageSize: 100 }] as const,
     detail: (id: string) => ['editions', id] as const,
     templates: (id: string, params: Record<string, unknown>) =>
       ['editions', id, 'templates', params] as const,
@@ -45,10 +49,13 @@ export const queryKeys = {
   },
 
   admin: {
+    seriesPrefix: () => ['admin', 'series'] as const,
     series: (params: Record<string, unknown>) => ['admin', 'series', params] as const,
+    editionsPrefix: () => ['admin', 'editions'] as const,
     editions: (params: Record<string, unknown>) => ['admin', 'editions', params] as const,
     participations: (editionId: string, params: Record<string, unknown>) =>
       ['admin', 'editions', editionId, 'participations', params] as const,
+    templatesPrefix: (editionId: string) => ['admin', 'editions', editionId, 'templates'] as const,
     templates: (editionId: string, params: Record<string, unknown>) =>
       ['admin', 'editions', editionId, 'templates', params] as const,
     universities: (params: Record<string, unknown>) => ['admin', 'universities', params] as const,
