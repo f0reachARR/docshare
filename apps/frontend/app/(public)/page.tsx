@@ -13,7 +13,7 @@ export default function TopPage() {
     <div className='container mx-auto px-4 py-16 space-y-16'>
       {/* Hero */}
       <section className='text-center space-y-6'>
-        <h1 className='text-4xl font-bold tracking-tight'>ロボコン資料共有サービス</h1>
+        <h1 className='text-4xl font-bold tracking-tight'>製本企画</h1>
         <p className='text-xl text-muted-foreground max-w-2xl mx-auto'>
           ロボコン参加チームが資料を安全に共有・管理できるプラットフォームです
         </p>
@@ -52,7 +52,7 @@ export default function TopPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className='text-sm text-muted-foreground'>
-              大会ごとに定められたテンプレートに従って資料を提出・差し替えできます。バージョン管理により更新履歴を確認できます。
+              大会ごとに定められたテンプレートに従って資料を提出・差し替えできます。
             </CardContent>
           </Card>
           <Card>
@@ -74,7 +74,7 @@ export default function TopPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className='text-sm text-muted-foreground'>
-              共有状態に応じて閲覧範囲を制御します。受付中・共有中・締切後でUIが自動的に切り替わります。
+              共有している資料と同じ資料のみを閲覧できます。ギブアンドテイクの精神で、提出すれば他校の資料も見られるようになります。
             </CardContent>
           </Card>
         </div>
@@ -88,10 +88,10 @@ export default function TopPage() {
             { step: 1, text: '大学の代表者が大学アカウントを作成します' },
             { step: 2, text: 'メンバーを招待してチームに参加してもらいます' },
             { step: 3, text: '大会回に出場登録をして資料を提出します' },
-            { step: 4, text: '共有状態になると他校の資料も閲覧できます' },
+            { step: 4, text: '他校の資料を閲覧し参考にできます' },
           ].map(({ step, text }) => (
             <li key={step} className='flex items-start gap-3'>
-              <span className='flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium'>
+              <span className='shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium'>
                 {step}
               </span>
               <span className='text-muted-foreground pt-0.5'>{text}</span>
