@@ -26,6 +26,21 @@ type ParticipationAccess = EditionViewAccess & {
 
 const sharingStatusesAllowingOtherSchoolView = new Set(['sharing', 'closed']);
 
+export const hasSubmittedAllRequiredTemplates = (params: {
+  requiredTemplateIds: Iterable<string>;
+  submittedTemplateIds: Iterable<string>;
+}): boolean => {
+  const submittedTemplateIds = new Set(params.submittedTemplateIds);
+
+  for (const requiredTemplateId of params.requiredTemplateIds) {
+    if (!submittedTemplateIds.has(requiredTemplateId)) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export const isAdmin = async (userId: string): Promise<boolean> => {
   const rows = await db
     .select({ isAdmin: users.isAdmin })
@@ -108,13 +123,29 @@ export const getEditionViewAccess = async (
   }
 
   const participationIds = participationRows.map((row) => row.id);
-  const submissionRows =
+  const [requiredTemplateRows, submissionRows] = await Promise.all([
+    db
+      .select({ templateId: submissionTemplates.id })
+      .from(submissionTemplates)
+      .where(
+        and(eq(submissionTemplates.editionId, editionId), eq(submissionTemplates.isRequired, true)),
+      ),
     participationIds.length === 0
-      ? []
-      : await db
+      ? Promise.resolve([])
+      : db
           .select({ templateId: submissions.templateId })
           .from(submissions)
-          .where(inArray(submissions.participationId, participationIds));
+          .where(inArray(submissions.participationId, participationIds)),
+  ]);
+
+  const canViewOtherUniversitySubmissions = hasSubmittedAllRequiredTemplates({
+    requiredTemplateIds: requiredTemplateRows.map((row) => row.templateId),
+    submittedTemplateIds: submissionRows.map((row) => row.templateId),
+  });
+
+  if (!canViewOtherUniversitySubmissions) {
+    return createDeniedEditionAccess();
+  }
 
   const viewableTemplateIds = new Set(submissionRows.map((row) => row.templateId));
 
