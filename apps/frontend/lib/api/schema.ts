@@ -1825,6 +1825,8 @@ export interface paths {
                 author: {
                   id: string;
                   name: string;
+                  /** Format: uri */
+                  gravatarUrl: string;
                   universityName: string | null;
                   teamName: string | null;
                 };

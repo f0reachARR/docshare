@@ -4,6 +4,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataTable } from '@/components/common/DataTable';
 import { DateTimeDisplay } from '@/components/common/DateTimeDisplay';
 import { MarkdownContent } from '@/components/common/MarkdownContent';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +32,22 @@ type ParticipationSubmissionItem = ParticipationSubmissionListResponse['data'][n
 type CommentListResponse =
   paths['/api/participations/{id}/comments']['get']['responses'][200]['content']['application/json'];
 type CommentItem = CommentListResponse['data'][number];
+
+const getInitials = (name: string | undefined): string => {
+  if (!name) {
+    return '?';
+  }
+
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return '?';
+  }
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+};
 
 export default function TeamDetailPage({
   params,
@@ -274,12 +291,20 @@ export default function TeamDetailPage({
               return (
                 <div key={c.id} className='border rounded-lg p-4 space-y-2'>
                   <div className='flex items-start justify-between gap-2 flex-wrap'>
-                    <div className='text-sm'>
-                      <span className='font-medium'>{c.author?.name}</span>
-                      <span className='text-muted-foreground ml-2'>
-                        {c.author?.universityName}
-                        {c.author?.teamName && ` / ${c.author.teamName}`}
-                      </span>
+                    <div className='flex items-start gap-3 min-w-0'>
+                      <Avatar size='sm'>
+                        <AvatarImage src={c.author?.gravatarUrl} alt={c.author?.name} />
+                        <AvatarFallback>{getInitials(c.author?.name)}</AvatarFallback>
+                      </Avatar>
+                      <div className='text-sm min-w-0'>
+                        <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
+                          <span className='font-medium'>{c.author?.name}</span>
+                          <span className='text-muted-foreground'>
+                            {c.author?.universityName}
+                            {c.author?.teamName && ` / ${c.author.teamName}`}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <div className='flex items-center gap-1'>
                       <DateTimeDisplay value={String(c.createdAt)} />

@@ -3208,6 +3208,10 @@
                               "name": {
                                 "type": "string"
                               },
+                              "gravatarUrl": {
+                                "type": "string",
+                                "format": "uri"
+                              },
                               "universityName": {
                                 "type": "string",
                                 "nullable": true
@@ -3217,7 +3221,7 @@
                                 "nullable": true
                               }
                             },
-                            "required": ["id", "name", "universityName", "teamName"]
+                            "required": ["id", "name", "gravatarUrl", "universityName", "teamName"]
                           }
                         },
                         "required": ["id", "participationId", "editionId", "body", "author"]

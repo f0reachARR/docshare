@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,6 +15,12 @@ const dequeueDb = async (): Promise<DbQueueItem> => {
     return [];
   }
   return dbQueue.shift() ?? [];
+};
+
+const createGravatarUrl = (email: string): string => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const hash = createHash('md5').update(normalizedEmail).digest('hex');
+  return `https://www.gravatar.com/avatar/${hash}?d=mp&s=80`;
 };
 
 const createAwaitableBuilder = () => {
@@ -784,6 +791,7 @@ describe('issue #11 api integration', () => {
           updatedAt: '2026-03-20T00:00:00.000Z',
           authorId: 'user-1',
           authorName: 'Alice',
+          authorEmail: 'Alice@example.com',
           universityName: 'Org One',
           teamName: 'Team A',
         },
@@ -803,6 +811,7 @@ describe('issue #11 api integration', () => {
         author: {
           id: string;
           name: string;
+          gravatarUrl: string;
           universityName: string | null;
           teamName: string | null;
         };
@@ -811,6 +820,7 @@ describe('issue #11 api integration', () => {
     expect(json.data[0]?.author).toEqual({
       id: 'user-1',
       name: 'Alice',
+      gravatarUrl: createGravatarUrl('Alice@example.com'),
       universityName: 'Org One',
       teamName: 'Team A',
     });

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { and, asc, count, desc, eq, ilike, isNull } from 'drizzle-orm';
 import { db } from '../db/index.js';
@@ -43,6 +44,7 @@ const commentWithAuthorSchema = z.object({
   author: z.object({
     id: z.string(),
     name: z.string(),
+    gravatarUrl: z.string().url(),
     universityName: z.string().nullable(),
     teamName: z.string().nullable(),
   }),
@@ -221,6 +223,12 @@ const deleteCommentRoute = createRoute({
 
 export const commentRoutes = new OpenAPIHono<{ Variables: AppVariables }>();
 
+const createGravatarUrl = (email: string): string => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const hash = createHash('md5').update(normalizedEmail).digest('hex');
+  return `https://www.gravatar.com/avatar/${hash}?d=mp&s=80`;
+};
+
 const resolveCommentAuthorAffiliation = async ({
   editionId,
   organizationId,
@@ -315,6 +323,7 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
       updatedAt: comments.updatedAt,
       authorId: users.id,
       authorName: users.name,
+      authorEmail: users.email,
       universityName: comments.authorUniversityName,
       teamName: comments.authorTeamName,
     })
@@ -337,6 +346,7 @@ commentRoutes.openapi(listCommentsRoute, async (c) => {
         author: {
           id: row.authorId,
           name: row.authorName,
+          gravatarUrl: createGravatarUrl(row.authorEmail),
           universityName: row.universityName,
           teamName: row.teamName,
         },
