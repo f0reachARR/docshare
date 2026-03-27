@@ -4,10 +4,11 @@ import { DataTable } from '@/components/common/DataTable';
 import { DateTimeDisplay } from '@/components/common/DateTimeDisplay';
 import { Button } from '@/components/ui/button';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import {
+  type SubmissionHistoryRow,
+  useSubmissionHistory,
+} from '@/features/editions/submission-history/hooks';
 import { apiClient, throwIfError } from '@/lib/api/client';
-import type { paths } from '@/lib/api/schema';
-import { queryKeys } from '@/lib/query/keys';
-import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { parseAsInteger, useQueryStates } from 'nuqs';
@@ -18,11 +19,6 @@ const paginationParsers = {
   pageSize: parseAsInteger.withDefault(20),
 };
 
-type SubmissionHistoryPath = paths['/api/submissions/{id}/history'];
-type SubmissionHistoryResponse =
-  SubmissionHistoryPath['get']['responses'][200]['content']['application/json'];
-type HistoryRow = SubmissionHistoryResponse['data'][number];
-
 export default function SubmissionHistoryPage({
   params,
 }: {
@@ -32,19 +28,7 @@ export default function SubmissionHistoryPage({
   const { organizationId } = useOrganization();
   const [queryParams, setQueryParams] = useQueryStates(paginationParsers);
 
-  const { data, isLoading } = useQuery<SubmissionHistoryResponse>({
-    queryKey: queryKeys.submissions.history(submissionId, organizationId ?? '', queryParams),
-    queryFn: async (): Promise<SubmissionHistoryResponse> => {
-      const result = await apiClient.GET('/api/submissions/{id}/history', {
-        params: {
-          path: { id: submissionId },
-          query: { page: queryParams.page, pageSize: queryParams.pageSize },
-        },
-        headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
-      });
-      return throwIfError(result);
-    },
-  });
+  const { data, isLoading } = useSubmissionHistory(submissionId, organizationId, queryParams);
 
   const historyRows = data?.data ?? [];
 
@@ -57,7 +41,7 @@ export default function SubmissionHistoryPage({
     window.open(data.data.presignedUrl, '_blank');
   };
 
-  const columns: ColumnDef<HistoryRow>[] = [
+  const columns: ColumnDef<SubmissionHistoryRow>[] = [
     { header: 'バージョン', cell: ({ row }) => `v${row.original.version}` },
     {
       header: '更新者',
