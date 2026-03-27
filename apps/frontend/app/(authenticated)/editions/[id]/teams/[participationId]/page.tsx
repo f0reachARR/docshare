@@ -8,18 +8,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@/contexts/AuthContext';
-import { useOrganization } from '@/contexts/OrganizationContext';
-import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
+import {
+  downloadSubmission,
+  useTeamCommentMutations,
+  useTeamDetailData,
+} from '@/features/editions/team-detail/hooks';
+import { ApiError } from '@/lib/api/client';
 import type { paths } from '@/lib/api/schema';
-import { queryKeys } from '@/lib/query/keys';
-import { getApiErrorMessage } from '@/lib/utils/errors';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DownloadIcon, ExternalLinkIcon, LockIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 import { parseAsInteger, useQueryStates } from 'nuqs';
 import { use, useState } from 'react';
-import { toast } from 'sonner';
 
 const paginationParsers = {
   page: parseAsInteger.withDefault(1),
@@ -55,119 +54,35 @@ export default function TeamDetailPage({
   params: Promise<{ id: string; participationId: string }>;
 }) {
   const { participationId } = use(params);
-  const { organizationId } = useOrganization();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   const [subQueryParams, setSubQueryParams] = useQueryStates(paginationParsers);
   const [commentBody, setCommentBody] = useState('');
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState('');
 
-  const { data: participation, isLoading: participationLoading } = useQuery({
-    queryKey: queryKeys.participations.detail(participationId, organizationId ?? ''),
-    queryFn: async () => {
-      const result = await apiClient.GET('/api/participations/{id}', {
-        params: { path: { id: participationId } },
-        headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
-      });
-      return throwIfError(result);
-    },
-  });
-
-  const { data: submissions, isLoading: submissionsLoading } = useQuery({
-    queryKey: queryKeys.participations.submissions(
-      participationId,
-      organizationId ?? '',
-      subQueryParams,
-    ),
-    queryFn: async () => {
-      const result = await apiClient.GET('/api/participations/{id}/submissions', {
-        params: {
-          path: { id: participationId },
-          query: { page: subQueryParams.page, pageSize: subQueryParams.pageSize },
-        },
-        headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
-      });
-      return throwIfError(result);
-    },
-  });
-
   const {
-    data: comments,
-    isLoading: commentsLoading,
-    error: commentsError,
-  } = useQuery({
-    queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
-    queryFn: async () => {
-      const result = await apiClient.GET('/api/participations/{id}/comments', {
-        params: { path: { id: participationId }, query: { pageSize: 100 } },
-        headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
-      });
-      return throwIfError(result);
-    },
-  });
+    organizationId,
+    user,
+    participation,
+    participationLoading,
+    submissions,
+    submissionsLoading,
+    comments,
+    commentsLoading,
+    commentsError,
+  } = useTeamDetailData(participationId, subQueryParams);
 
-  const postCommentMutation = useMutation({
-    mutationFn: async (body: string) => {
-      const result = await apiClient.POST('/api/participations/{id}/comments', {
-        params: { path: { id: participationId } },
-        body: { body },
-        headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
-      });
-      return throwIfError(result);
-    },
-    onSuccess: () => {
-      setCommentBody('');
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
-      });
-    },
-    onError: (err) => toast.error(getApiErrorMessage(err)),
-  });
-
-  const updateCommentMutation = useMutation({
-    mutationFn: async ({ id, body }: { id: string; body: string }) => {
-      const result = await apiClient.PUT('/api/comments/{id}', {
-        params: { path: { id } },
-        body: { body },
-        headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
-      });
-      return throwIfError(result);
-    },
-    onSuccess: () => {
-      setEditingCommentId(null);
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
-      });
-    },
-    onError: (err) => toast.error(getApiErrorMessage(err)),
-  });
-
-  const deleteCommentMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const result = await apiClient.DELETE('/api/comments/{id}', {
-        params: { path: { id } },
-        headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
-      });
-      if (!result.response.ok) throw new ApiError(result.response.status, result.error);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.comments(participationId, organizationId ?? '', {}),
-      });
-    },
-    onError: (err) => toast.error(getApiErrorMessage(err)),
-  });
-
-  const handleDownload = async (submissionId: string) => {
-    const result = await apiClient.GET('/api/submissions/{id}/download', {
-      params: { path: { id: submissionId } },
-      headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
+  const { postCommentMutation, updateCommentMutation, deleteCommentMutation } =
+    useTeamCommentMutations({
+      participationId,
+      organizationId: organizationId ?? '',
+      onPostSuccess: () => {
+        setCommentBody('');
+      },
+      onUpdateSuccess: () => {
+        setEditingCommentId(null);
+      },
     });
-    const data = throwIfError(result);
-    window.open(data.data.presignedUrl, '_blank');
-  };
 
   const submissionColumns: ColumnDef<ParticipationSubmissionItem>[] = [
     {
@@ -206,7 +121,7 @@ export default function TeamDetailPage({
             <Button
               variant='ghost'
               size='sm'
-              onClick={() => handleDownload(id)}
+              onClick={() => downloadSubmission(id, organizationId ?? '')}
               className='flex items-center gap-1 text-primary cursor-pointer'
             >
               <DownloadIcon className='h-3 w-3 mr-1' />

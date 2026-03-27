@@ -3,38 +3,16 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useInvalidateMe } from '@/contexts/AuthContext';
-import { authClient } from '@/lib/auth/client';
-import { useForm } from '@tanstack/react-form';
+import { useLoginForm } from '@/features/public/auth/login/hooks';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
-import { z } from 'zod';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard';
-  const invalidateMe = useInvalidateMe();
-  const [error, setError] = useState<string | null>(null);
-
-  const form = useForm({
-    defaultValues: { email: '', password: '' },
-    onSubmit: async ({ value }) => {
-      setError(null);
-      const result = await authClient.signIn.email({
-        email: value.email,
-        password: value.password,
-      });
-
-      if (result.error) {
-        setError('メールアドレスまたはパスワードが正しくありません');
-        return;
-      }
-
-      await invalidateMe();
-      router.push(callbackUrl);
-    },
+  const { form, error, validators } = useLoginForm(() => {
+    router.push(callbackUrl);
   });
 
   return (
@@ -52,10 +30,7 @@ export default function LoginPage() {
             }}
             className='space-y-4'
           >
-            <form.Field
-              name='email'
-              validators={{ onChange: z.string().email('有効なメールアドレスを入力してください') }}
-            >
+            <form.Field name='email' validators={{ onChange: validators.email }}>
               {(field) => (
                 <div className='space-y-1'>
                   <label htmlFor={field.name} className='text-sm font-medium'>
@@ -75,10 +50,7 @@ export default function LoginPage() {
                 </div>
               )}
             </form.Field>
-            <form.Field
-              name='password'
-              validators={{ onChange: z.string().min(1, 'パスワードを入力してください') }}
-            >
+            <form.Field name='password' validators={{ onChange: validators.password }}>
               {(field) => (
                 <div className='space-y-1'>
                   <label htmlFor={field.name} className='text-sm font-medium'>

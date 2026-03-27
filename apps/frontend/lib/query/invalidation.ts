@@ -21,3 +21,62 @@ export async function invalidateAdminTemplatesQueries(
 ): Promise<void> {
   await queryClient.invalidateQueries({ queryKey: queryKeys.admin.templatesPrefix(editionId) });
 }
+
+export async function invalidateAdminParticipationsQueries(
+  queryClient: QueryClient,
+  editionId: string,
+): Promise<void> {
+  await queryClient.invalidateQueries({
+    queryKey: queryKeys.admin.participationsPrefix(editionId),
+  });
+}
+
+export async function invalidateAdminUsersQueries(queryClient: QueryClient): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: queryKeys.admin.usersPrefix() });
+}
+
+export async function invalidateAdminUniversitiesQueries(queryClient: QueryClient): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: queryKeys.admin.universitiesPrefix() });
+}
+
+export async function invalidateUniversityMembersQueries(
+  queryClient: QueryClient,
+  orgId: string,
+): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: queryKeys.university.membersPrefix(orgId) });
+}
+
+export async function invalidateParticipationCommentsQueries(
+  queryClient: QueryClient,
+  participationId: string,
+  orgId: string,
+): Promise<void> {
+  await queryClient.invalidateQueries({
+    queryKey: queryKeys.participations.comments(participationId, orgId, {}),
+  });
+}
+
+export async function invalidateSubmissionStatusQueries(
+  queryClient: QueryClient,
+  editionId: string,
+  participationId: string,
+  orgId: string,
+  submissionId?: string,
+): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.editions.mySubmissionStatus(editionId, orgId),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.editions.submissionMatrixPrefix(editionId, orgId),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.participations.submissionsPrefix(participationId, orgId),
+    }),
+    submissionId
+      ? queryClient.invalidateQueries({
+          queryKey: queryKeys.submissions.historyPrefix(submissionId, orgId),
+        })
+      : Promise.resolve(),
+  ]);
+}

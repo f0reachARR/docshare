@@ -10,63 +10,34 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/AuthContext';
-import { useOrganization } from '@/contexts/OrganizationContext';
-import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
-import { queryKeys } from '@/lib/query/keys';
-import { getApiErrorMessage } from '@/lib/utils/errors';
-import { s3Put, validateFile } from '@/lib/utils/file';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type StatusItem,
+  type TemplateItem,
+  useSubmitPageData,
+  useTemplateSubmissionMutations,
+} from '@/features/editions/submit/hooks';
 import { ExternalLinkIcon, HistoryIcon, Trash2Icon, UploadIcon } from 'lucide-react';
 import Link from 'next/link';
 import { use, useRef, useState } from 'react';
-import { toast } from 'sonner';
 
 export default function SubmitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { user } = useAuth();
-  const { organizationId, currentOrg } = useOrganization();
-  const queryClient = useQueryClient();
-  const [selectedParticipationId, setSelectedParticipationId] = useState<string | null>(null);
-
-  const { data: editionData, isLoading: isEditionLoading } = useQuery({
-    queryKey: queryKeys.editions.detail(id),
-    queryFn: async () => {
-      const result = await apiClient.GET('/api/editions/{id}', {
-        params: { path: { id } },
-      });
-      return throwIfError(result);
-    },
-  });
-
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.editions.mySubmissionStatus(id, organizationId ?? ''),
-    queryFn: async () => {
-      if (!organizationId) return null;
-      const result = await apiClient.GET('/api/editions/{id}/my-submission-status', {
-        params: { path: { id } },
-        headers: { 'X-Organization-Id': organizationId },
-      });
-      return throwIfError(result);
-    },
-    enabled: !!organizationId,
-  });
-
-  const statusData = data?.data;
-  const participations = statusData?.participations ?? [];
-  const templates = statusData?.templates ?? [];
-  const items = statusData?.items ?? [];
-  const sharingStatus = statusData?.edition?.sharingStatus;
-  const edition = editionData?.data;
-
-  const activeParticipationId =
-    participations.length === 1 ? (participations[0]?.id ?? null) : selectedParticipationId;
-
-  const invalidateStatus = () => {
-    queryClient.invalidateQueries({
-      queryKey: queryKeys.editions.mySubmissionStatus(id, organizationId ?? ''),
-    });
-  };
+  const {
+    user,
+    organizationId,
+    selectedParticipationId,
+    setSelectedParticipationId,
+    isEditionLoading,
+    isLoading,
+    statusData,
+    participations,
+    templates,
+    items,
+    sharingStatus,
+    edition,
+    activeParticipationId,
+    canDelete,
+  } = useSubmitPageData(id);
 
   if (isLoading || isEditionLoading) {
     return (
@@ -93,7 +64,6 @@ export default function SubmitPage({ params }: { params: Promise<{ id: string }>
   }
 
   const isClosed = sharingStatus === 'closed';
-  const canDelete = !!(currentOrg?.role === 'owner' || user?.isAdmin);
 
   return (
     <div className='space-y-6'>
@@ -168,7 +138,7 @@ export default function SubmitPage({ params }: { params: Promise<{ id: string }>
               isClosed={isClosed}
               canDelete={canDelete}
               organizationId={organizationId}
-              onSuccess={invalidateStatus}
+              onSuccess={() => {}}
             />
           ) : (
             <EmptyState
@@ -186,7 +156,7 @@ export default function SubmitPage({ params }: { params: Promise<{ id: string }>
           isClosed={isClosed}
           canDelete={canDelete}
           organizationId={organizationId}
-          onSuccess={invalidateStatus}
+          onSuccess={() => {}}
         />
       ) : (
         <EmptyState title='この大会回への出場登録がありません' />
@@ -194,30 +164,6 @@ export default function SubmitPage({ params }: { params: Promise<{ id: string }>
     </div>
   );
 }
-
-type TemplateItem = {
-  id: string;
-  name: string;
-  description?: string | null;
-  acceptType: 'file' | 'url';
-  isRequired: boolean;
-  allowedExtensions: string[] | null;
-  urlPattern: string | null;
-  maxFileSizeMb: number;
-  sortOrder: number;
-};
-
-type StatusItem = {
-  participationId: string;
-  templateId: string;
-  submission: {
-    id: string;
-    version: number;
-    fileName: string | null;
-    url: string | null;
-    updatedAt?: unknown;
-  } | null;
-};
 
 function TemplateList({
   editionId,
@@ -281,128 +227,17 @@ function TemplateCard({
   organizationId: string;
   onSuccess: () => void;
 }) {
-  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [urlValue, setUrlValue] = useState(submission?.url ?? '');
-  const invalidateSubmissionQueries = () => {
-    queryClient.invalidateQueries({
-      queryKey: queryKeys.editions.mySubmissionStatus(editionId, organizationId),
-    });
-    queryClient.invalidateQueries({
-      queryKey: ['editions', editionId, 'submission-matrix', organizationId],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ['participations', participationId, 'submissions', organizationId],
-    });
-    if (submission) {
-      queryClient.invalidateQueries({
-        queryKey: ['submissions', submission.id, 'history', organizationId],
-      });
-    }
-  };
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      if (!submission) return;
-      const result = await apiClient.DELETE('/api/submissions/{id}', {
-        params: { path: { id: submission.id } },
-        headers: { 'X-Organization-Id': organizationId },
-      });
-      if (!result.response.ok) throw new ApiError(result.response.status, result.error);
-    },
-    onSuccess: () => {
-      toast.success('資料を削除しました');
-      invalidateSubmissionQueries();
-      onSuccess();
-    },
-    onError: (err) => {
-      toast.error(getApiErrorMessage(err, 'submission'));
-    },
-  });
-
-  const uploadFileMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const validation = validateFile(file, template);
-      if (!validation.ok) throw new Error(validation.message);
-
-      // 1. Presign
-      const presignResult = await apiClient.POST('/api/upload/presign', {
-        body: {
-          participationId,
-          templateId: template.id,
-          fileName: file.name,
-          contentType: file.type,
-          fileSizeBytes: file.size,
-        },
-        headers: { 'X-Organization-Id': organizationId },
-      });
-      const presign = throwIfError(presignResult);
-
-      // 2. S3 PUT
-      setUploadProgress(0);
-      await s3Put(presign.data.presignedUrl, file, setUploadProgress);
-
-      // 3. Submit
-      const body = {
-        s3Key: presign.data.s3Key,
-        fileName: file.name,
-        fileSizeBytes: file.size,
-        mimeType: file.type,
-      };
-
-      if (submission) {
-        const r = await apiClient.PUT('/api/submissions/{id}', {
-          params: { path: { id: submission.id } },
-          body,
-          headers: { 'X-Organization-Id': organizationId },
-        });
-        throwIfError(r);
-      } else {
-        const r = await apiClient.POST('/api/submissions', {
-          body: { ...body, templateId: template.id, participationId },
-          headers: { 'X-Organization-Id': organizationId },
-        });
-        throwIfError(r);
-      }
-    },
-    onSuccess: () => {
-      setUploadProgress(null);
-      toast.success('資料をアップロードしました');
-      invalidateSubmissionQueries();
-      onSuccess();
-    },
-    onError: (err) => {
-      setUploadProgress(null);
-      toast.error(err instanceof Error ? err.message : getApiErrorMessage(err, 'submission'));
-    },
-  });
-
-  const submitUrlMutation = useMutation({
-    mutationFn: async (url: string) => {
-      if (submission) {
-        const r = await apiClient.PUT('/api/submissions/{id}', {
-          params: { path: { id: submission.id } },
-          body: { url },
-          headers: { 'X-Organization-Id': organizationId },
-        });
-        throwIfError(r);
-      } else {
-        const r = await apiClient.POST('/api/submissions', {
-          body: { url, templateId: template.id, participationId },
-          headers: { 'X-Organization-Id': organizationId },
-        });
-        throwIfError(r);
-      }
-    },
-    onSuccess: () => {
-      toast.success('URLを登録しました');
-      invalidateSubmissionQueries();
-      onSuccess();
-    },
-    onError: (err) => {
-      toast.error(getApiErrorMessage(err, 'submission'));
-    },
+  const { deleteMutation, uploadFileMutation, submitUrlMutation } = useTemplateSubmissionMutations({
+    editionId,
+    participationId,
+    template,
+    submission,
+    organizationId,
+    onSuccess,
+    setUploadProgress,
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -468,7 +303,7 @@ function TemplateCard({
                 rel='noopener noreferrer'
                 className='flex items-center gap-1 text-primary hover:underline text-xs truncate'
               >
-                <ExternalLinkIcon className='h-3 w-3 flex-shrink-0' />
+                <ExternalLinkIcon className='h-3 w-3 shrink-0' />
                 {submission.url}
               </a>
             ) : null}
