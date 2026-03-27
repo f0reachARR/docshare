@@ -131,7 +131,7 @@ export default function CompetitionsPage() {
                         >
                           <Link
                             href={`/competitions/${edition.id}`}
-                            className='text-sm font-medium hover:underline'
+                            className='text-sm font-medium underline'
                           >
                             {edition.year}年 {edition.name}
                           </Link>

@@ -178,7 +178,7 @@ export default function TeamDetailPage({
         if (row.original.state === 'locked') {
           return (
             <span className='text-sm text-muted-foreground'>
-              提出済み / この資料種別は自校未提出のため閲覧できません
+              提出済み / 必須テンプレートをすべて提出するまで閲覧できません
             </span>
           );
         }

@@ -106,9 +106,7 @@ export function EditionSubmissionMatrix({ editionId }: { editionId: string }) {
             <LockIcon className='h-3.5 w-3.5' />
             提出済み
           </p>
-          <p className='text-[11px] text-muted-foreground'>
-            この資料種別は自校未提出のため閲覧できません
-          </p>
+          <p className='text-[11px] text-muted-foreground'>提出するまで閲覧できません</p>
         </div>
       );
     }
@@ -232,7 +230,7 @@ export function EditionSubmissionMatrix({ editionId }: { editionId: string }) {
                     </p>
                     <Link
                       href={`/editions/${editionId}/teams/${row.participation.id}`}
-                      className='text-primary hover:underline font-medium'
+                      className='text-primary underline font-medium'
                     >
                       {row.participation.teamName ?? '(チーム名なし)'}
                     </Link>
@@ -274,7 +272,7 @@ export function EditionSubmissionMatrix({ editionId }: { editionId: string }) {
                 <p className='text-xs text-muted-foreground'>{row.participation.universityName}</p>
                 <Link
                   href={`/editions/${editionId}/teams/${row.participation.id}`}
-                  className='text-primary hover:underline font-medium'
+                  className='text-primary underline font-medium'
                 >
                   {row.participation.teamName ?? '(チーム名なし)'}
                 </Link>

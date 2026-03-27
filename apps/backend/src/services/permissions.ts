@@ -143,17 +143,13 @@ export const getEditionViewAccess = async (
     submittedTemplateIds: submissionRows.map((row) => row.templateId),
   });
 
-  if (!canViewOtherUniversitySubmissions) {
-    return createDeniedEditionAccess();
-  }
-
-  const viewableTemplateIds = new Set(submissionRows.map((row) => row.templateId));
-
   return {
     canAccessEdition: true,
-    canViewComments: submissionRows.length > 0,
+    canViewComments: canViewOtherUniversitySubmissions && submissionRows.length > 0,
     canViewAllSubmissions: false,
-    viewableTemplateIds,
+    viewableTemplateIds: canViewOtherUniversitySubmissions
+      ? new Set(submissionRows.map((row) => row.templateId))
+      : new Set<string>(),
   };
 };
 
