@@ -3841,7 +3841,11 @@ export interface paths {
     };
     get: {
       parameters: {
-        query?: never;
+        query?: {
+          page?: number;
+          pageSize?: number;
+          sort?: 'createdAt:desc' | 'createdAt:asc';
+        };
         header?: never;
         path?: never;
         cookie?: never;
@@ -3886,6 +3890,38 @@ export interface paths {
                 /** Format: date-time */
                 updatedAt: string;
               }[];
+              pagination: {
+                page: number;
+                pageSize: number;
+                total: number;
+                totalPages: number;
+                hasNext: boolean;
+                hasPrev: boolean;
+              };
+            };
+          };
+        };
+        /** @description 不正クエリ */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Invalid query';
+            };
+          };
+        };
+        /** @description 不正ソート */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Invalid sort';
             };
           };
         };
@@ -4111,7 +4147,11 @@ export interface paths {
     };
     get: {
       parameters: {
-        query?: never;
+        query?: {
+          page?: number;
+          pageSize?: number;
+          sort?: 'createdAt:desc' | 'createdAt:asc';
+        };
         header?: never;
         path?: never;
         cookie?: never;
@@ -4164,6 +4204,38 @@ export interface paths {
                 /** Format: date-time */
                 updatedAt: string;
               }[];
+              pagination: {
+                page: number;
+                pageSize: number;
+                total: number;
+                totalPages: number;
+                hasNext: boolean;
+                hasPrev: boolean;
+              };
+            };
+          };
+        };
+        /** @description 不正クエリ */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Invalid query';
+            };
+          };
+        };
+        /** @description 不正ソート */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Invalid sort';
             };
           };
         };

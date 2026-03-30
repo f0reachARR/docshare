@@ -23,7 +23,13 @@ function RequestStatusBadge({ status }: { status: string }) {
 export default function AdminRequestsPage() {
   const {
     universityRequests,
+    universityPagination,
+    setUniversityPage,
+    setUniversityPageSize,
     participationRequests,
+    participationPagination,
+    setParticipationPage,
+    setParticipationPageSize,
     isLoading,
     approveUniversityMutation,
     rejectUniversityMutation,
@@ -181,6 +187,9 @@ export default function AdminRequestsPage() {
               (a, b) => Number(a.status !== 'pending') - Number(b.status !== 'pending'),
             )}
             isLoading={isLoading}
+            pagination={universityPagination}
+            onPageChange={setUniversityPage}
+            onPageSizeChange={setUniversityPageSize}
           />
         </TabsContent>
 
@@ -191,6 +200,9 @@ export default function AdminRequestsPage() {
               (a, b) => Number(a.status !== 'pending') - Number(b.status !== 'pending'),
             )}
             isLoading={isLoading}
+            pagination={participationPagination}
+            onPageChange={setParticipationPage}
+            onPageSizeChange={setParticipationPageSize}
           />
         </TabsContent>
       </Tabs>

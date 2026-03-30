@@ -1,5 +1,6 @@
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { parseAsInteger, useQueryStates } from 'nuqs';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { apiClient, throwIfError } from '@/lib/api/client';
@@ -26,6 +27,11 @@ export type UniversityRequest =
 
 export type ParticipationRequest =
   paths['/api/participation-requests']['get']['responses'][200]['content']['application/json']['data'][number];
+
+type AdminUniversityRequestsResponse =
+  paths['/api/admin/university-requests']['get']['responses'][200]['content']['application/json'];
+type AdminParticipationRequestsResponse =
+  paths['/api/admin/participation-requests']['get']['responses'][200]['content']['application/json'];
 
 type UniversityRequestFormValues = {
   universityName: string;
@@ -144,19 +150,47 @@ export function useParticipationRequestsSection(editionId: string, organizationI
 
 export function useAdminRequestsPage() {
   const queryClient = useQueryClient();
+  const [universityQueryParams, setUniversityQueryParams] = useQueryStates({
+    universityPage: parseAsInteger.withDefault(1),
+    universityPageSize: parseAsInteger.withDefault(20),
+  });
+  const [participationQueryParams, setParticipationQueryParams] = useQueryStates({
+    participationPage: parseAsInteger.withDefault(1),
+    participationPageSize: parseAsInteger.withDefault(20),
+  });
 
   const universityRequestsQuery = useQuery({
-    queryKey: queryKeys.admin.universityRequests(),
+    queryKey: queryKeys.admin.universityRequests({
+      page: universityQueryParams.universityPage,
+      pageSize: universityQueryParams.universityPageSize,
+    }),
     queryFn: async () => {
-      const result = await apiClient.GET('/api/admin/university-requests');
+      const result = await apiClient.GET('/api/admin/university-requests', {
+        params: {
+          query: {
+            page: universityQueryParams.universityPage,
+            pageSize: universityQueryParams.universityPageSize,
+          },
+        },
+      });
       return throwIfError(result);
     },
   });
 
   const participationRequestsQuery = useQuery({
-    queryKey: queryKeys.admin.participationRequests(),
+    queryKey: queryKeys.admin.participationRequests({
+      page: participationQueryParams.participationPage,
+      pageSize: participationQueryParams.participationPageSize,
+    }),
     queryFn: async () => {
-      const result = await apiClient.GET('/api/admin/participation-requests');
+      const result = await apiClient.GET('/api/admin/participation-requests', {
+        params: {
+          query: {
+            page: participationQueryParams.participationPage,
+            pageSize: participationQueryParams.participationPageSize,
+          },
+        },
+      });
       return throwIfError(result);
     },
   });
@@ -226,8 +260,19 @@ export function useAdminRequestsPage() {
   });
 
   return {
-    universityRequests: universityRequestsQuery.data?.data ?? [],
-    participationRequests: participationRequestsQuery.data?.data ?? [],
+    universityRequests: (universityRequestsQuery.data?.data ??
+      []) as AdminUniversityRequestsResponse['data'],
+    universityPagination: universityRequestsQuery.data?.pagination,
+    setUniversityPage: (page: number) => setUniversityQueryParams({ universityPage: page }),
+    setUniversityPageSize: (pageSize: number) =>
+      setUniversityQueryParams({ universityPageSize: pageSize, universityPage: 1 }),
+    participationRequests: (participationRequestsQuery.data?.data ??
+      []) as AdminParticipationRequestsResponse['data'],
+    participationPagination: participationRequestsQuery.data?.pagination,
+    setParticipationPage: (page: number) =>
+      setParticipationQueryParams({ participationPage: page }),
+    setParticipationPageSize: (pageSize: number) =>
+      setParticipationQueryParams({ participationPageSize: pageSize, participationPage: 1 }),
     isLoading: universityRequestsQuery.isLoading || participationRequestsQuery.isLoading,
     approveUniversityMutation,
     rejectUniversityMutation,

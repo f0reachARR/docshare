@@ -80,9 +80,11 @@ export const queryKeys = {
     universitiesPrefix: () => ['admin', 'universities'] as const,
     universities: (params: Record<string, unknown>) => ['admin', 'universities', params] as const,
     universityRequestsPrefix: () => ['admin', 'university-requests'] as const,
-    universityRequests: () => ['admin', 'university-requests'] as const,
+    universityRequests: (params: Record<string, unknown>) =>
+      ['admin', 'university-requests', params] as const,
     participationRequestsPrefix: () => ['admin', 'participation-requests'] as const,
-    participationRequests: () => ['admin', 'participation-requests'] as const,
+    participationRequests: (params: Record<string, unknown>) =>
+      ['admin', 'participation-requests', params] as const,
     usersPrefix: () => ['admin', 'users'] as const,
     users: (params: Record<string, unknown>) => ['admin', 'users', params] as const,
     userMemberships: (userId: string) => ['admin', 'users', userId, 'memberships'] as const,

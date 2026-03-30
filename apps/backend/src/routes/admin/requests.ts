@@ -1,7 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../../db/index.js';
+import {
+  createPaginatedResponseSchema,
+  createPaginationMeta,
+  createPagingQuerySchema,
+  parsePagingParams,
+} from '../../lib/pagination.js';
 import {
   competitionEditions,
   invitations,
@@ -73,15 +79,46 @@ const participationRequestSchema = z.object({
   updatedAt: z.date(),
 });
 
+const listUniversityRequestSortValues = ['createdAt:desc', 'createdAt:asc'] as const;
+const listParticipationRequestSortValues = ['createdAt:desc', 'createdAt:asc'] as const;
+
+const listUniversityRequestQuerySchema = createPagingQuerySchema(
+  listUniversityRequestSortValues,
+  false,
+);
+const listParticipationRequestQuerySchema = createPagingQuerySchema(
+  listParticipationRequestSortValues,
+  false,
+);
+
 const listUniversityRequestsRoute = createRoute({
   method: 'get',
   path: '/university-requests',
+  request: {
+    query: listUniversityRequestQuerySchema,
+  },
   responses: {
     200: {
       description: '大学追加依頼一覧',
       content: {
         'application/json': {
-          schema: z.object({ data: z.array(universityRequestSchema) }),
+          schema: createPaginatedResponseSchema(universityRequestSchema),
+        },
+      },
+    },
+    400: {
+      description: '不正クエリ',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid query') }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
         },
       },
     },
@@ -174,12 +211,31 @@ const rejectUniversityRequestRoute = createRoute({
 const listParticipationRequestsRoute = createRoute({
   method: 'get',
   path: '/participation-requests',
+  request: {
+    query: listParticipationRequestQuerySchema,
+  },
   responses: {
     200: {
       description: '出場追加依頼一覧',
       content: {
         'application/json': {
-          schema: z.object({ data: z.array(participationRequestSchema) }),
+          schema: createPaginatedResponseSchema(participationRequestSchema),
+        },
+      },
+    },
+    400: {
+      description: '不正クエリ',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid query') }),
+        },
+      },
+    },
+    422: {
+      description: '不正ソート',
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.literal('Invalid sort') }),
         },
       },
     },
@@ -321,7 +377,18 @@ const getUniqueUniversitySlug = async (name: string): Promise<string> => {
   }
 };
 
-const listUniversityRequestDetails = async () => {
+const listUniversityRequestDetails = async ({
+  page,
+  pageSize,
+  offset,
+  direction,
+}: {
+  page: number;
+  pageSize: number;
+  offset: number;
+  direction: 'asc' | 'desc';
+}) => {
+  const totalRows = await db.select({ total: count() }).from(universityCreationRequests);
   const rows = await db
     .select({
       id: universityCreationRequests.id,
@@ -342,37 +409,66 @@ const listUniversityRequestDetails = async () => {
     })
     .from(universityCreationRequests)
     .innerJoin(users, eq(users.id, universityCreationRequests.requestedByUserId))
-    .orderBy(desc(universityCreationRequests.createdAt));
+    .orderBy(
+      direction === 'asc'
+        ? asc(universityCreationRequests.createdAt)
+        : desc(universityCreationRequests.createdAt),
+    )
+    .limit(pageSize)
+    .offset(offset);
 
   const reviewerMap = await buildReviewerMap(rows.map((row) => row.reviewedByUserId));
 
-  return rows.map((row) => ({
-    id: row.id,
-    universityName: row.universityName,
-    representativeEmail: row.representativeEmail,
-    message: row.message,
-    status: row.status,
-    requestedBy: {
-      id: row.requestedById,
-      name: row.requestedByName,
-      email: row.requestedByEmail,
-    },
-    reviewedBy: row.reviewedByUserId ? (reviewerMap.get(row.reviewedByUserId) ?? null) : null,
-    reviewedAt: row.reviewedAt,
-    createdOrganizationId: row.createdOrganizationId,
-    createdInvitationId: row.createdInvitationId,
-    adminNote: row.adminNote,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  }));
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      universityName: row.universityName,
+      representativeEmail: row.representativeEmail,
+      message: row.message,
+      status: row.status,
+      requestedBy: {
+        id: row.requestedById,
+        name: row.requestedByName,
+        email: row.requestedByEmail,
+      },
+      reviewedBy: row.reviewedByUserId ? (reviewerMap.get(row.reviewedByUserId) ?? null) : null,
+      reviewedAt: row.reviewedAt,
+      createdOrganizationId: row.createdOrganizationId,
+      createdInvitationId: row.createdInvitationId,
+      adminNote: row.adminNote,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    })),
+    pagination: createPaginationMeta({
+      page,
+      pageSize,
+      total: totalRows[0]?.total ?? 0,
+    }),
+  };
 };
 
 const getUniversityRequestDetail = async (requestId: string) => {
-  const rows = await listUniversityRequestDetails();
-  return rows.find((row) => row.id === requestId) ?? null;
+  const rows = await listUniversityRequestDetails({
+    page: 1,
+    pageSize: 1000,
+    offset: 0,
+    direction: 'desc',
+  });
+  return rows.data.find((row) => row.id === requestId) ?? null;
 };
 
-const listParticipationRequestDetails = async () => {
+const listParticipationRequestDetails = async ({
+  page,
+  pageSize,
+  offset,
+  direction,
+}: {
+  page: number;
+  pageSize: number;
+  offset: number;
+  direction: 'asc' | 'desc';
+}) => {
+  const totalRows = await db.select({ total: count() }).from(participationRequests);
   const rows = await db
     .select({
       id: participationRequests.id,
@@ -398,47 +494,84 @@ const listParticipationRequestDetails = async () => {
     .innerJoin(users, eq(users.id, participationRequests.requestedByUserId))
     .innerJoin(competitionEditions, eq(competitionEditions.id, participationRequests.editionId))
     .innerJoin(organizations, eq(organizations.id, participationRequests.universityId))
-    .orderBy(desc(participationRequests.createdAt));
+    .orderBy(
+      direction === 'asc'
+        ? asc(participationRequests.createdAt)
+        : desc(participationRequests.createdAt),
+    )
+    .limit(pageSize)
+    .offset(offset);
 
   const reviewerMap = await buildReviewerMap(rows.map((row) => row.reviewedByUserId));
 
-  return rows.map((row) => ({
-    id: row.id,
-    edition: {
-      id: row.editionId,
-      name: row.editionName,
-      year: row.editionYear,
-    },
-    university: {
-      id: row.universityId,
-      name: row.universityName,
-    },
-    teamName: row.teamName,
-    message: row.message,
-    status: row.status,
-    requestedBy: {
-      id: row.requestedById,
-      name: row.requestedByName,
-      email: row.requestedByEmail,
-    },
-    reviewedBy: row.reviewedByUserId ? (reviewerMap.get(row.reviewedByUserId) ?? null) : null,
-    reviewedAt: row.reviewedAt,
-    createdParticipationId: row.createdParticipationId,
-    adminNote: row.adminNote,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  }));
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      edition: {
+        id: row.editionId,
+        name: row.editionName,
+        year: row.editionYear,
+      },
+      university: {
+        id: row.universityId,
+        name: row.universityName,
+      },
+      teamName: row.teamName,
+      message: row.message,
+      status: row.status,
+      requestedBy: {
+        id: row.requestedById,
+        name: row.requestedByName,
+        email: row.requestedByEmail,
+      },
+      reviewedBy: row.reviewedByUserId ? (reviewerMap.get(row.reviewedByUserId) ?? null) : null,
+      reviewedAt: row.reviewedAt,
+      createdParticipationId: row.createdParticipationId,
+      adminNote: row.adminNote,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    })),
+    pagination: createPaginationMeta({
+      page,
+      pageSize,
+      total: totalRows[0]?.total ?? 0,
+    }),
+  };
 };
 
 const getParticipationRequestDetail = async (requestId: string) => {
-  const rows = await listParticipationRequestDetails();
-  return rows.find((row) => row.id === requestId) ?? null;
+  const rows = await listParticipationRequestDetails({
+    page: 1,
+    pageSize: 1000,
+    offset: 0,
+    direction: 'desc',
+  });
+  return rows.data.find((row) => row.id === requestId) ?? null;
 };
 
 export const adminRequestRoutes = new OpenAPIHono<{ Variables: AppVariables }>();
 
 adminRequestRoutes.openapi(listUniversityRequestsRoute, async (c) => {
-  return c.json({ data: await listUniversityRequestDetails() }, 200);
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: listUniversityRequestQuerySchema,
+    sortValues: listUniversityRequestSortValues,
+    defaultSort: 'createdAt:desc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
+  }
+
+  const rows = await listUniversityRequestDetails({
+    page: parsed.value.page,
+    pageSize: parsed.value.pageSize,
+    offset: parsed.value.offset,
+    direction: parsed.value.sort.direction,
+  });
+  return c.json(rows, 200);
 });
 
 adminRequestRoutes.openapi(approveUniversityRequestRoute, async (c) => {
@@ -545,7 +678,26 @@ adminRequestRoutes.openapi(rejectUniversityRequestRoute, async (c) => {
 });
 
 adminRequestRoutes.openapi(listParticipationRequestsRoute, async (c) => {
-  return c.json({ data: await listParticipationRequestDetails() }, 200);
+  const parsed = parsePagingParams({
+    query: c.req.query(),
+    schema: listParticipationRequestQuerySchema,
+    sortValues: listParticipationRequestSortValues,
+    defaultSort: 'createdAt:desc',
+  });
+  if (!parsed.ok) {
+    if (parsed.status === 400) {
+      return c.json({ error: 'Invalid query' as const }, 400);
+    }
+    return c.json({ error: 'Invalid sort' as const }, 422);
+  }
+
+  const rows = await listParticipationRequestDetails({
+    page: parsed.value.page,
+    pageSize: parsed.value.pageSize,
+    offset: parsed.value.offset,
+    direction: parsed.value.sort.direction,
+  });
+  return c.json(rows, 200);
 });
 
 adminRequestRoutes.openapi(approveParticipationRequestRoute, async (c) => {
