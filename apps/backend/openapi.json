@@ -6523,6 +6523,40 @@
     },
     "/api/admin/university-requests": {
       "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "createdAt:desc",
+              "enum": ["createdAt:desc", "createdAt:asc"]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "大学追加依頼一覧",
@@ -6629,9 +6663,72 @@
                           "updatedAt"
                         ]
                       }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPages": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "hasNext": {
+                          "type": "boolean"
+                        },
+                        "hasPrev": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
                     }
                   },
-                  "required": ["data"]
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Invalid query"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Invalid sort"]
+                    }
+                  },
+                  "required": ["error"]
                 }
               }
             }
@@ -6990,6 +7087,40 @@
     },
     "/api/admin/participation-requests": {
       "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "createdAt:desc",
+              "enum": ["createdAt:desc", "createdAt:asc"]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "出場追加依頼一覧",
@@ -7118,9 +7249,72 @@
                           "updatedAt"
                         ]
                       }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPages": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "hasNext": {
+                          "type": "boolean"
+                        },
+                        "hasPrev": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasNext", "hasPrev"]
                     }
                   },
-                  "required": ["data"]
+                  "required": ["data", "pagination"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正クエリ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Invalid query"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "不正ソート",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Invalid sort"]
+                    }
+                  },
+                  "required": ["error"]
                 }
               }
             }
