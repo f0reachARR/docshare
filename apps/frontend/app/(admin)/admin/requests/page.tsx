@@ -169,7 +169,7 @@ export default function AdminRequestsPage() {
       </div>
 
       <Tabs defaultValue='university' className='space-y-4'>
-        <TabsList variant='line'>
+        <TabsList>
           <TabsTrigger value='university'>大学追加依頼</TabsTrigger>
           <TabsTrigger value='participation'>出場追加依頼</TabsTrigger>
         </TabsList>
