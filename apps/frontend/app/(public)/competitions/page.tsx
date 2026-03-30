@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient, throwIfError } from '@/lib/api/client';
-import { queryKeys } from '@/lib/query/keys';
-import { useQuery } from '@tanstack/react-query';
+import {
+  useCompetitionsEditions,
+  useCompetitionsSeries,
+} from '@/features/public/competitions/query';
 import { ChevronDownIcon, ChevronRightIcon, ExternalLinkIcon } from 'lucide-react';
 import Link from 'next/link';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
@@ -23,28 +24,8 @@ export default function CompetitionsPage() {
   const [params, setParams] = useQueryStates(paginationParsers);
   const [expandedSeries, setExpandedSeries] = useState<Record<string, boolean>>({});
 
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.series.all(params),
-    queryFn: async () => {
-      const result = await apiClient.GET('/api/series', {
-        params: {
-          query: { page: params.page, pageSize: params.pageSize, q: params.q || undefined },
-        },
-      });
-      return throwIfError(result);
-    },
-  });
-
-  // Fetch editions for expanded series
-  const { data: allEditions } = useQuery({
-    queryKey: ['editions-all'],
-    queryFn: async () => {
-      const result = await apiClient.GET('/api/editions', {
-        params: { query: { pageSize: 100 } },
-      });
-      return throwIfError(result);
-    },
-  });
+  const { data, isLoading } = useCompetitionsSeries(params);
+  const { data: allEditions } = useCompetitionsEditions();
 
   const handleSearch = (q: string) => {
     setParams({ q, page: 1 });

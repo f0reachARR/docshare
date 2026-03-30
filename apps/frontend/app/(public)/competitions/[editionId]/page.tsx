@@ -7,9 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiClient, throwIfError } from '@/lib/api/client';
-import { queryKeys } from '@/lib/query/keys';
-import { useQuery } from '@tanstack/react-query';
+import { useCompetitionDetail } from '@/features/public/competition-detail/query';
 import Link from 'next/link';
 import { use } from 'react';
 
@@ -18,15 +16,7 @@ export default function EditionDetailPage({ params }: { params: Promise<{ editio
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const loginHref = `/auth/login?callbackUrl=${encodeURIComponent(`/competitions/${editionId}`)}`;
 
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.editions.detail(editionId),
-    queryFn: async () => {
-      const result = await apiClient.GET('/api/editions/{id}', {
-        params: { path: { id: editionId } },
-      });
-      return throwIfError(result);
-    },
-  });
+  const { data, isLoading } = useCompetitionDetail(editionId);
 
   const edition = data?.data;
 

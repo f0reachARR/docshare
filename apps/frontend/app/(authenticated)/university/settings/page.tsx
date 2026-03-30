@@ -13,110 +13,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAuth } from '@/contexts/AuthContext';
-import { useOrganization } from '@/contexts/OrganizationContext';
-import { ApiError, apiClient, throwIfError } from '@/lib/api/client';
-import { queryKeys } from '@/lib/query/keys';
-import { getApiErrorMessage } from '@/lib/utils/errors';
+import { type Member, useUniversitySettingsPage } from '@/features/university/settings/hooks';
 import { ROLE_LABELS } from '@/lib/utils/status';
-import { useForm } from '@tanstack/react-form';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { toast } from 'sonner';
-import { z } from 'zod';
-
-type Member = {
-  id: string;
-  userId: string;
-  name: string;
-  email: string;
-  role: 'owner' | 'member';
-  createdAt: unknown;
-};
 
 export default function UniversitySettingsPage() {
-  const { user } = useAuth();
-  const { organizationId, currentOrg } = useOrganization();
-  const queryClient = useQueryClient();
-  const canEdit = currentOrg?.role === 'owner' || user?.isAdmin;
-
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.university.members(organizationId ?? '', {}),
-    queryFn: async () => {
-      if (!organizationId) return null;
-      const result = await apiClient.GET('/api/university/members', {
-        params: { header: { 'x-organization-id': organizationId } },
-      });
-      return throwIfError(result);
-    },
-    enabled: !!organizationId,
-  });
-
-  const inviteForm = useForm({
-    defaultValues: { email: '', role: 'member' as 'owner' | 'member' },
-    onSubmit: async ({ value }) => {
-      await inviteMutation.mutateAsync(value);
-    },
-  });
-
-  const inviteMutation = useMutation({
-    mutationFn: async (values: { email: string; role: 'owner' | 'member' }) => {
-      const result = await apiClient.POST('/api/university/invite', {
-        params: { header: { 'x-organization-id': organizationId ?? '' } },
-        body: { email: values.email, role: values.role },
-      });
-      return throwIfError(result);
-    },
-    onSuccess: () => {
-      toast.success('招待メールを送信しました');
-      inviteForm.reset();
-    },
-    onError: (err) => toast.error(getApiErrorMessage(err)),
-  });
-
-  const changeRoleMutation = useMutation({
-    mutationFn: async ({ memberId, role }: { memberId: string; role: string }) => {
-      const result = await apiClient.PUT('/api/university/members/{id}/role', {
-        params: { path: { id: memberId }, header: { 'x-organization-id': organizationId ?? '' } },
-        body: { role: role as 'owner' | 'member' },
-      });
-      return throwIfError(result);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.university.members(organizationId ?? '', {}),
-      });
-    },
-    onError: (err) => {
-      const msg =
-        err instanceof ApiError && err.status === 409
-          ? '最後のオーナーは変更できません'
-          : getApiErrorMessage(err);
-      toast.error(msg);
-    },
-  });
-
-  const deleteMemberMutation = useMutation({
-    mutationFn: async (memberId: string) => {
-      const result = await apiClient.DELETE('/api/university/members/{id}', {
-        params: { path: { id: memberId }, header: { 'x-organization-id': organizationId ?? '' } },
-      });
-      if (!result.response.ok) throw new ApiError(result.response.status, result.error);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.university.members(organizationId ?? '', {}),
-      });
-      toast.success('メンバーを削除しました');
-    },
-    onError: (err) => {
-      const msg =
-        err instanceof ApiError && err.status === 409
-          ? '最後のオーナーは削除できません'
-          : getApiErrorMessage(err);
-      toast.error(msg);
-    },
-  });
+  const {
+    currentOrg,
+    canEdit,
+    data,
+    isLoading,
+    inviteForm,
+    inviteMutation,
+    changeRoleMutation,
+    deleteMemberMutation,
+    validators,
+  } = useUniversitySettingsPage();
 
   const columns: ColumnDef<Member>[] = [
     { header: '名前', accessorKey: 'name' },
@@ -183,12 +95,7 @@ export default function UniversitySettingsPage() {
               }}
               className='flex gap-3 flex-wrap'
             >
-              <inviteForm.Field
-                name='email'
-                validators={{
-                  onChange: z.string().email('有効なメールアドレスを入力してください'),
-                }}
-              >
+              <inviteForm.Field name='email' validators={{ onChange: validators.email }}>
                 {(field) => (
                   <div className='flex-1 min-w-48 space-y-1'>
                     <Input

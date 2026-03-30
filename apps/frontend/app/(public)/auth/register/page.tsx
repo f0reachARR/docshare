@@ -3,37 +3,14 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useInvalidateMe } from '@/contexts/AuthContext';
-import { authClient } from '@/lib/auth/client';
-import { useForm } from '@tanstack/react-form';
+import { useRegisterForm } from '@/features/public/auth/register/hooks';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { z } from 'zod';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const invalidateMe = useInvalidateMe();
-  const [error, setError] = useState<string | null>(null);
-
-  const form = useForm({
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
-    onSubmit: async ({ value }) => {
-      setError(null);
-      const result = await authClient.signUp.email({
-        name: value.name,
-        email: value.email,
-        password: value.password,
-      });
-
-      if (result.error) {
-        setError(result.error.message ?? 'アカウント作成に失敗しました');
-        return;
-      }
-
-      await invalidateMe();
-      router.push('/dashboard');
-    },
+  const { form, error, validators } = useRegisterForm(() => {
+    router.push('/dashboard');
   });
 
   return (
@@ -51,10 +28,7 @@ export default function RegisterPage() {
             }}
             className='space-y-4'
           >
-            <form.Field
-              name='name'
-              validators={{ onChange: z.string().min(1, '名前を入力してください') }}
-            >
+            <form.Field name='name' validators={{ onChange: validators.name }}>
               {(field) => (
                 <div className='space-y-1'>
                   <label htmlFor={field.name} className='text-sm font-medium'>
@@ -73,10 +47,7 @@ export default function RegisterPage() {
                 </div>
               )}
             </form.Field>
-            <form.Field
-              name='email'
-              validators={{ onChange: z.string().email('有効なメールアドレスを入力してください') }}
-            >
+            <form.Field name='email' validators={{ onChange: validators.email }}>
               {(field) => (
                 <div className='space-y-1'>
                   <label htmlFor={field.name} className='text-sm font-medium'>
@@ -96,12 +67,7 @@ export default function RegisterPage() {
                 </div>
               )}
             </form.Field>
-            <form.Field
-              name='password'
-              validators={{
-                onChange: z.string().min(8, 'パスワードは8文字以上で入力してください'),
-              }}
-            >
+            <form.Field name='password' validators={{ onChange: validators.password }}>
               {(field) => (
                 <div className='space-y-1'>
                   <label htmlFor={field.name} className='text-sm font-medium'>
@@ -125,10 +91,10 @@ export default function RegisterPage() {
               validators={{
                 onChangeListenTo: ['password'],
                 onChange: ({ value, fieldApi }) => {
-                  if (value !== fieldApi.form.getFieldValue('password')) {
-                    return { message: 'パスワードが一致しません' };
-                  }
-                  return undefined;
+                  return validators.confirmPassword({
+                    value,
+                    password: fieldApi.form.getFieldValue('password'),
+                  });
                 },
               }}
             >
