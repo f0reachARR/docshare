@@ -308,3 +308,85 @@ export const comments = pgTable(
     editionDeletedIdx: index('comment_edition_deleted_idx').on(table.editionId, table.deletedAt),
   }),
 );
+
+export const universityCreationRequests = pgTable(
+  'university_creation_request',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    requestedByUserId: text('requested_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    universityName: text('university_name').notNull(),
+    representativeEmail: text('representative_email').notNull(),
+    message: text('message').notNull(),
+    status: text('status')
+      .$type<'pending' | 'approved' | 'rejected'>()
+      .notNull()
+      .default('pending'),
+    reviewedByUserId: text('reviewed_by_user_id').references(() => users.id, {
+      onDelete: 'restrict',
+    }),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    createdOrganizationId: text('created_organization_id').references(() => organizations.id, {
+      onDelete: 'set null',
+    }),
+    createdInvitationId: text('created_invitation_id').references(() => invitations.id, {
+      onDelete: 'set null',
+    }),
+    adminNote: text('admin_note'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    requestedByIdx: index('university_creation_request_requested_by_idx').on(
+      table.requestedByUserId,
+    ),
+    statusCreatedAtIdx: index('university_creation_request_status_created_at_idx').on(
+      table.status,
+      table.createdAt,
+    ),
+  }),
+);
+
+export const participationRequests = pgTable(
+  'participation_request',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => competitionEditions.id, { onDelete: 'cascade' }),
+    universityId: text('university_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    requestedByUserId: text('requested_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    teamName: text('team_name'),
+    message: text('message').notNull(),
+    status: text('status')
+      .$type<'pending' | 'approved' | 'rejected'>()
+      .notNull()
+      .default('pending'),
+    reviewedByUserId: text('reviewed_by_user_id').references(() => users.id, {
+      onDelete: 'restrict',
+    }),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    createdParticipationId: uuid('created_participation_id').references(() => participations.id, {
+      onDelete: 'set null',
+    }),
+    adminNote: text('admin_note'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    editionUniversityIdx: index('participation_request_edition_university_idx').on(
+      table.editionId,
+      table.universityId,
+    ),
+    requestedByIdx: index('participation_request_requested_by_idx').on(table.requestedByUserId),
+    statusCreatedAtIdx: index('participation_request_status_created_at_idx').on(
+      table.status,
+      table.createdAt,
+    ),
+  }),
+);

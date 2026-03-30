@@ -155,6 +155,7 @@ const mockPresignDownload = vi.fn(async (_bucket: string, key: string) => ({
   presignedUrl: `https://files.example.test/${key}`,
   expiresIn: 300,
 }));
+const mockSendEmail = vi.fn(async () => ({ id: 'email-1' }));
 
 vi.mock('../services/permissions.js', () => ({
   canDeleteSubmission: vi.fn(async () => true),
@@ -180,6 +181,12 @@ vi.mock('../services/storage.js', () => ({
   presignDownload: mockPresignDownload,
   presignUpload: vi.fn(),
   presignUploadByKey: vi.fn(),
+}));
+
+vi.mock('../services/email/index.js', () => ({
+  emailService: {
+    sendEmail: mockSendEmail,
+  },
 }));
 
 const { createApp } = await import('../app.js');
@@ -1047,6 +1054,381 @@ describe('issue #11 api integration', () => {
     });
   });
 
+  it('creates and lists university requests for the current user', async () => {
+    const app = createApp();
+
+    enqueueDb([
+      {
+        id: '50000000-0000-0000-0000-000000000001',
+        requestedByUserId: 'member-user',
+        universityName: 'Robocon University',
+        representativeEmail: 'owner@robocon.example',
+        message: 'Please add us',
+        status: 'pending',
+        reviewedAt: null,
+        createdOrganizationId: null,
+        createdInvitationId: null,
+        adminNote: null,
+        createdAt: '2026-03-20T00:00:00.000Z',
+        updatedAt: '2026-03-20T00:00:00.000Z',
+      },
+    ]);
+
+    const createRes = await app.request('/api/university-requests', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-role': 'member',
+      },
+      body: JSON.stringify({
+        universityName: 'Robocon University',
+        representativeEmail: 'owner@robocon.example',
+        message: 'Please add us',
+      }),
+    });
+
+    expect(createRes.status).toBe(201);
+    expect(await createRes.json()).toEqual({
+      data: {
+        id: '50000000-0000-0000-0000-000000000001',
+        universityName: 'Robocon University',
+        representativeEmail: 'owner@robocon.example',
+        message: 'Please add us',
+        status: 'pending',
+        requestedBy: {
+          id: 'member-user',
+          name: 'member',
+          email: 'member@example.com',
+        },
+        reviewedBy: null,
+        reviewedAt: null,
+        createdOrganizationId: null,
+        createdInvitationId: null,
+        adminNote: null,
+        createdAt: '2026-03-20T00:00:00.000Z',
+        updatedAt: '2026-03-20T00:00:00.000Z',
+      },
+    });
+
+    enqueueDb([
+      {
+        id: '50000000-0000-0000-0000-000000000001',
+        universityName: 'Robocon University',
+        representativeEmail: 'owner@robocon.example',
+        message: 'Please add us',
+        status: 'pending',
+        requestedById: 'member-user',
+        requestedByName: 'member',
+        requestedByEmail: 'member@example.com',
+        reviewedAt: null,
+        createdOrganizationId: null,
+        createdInvitationId: null,
+        adminNote: null,
+        createdAt: '2026-03-20T00:00:00.000Z',
+        updatedAt: '2026-03-20T00:00:00.000Z',
+      },
+    ]);
+
+    const listRes = await app.request('/api/university-requests', {
+      headers: { 'x-role': 'member' },
+    });
+
+    expect(listRes.status).toBe(200);
+    expect(await listRes.json()).toEqual({
+      data: [
+        {
+          id: '50000000-0000-0000-0000-000000000001',
+          universityName: 'Robocon University',
+          representativeEmail: 'owner@robocon.example',
+          message: 'Please add us',
+          status: 'pending',
+          requestedBy: {
+            id: 'member-user',
+            name: 'member',
+            email: 'member@example.com',
+          },
+          reviewedBy: null,
+          reviewedAt: null,
+          createdOrganizationId: null,
+          createdInvitationId: null,
+          adminNote: null,
+          createdAt: '2026-03-20T00:00:00.000Z',
+          updatedAt: '2026-03-20T00:00:00.000Z',
+        },
+      ],
+    });
+  });
+
+  it('approves and rejects university requests from admin APIs', async () => {
+    const app = createApp();
+
+    enqueueDb(
+      [
+        {
+          id: '50000000-0000-0000-0000-000000000002',
+          requestedByUserId: 'member-user',
+          universityName: 'Approve University',
+          representativeEmail: 'owner@approve.example',
+          message: 'Approve this',
+          status: 'pending',
+        },
+      ],
+      [],
+      [],
+      [],
+      [],
+      [
+        {
+          id: '50000000-0000-0000-0000-000000000002',
+          universityName: 'Approve University',
+          representativeEmail: 'owner@approve.example',
+          message: 'Approve this',
+          status: 'approved',
+          requestedById: 'member-user',
+          requestedByName: 'member',
+          requestedByEmail: 'member@example.com',
+          reviewedByUserId: 'admin-user',
+          reviewedAt: '2026-03-20T00:00:00.000Z',
+          createdOrganizationId: 'org-new',
+          createdInvitationId: 'invite-new',
+          adminNote: null,
+          createdAt: '2026-03-20T00:00:00.000Z',
+          updatedAt: '2026-03-20T00:00:00.000Z',
+        },
+      ],
+      [{ id: 'admin-user', name: 'admin', email: 'admin@example.com' }],
+    );
+
+    const approveRes = await app.request(
+      '/api/admin/university-requests/50000000-0000-0000-0000-000000000002/approve',
+      {
+        method: 'POST',
+        headers: { 'x-role': 'admin' },
+      },
+    );
+
+    expect(approveRes.status).toBe(200);
+    expect(mockSendEmail).toHaveBeenCalledWith({
+      to: 'owner@approve.example',
+      subject: 'Approve University の代表者招待',
+      html: '招待リンク: invitation:invite-new',
+    });
+    const approveJson = (await approveRes.json()) as {
+      data: { status: string; createdOrganizationId: string };
+    };
+    expect(approveJson.data.status).toBe('approved');
+    expect(approveJson.data.createdOrganizationId).toBe('org-new');
+
+    enqueueDb(
+      [
+        {
+          id: '50000000-0000-0000-0000-000000000003',
+          requestedByUserId: 'member-user',
+          universityName: 'Reject University',
+          representativeEmail: 'owner@reject.example',
+          message: 'Reject this',
+          status: 'pending',
+        },
+      ],
+      [],
+      [
+        {
+          id: '50000000-0000-0000-0000-000000000003',
+          universityName: 'Reject University',
+          representativeEmail: 'owner@reject.example',
+          message: 'Reject this',
+          status: 'rejected',
+          requestedById: 'member-user',
+          requestedByName: 'member',
+          requestedByEmail: 'member@example.com',
+          reviewedByUserId: 'admin-user',
+          reviewedAt: '2026-03-20T00:00:00.000Z',
+          createdOrganizationId: null,
+          createdInvitationId: null,
+          adminNote: 'duplicate request',
+          createdAt: '2026-03-20T00:00:00.000Z',
+          updatedAt: '2026-03-20T00:00:00.000Z',
+        },
+      ],
+      [{ id: 'admin-user', name: 'admin', email: 'admin@example.com' }],
+    );
+
+    const rejectRes = await app.request(
+      '/api/admin/university-requests/50000000-0000-0000-0000-000000000003/reject',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-role': 'admin',
+        },
+        body: JSON.stringify({ adminNote: 'duplicate request' }),
+      },
+    );
+
+    expect(rejectRes.status).toBe(200);
+    expect(((await rejectRes.json()) as { data: { adminNote: string } }).data.adminNote).toBe(
+      'duplicate request',
+    );
+  });
+
+  it('creates and approves participation requests', async () => {
+    const app = createApp();
+
+    enqueueDb(
+      [
+        {
+          id: '00000000-0000-0000-0000-000000000050',
+          name: '2026 Main Edition',
+          year: 2026,
+        },
+      ],
+      [{ id: 'org-1', name: 'Org One' }],
+      [
+        {
+          id: '60000000-0000-0000-0000-000000000001',
+          editionId: '00000000-0000-0000-0000-000000000050',
+          universityId: 'org-1',
+          requestedByUserId: 'owner-user',
+          teamName: 'Team Rocket',
+          message: 'Please add another team',
+          status: 'pending',
+          reviewedAt: null,
+          createdParticipationId: null,
+          adminNote: null,
+          createdAt: '2026-03-20T00:00:00.000Z',
+          updatedAt: '2026-03-20T00:00:00.000Z',
+        },
+      ],
+    );
+
+    const createRes = await app.request(
+      '/api/editions/00000000-0000-0000-0000-000000000050/participation-requests',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-role': 'owner',
+          'x-organization-id': 'org-1',
+        },
+        body: JSON.stringify({
+          teamName: 'Team Rocket',
+          message: 'Please add another team',
+        }),
+      },
+    );
+
+    expect(createRes.status).toBe(201);
+    expect(
+      ((await createRes.json()) as { data: { university: { name: string } } }).data.university.name,
+    ).toBe('Org One');
+
+    const missingOrgRes = await app.request(
+      '/api/editions/00000000-0000-0000-0000-000000000050/participation-requests',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-role': 'member',
+        },
+        body: JSON.stringify({
+          teamName: 'Team Rocket',
+          message: 'Please add another team',
+        }),
+      },
+    );
+    expect(missingOrgRes.status).toBe(400);
+
+    enqueueDb(
+      [
+        {
+          id: '60000000-0000-0000-0000-000000000001',
+          editionId: '00000000-0000-0000-0000-000000000050',
+          universityId: 'org-1',
+          requestedByUserId: 'owner-user',
+          teamName: 'Team Rocket',
+          message: 'Please add another team',
+          status: 'pending',
+        },
+      ],
+      [],
+      [
+        {
+          id: '10000000-0000-0000-0000-000000000099',
+        },
+      ],
+      [],
+      [
+        {
+          id: '60000000-0000-0000-0000-000000000001',
+          editionId: '00000000-0000-0000-0000-000000000050',
+          editionName: '2026 Main Edition',
+          editionYear: 2026,
+          universityId: 'org-1',
+          universityName: 'Org One',
+          teamName: 'Team Rocket',
+          message: 'Please add another team',
+          status: 'approved',
+          requestedById: 'owner-user',
+          requestedByName: 'owner',
+          requestedByEmail: 'owner@example.com',
+          reviewedByUserId: 'admin-user',
+          reviewedAt: '2026-03-20T00:00:00.000Z',
+          createdParticipationId: '10000000-0000-0000-0000-000000000099',
+          adminNote: null,
+          createdAt: '2026-03-20T00:00:00.000Z',
+          updatedAt: '2026-03-20T00:00:00.000Z',
+        },
+      ],
+      [{ id: 'admin-user', name: 'admin', email: 'admin@example.com' }],
+    );
+
+    const approveRes = await app.request(
+      '/api/admin/participation-requests/60000000-0000-0000-0000-000000000001/approve',
+      {
+        method: 'POST',
+        headers: { 'x-role': 'admin' },
+      },
+    );
+
+    expect(approveRes.status).toBe(200);
+    expect(
+      ((await approveRes.json()) as { data: { createdParticipationId: string } }).data
+        .createdParticipationId,
+    ).toBe('10000000-0000-0000-0000-000000000099');
+
+    enqueueDb(
+      [
+        {
+          id: '60000000-0000-0000-0000-000000000002',
+          editionId: '00000000-0000-0000-0000-000000000050',
+          universityId: 'org-1',
+          requestedByUserId: 'owner-user',
+          teamName: 'Team Rocket',
+          message: 'Duplicate team',
+          status: 'pending',
+        },
+      ],
+      [{ id: '10000000-0000-0000-0000-000000000099' }],
+    );
+
+    const duplicateApproveRes = await app.request(
+      '/api/admin/participation-requests/60000000-0000-0000-0000-000000000002/approve',
+      {
+        method: 'POST',
+        headers: { 'x-role': 'admin' },
+      },
+    );
+    expect(duplicateApproveRes.status).toBe(409);
+  });
+
+  it('blocks non-admin access to admin request APIs', async () => {
+    const app = createApp();
+    const res = await app.request('/api/admin/university-requests', {
+      headers: { 'x-role': 'member' },
+    });
+    expect(res.status).toBe(403);
+  });
+
   it('OpenAPI includes new paths', async () => {
     const app = createApp();
     const res = await app.request('/api/openapi.json');
@@ -1078,6 +1460,15 @@ describe('issue #11 api integration', () => {
     expect(json.paths['/api/admin/users/{userId}/memberships']).toBeDefined();
     expect(json.paths['/api/admin/memberships/{memberId}/role']).toBeDefined();
     expect(json.paths['/api/admin/memberships/{memberId}']).toBeDefined();
+    expect(json.paths['/api/university-requests']).toBeDefined();
+    expect(json.paths['/api/participation-requests']).toBeDefined();
+    expect(json.paths['/api/editions/{id}/participation-requests']).toBeDefined();
+    expect(json.paths['/api/admin/university-requests']).toBeDefined();
+    expect(json.paths['/api/admin/university-requests/{id}/approve']).toBeDefined();
+    expect(json.paths['/api/admin/university-requests/{id}/reject']).toBeDefined();
+    expect(json.paths['/api/admin/participation-requests']).toBeDefined();
+    expect(json.paths['/api/admin/participation-requests/{id}/approve']).toBeDefined();
+    expect(json.paths['/api/admin/participation-requests/{id}/reject']).toBeDefined();
 
     const myParticipationsPath = json.paths['/api/editions/{id}/my-participations'] as {
       get?: { responses?: Record<string, unknown> };

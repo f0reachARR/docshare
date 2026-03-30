@@ -58,6 +58,13 @@ export const queryKeys = {
       [...queryKeys.university.membersPrefix(orgId), params] as const,
   },
 
+  requests: {
+    universityPrefix: () => ['requests', 'university'] as const,
+    university: () => ['requests', 'university'] as const,
+    participationPrefix: () => ['requests', 'participation'] as const,
+    participation: () => ['requests', 'participation'] as const,
+  },
+
   admin: {
     seriesPrefix: () => ['admin', 'series'] as const,
     series: (params: Record<string, unknown>) => ['admin', 'series', params] as const,
@@ -72,6 +79,10 @@ export const queryKeys = {
       ['admin', 'editions', editionId, 'templates', params] as const,
     universitiesPrefix: () => ['admin', 'universities'] as const,
     universities: (params: Record<string, unknown>) => ['admin', 'universities', params] as const,
+    universityRequestsPrefix: () => ['admin', 'university-requests'] as const,
+    universityRequests: () => ['admin', 'university-requests'] as const,
+    participationRequestsPrefix: () => ['admin', 'participation-requests'] as const,
+    participationRequests: () => ['admin', 'participation-requests'] as const,
     usersPrefix: () => ['admin', 'users'] as const,
     users: (params: Record<string, unknown>) => ['admin', 'users', params] as const,
     userMemberships: (userId: string) => ['admin', 'users', userId, 'memberships'] as const,

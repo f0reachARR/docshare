@@ -39,6 +39,28 @@ export async function invalidateAdminUniversitiesQueries(queryClient: QueryClien
   await queryClient.invalidateQueries({ queryKey: queryKeys.admin.universitiesPrefix() });
 }
 
+export async function invalidateUniversityRequestQueries(queryClient: QueryClient): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: queryKeys.requests.universityPrefix() });
+}
+
+export async function invalidateParticipationRequestQueries(
+  queryClient: QueryClient,
+): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: queryKeys.requests.participationPrefix() });
+}
+
+export async function invalidateAdminUniversityRequestQueries(
+  queryClient: QueryClient,
+): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: queryKeys.admin.universityRequestsPrefix() });
+}
+
+export async function invalidateAdminParticipationRequestQueries(
+  queryClient: QueryClient,
+): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: queryKeys.admin.participationRequestsPrefix() });
+}
+
 export async function invalidateUniversityMembersQueries(
   queryClient: QueryClient,
   orgId: string,

@@ -119,13 +119,22 @@
                             }
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
-                        "required": ["id", "name", "description", "externalLinks"]
+                        "required": [
+                          "id",
+                          "name",
+                          "description",
+                          "externalLinks",
+                          "createdAt",
+                          "updatedAt"
+                        ]
                       }
                     },
                     "pagination": {
@@ -253,13 +262,22 @@
                           }
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "name", "description", "externalLinks"]
+                      "required": [
+                        "id",
+                        "name",
+                        "description",
+                        "externalLinks",
+                        "createdAt",
+                        "updatedAt"
+                      ]
                     }
                   },
                   "required": ["data"]
@@ -424,10 +442,12 @@
                             }
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -438,7 +458,9 @@
                           "description",
                           "ruleDocuments",
                           "sharingStatus",
-                          "externalLinks"
+                          "externalLinks",
+                          "createdAt",
+                          "updatedAt"
                         ]
                       }
                     },
@@ -601,10 +623,12 @@
                           }
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -615,7 +639,9 @@
                         "description",
                         "ruleDocuments",
                         "sharingStatus",
-                        "externalLinks"
+                        "externalLinks",
+                        "createdAt",
+                        "updatedAt"
                       ]
                     }
                   },
@@ -845,7 +871,8 @@
                             "type": "integer"
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -858,7 +885,8 @@
                           "urlPattern",
                           "maxFileSizeMb",
                           "isRequired",
-                          "sortOrder"
+                          "sortOrder",
+                          "createdAt"
                         ]
                       }
                     },
@@ -1036,10 +1064,12 @@
                             "nullable": true
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -1051,7 +1081,9 @@
                           "fileName",
                           "fileSizeBytes",
                           "fileMimeType",
-                          "url"
+                          "url",
+                          "createdAt",
+                          "updatedAt"
                         ]
                       }
                     },
@@ -1183,7 +1215,8 @@
                             "nullable": true
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -1191,7 +1224,8 @@
                           "editionId",
                           "universityId",
                           "universityName",
-                          "teamName"
+                          "teamName",
+                          "createdAt"
                         ]
                       }
                     }
@@ -1375,10 +1409,11 @@
                                     "nullable": true
                                   },
                                   "updatedAt": {
-                                    "nullable": true
+                                    "type": "string",
+                                    "format": "date-time"
                                   }
                                 },
-                                "required": ["id", "version", "fileName", "url"]
+                                "required": ["id", "version", "fileName", "url", "updatedAt"]
                               }
                             },
                             "required": ["participationId", "templateId", "submission"]
@@ -1490,10 +1525,18 @@
                           "nullable": true
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "editionId", "universityId", "universityName", "teamName"]
+                      "required": [
+                        "id",
+                        "editionId",
+                        "universityId",
+                        "universityName",
+                        "teamName",
+                        "createdAt"
+                      ]
                     }
                   },
                   "required": ["data"]
@@ -1638,10 +1681,18 @@
                                     "nullable": true
                                   },
                                   "updatedAt": {
-                                    "nullable": true
+                                    "type": "string",
+                                    "format": "date-time"
                                   }
                                 },
-                                "required": ["id", "template", "version", "fileName", "url"]
+                                "required": [
+                                  "id",
+                                  "template",
+                                  "version",
+                                  "fileName",
+                                  "url",
+                                  "updatedAt"
+                                ]
                               }
                             },
                             "required": ["state", "submission"]
@@ -1671,10 +1722,11 @@
                                 "required": ["id", "name", "acceptType"]
                               },
                               "updatedAt": {
-                                "nullable": true
+                                "type": "string",
+                                "format": "date-time"
                               }
                             },
-                            "required": ["state", "template"]
+                            "required": ["state", "template", "updatedAt"]
                           }
                         ]
                       }
@@ -1871,10 +1923,12 @@
                           "nullable": true
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -1886,7 +1940,9 @@
                         "fileName",
                         "fileSizeBytes",
                         "fileMimeType",
-                        "url"
+                        "url",
+                        "createdAt",
+                        "updatedAt"
                       ]
                     }
                   },
@@ -2016,10 +2072,12 @@
                           "nullable": true
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -2031,7 +2089,9 @@
                         "fileName",
                         "fileSizeBytes",
                         "fileMimeType",
-                        "url"
+                        "url",
+                        "createdAt",
+                        "updatedAt"
                       ]
                     }
                   },
@@ -2238,10 +2298,12 @@
                                 "nullable": true
                               },
                               "createdAt": {
-                                "nullable": true
+                                "type": "string",
+                                "format": "date-time"
                               },
                               "updatedAt": {
-                                "nullable": true
+                                "type": "string",
+                                "format": "date-time"
                               }
                             },
                             "required": [
@@ -2253,7 +2315,9 @@
                               "fileName",
                               "fileSizeBytes",
                               "fileMimeType",
-                              "url"
+                              "url",
+                              "createdAt",
+                              "updatedAt"
                             ]
                           },
                           "participation": {
@@ -2278,7 +2342,8 @@
                                 "nullable": true
                               },
                               "createdAt": {
-                                "nullable": true
+                                "type": "string",
+                                "format": "date-time"
                               }
                             },
                             "required": [
@@ -2286,7 +2351,8 @@
                               "editionId",
                               "universityId",
                               "universityName",
-                              "teamName"
+                              "teamName",
+                              "createdAt"
                             ]
                           }
                         },
@@ -2501,7 +2567,8 @@
                                 "nullable": true
                               },
                               "createdAt": {
-                                "nullable": true
+                                "type": "string",
+                                "format": "date-time"
                               }
                             },
                             "required": [
@@ -2509,7 +2576,8 @@
                               "editionId",
                               "universityId",
                               "universityName",
-                              "teamName"
+                              "teamName",
+                              "createdAt"
                             ]
                           },
                           "cells": {
@@ -2581,10 +2649,12 @@
                                           "nullable": true
                                         },
                                         "createdAt": {
-                                          "nullable": true
+                                          "type": "string",
+                                          "format": "date-time"
                                         },
                                         "updatedAt": {
-                                          "nullable": true
+                                          "type": "string",
+                                          "format": "date-time"
                                         }
                                       },
                                       "required": [
@@ -2596,7 +2666,9 @@
                                         "fileName",
                                         "fileSizeBytes",
                                         "fileMimeType",
-                                        "url"
+                                        "url",
+                                        "createdAt",
+                                        "updatedAt"
                                       ]
                                     }
                                   },
@@ -2896,7 +2968,8 @@
                             "nullable": true
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -2908,7 +2981,8 @@
                           "fileName",
                           "fileSizeBytes",
                           "fileMimeType",
-                          "url"
+                          "url",
+                          "createdAt"
                         ]
                       }
                     },
@@ -3194,10 +3268,12 @@
                             "type": "string"
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "author": {
                             "type": "object",
@@ -3224,7 +3300,15 @@
                             "required": ["id", "name", "gravatarUrl", "universityName", "teamName"]
                           }
                         },
-                        "required": ["id", "participationId", "editionId", "body", "author"]
+                        "required": [
+                          "id",
+                          "participationId",
+                          "editionId",
+                          "body",
+                          "createdAt",
+                          "updatedAt",
+                          "author"
+                        ]
                       }
                     },
                     "pagination": {
@@ -3382,13 +3466,17 @@
                           "type": "string"
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "deletedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "nullable": true,
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -3398,7 +3486,10 @@
                         "authorId",
                         "authorUniversityName",
                         "authorTeamName",
-                        "body"
+                        "body",
+                        "createdAt",
+                        "updatedAt",
+                        "deletedAt"
                       ]
                     }
                   },
@@ -3527,13 +3618,17 @@
                           "type": "string"
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "deletedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "nullable": true,
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -3543,7 +3638,10 @@
                         "authorId",
                         "authorUniversityName",
                         "authorTeamName",
-                        "body"
+                        "body",
+                        "createdAt",
+                        "updatedAt",
+                        "deletedAt"
                       ]
                     }
                   },
@@ -4033,13 +4131,23 @@
                           "type": "string"
                         },
                         "expiresAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "organizationId", "email", "role", "inviterId"]
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "email",
+                        "role",
+                        "inviterId",
+                        "expiresAt",
+                        "createdAt"
+                      ]
                     }
                   },
                   "required": ["data"]
@@ -4160,9 +4268,6 @@
                         {
                           "type": "string",
                           "enum": ["x-organization-id is required"]
-                        },
-                        {
-                          "nullable": true
                         },
                         {
                           "nullable": true
@@ -4306,6 +4411,648 @@
         }
       }
     },
+    "/api/university-requests": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "自分の大学追加依頼一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "universityName": {
+                            "type": "string"
+                          },
+                          "representativeEmail": {
+                            "type": "string",
+                            "format": "email"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["pending", "approved", "rejected"]
+                          },
+                          "requestedBy": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string",
+                                "format": "email"
+                              }
+                            },
+                            "required": ["id", "name", "email"]
+                          },
+                          "reviewedBy": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string",
+                                "format": "email"
+                              }
+                            },
+                            "required": ["id", "name", "email"]
+                          },
+                          "reviewedAt": {
+                            "type": "string",
+                            "nullable": true,
+                            "format": "date-time"
+                          },
+                          "createdOrganizationId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdInvitationId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "adminNote": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "universityName",
+                          "representativeEmail",
+                          "message",
+                          "status",
+                          "requestedBy",
+                          "reviewedBy",
+                          "reviewedAt",
+                          "createdOrganizationId",
+                          "createdInvitationId",
+                          "adminNote",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "universityName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "representativeEmail": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["universityName", "representativeEmail", "message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "大学追加依頼作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "universityName": {
+                          "type": "string"
+                        },
+                        "representativeEmail": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["pending", "approved", "rejected"]
+                        },
+                        "requestedBy": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedBy": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "format": "date-time"
+                        },
+                        "createdOrganizationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdInvitationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "adminNote": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "universityName",
+                        "representativeEmail",
+                        "message",
+                        "status",
+                        "requestedBy",
+                        "reviewedBy",
+                        "reviewedAt",
+                        "createdOrganizationId",
+                        "createdInvitationId",
+                        "adminNote",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/participation-requests": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "自分の出場追加依頼一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "edition": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "year": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": ["id", "name", "year"]
+                          },
+                          "university": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "name"]
+                          },
+                          "teamName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["pending", "approved", "rejected"]
+                          },
+                          "requestedBy": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string",
+                                "format": "email"
+                              }
+                            },
+                            "required": ["id", "name", "email"]
+                          },
+                          "reviewedBy": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string",
+                                "format": "email"
+                              }
+                            },
+                            "required": ["id", "name", "email"]
+                          },
+                          "reviewedAt": {
+                            "type": "string",
+                            "nullable": true,
+                            "format": "date-time"
+                          },
+                          "createdParticipationId": {
+                            "type": "string",
+                            "nullable": true,
+                            "format": "uuid"
+                          },
+                          "adminNote": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "edition",
+                          "university",
+                          "teamName",
+                          "message",
+                          "status",
+                          "requestedBy",
+                          "reviewedBy",
+                          "reviewedAt",
+                          "createdParticipationId",
+                          "adminNote",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/editions/{id}/participation-requests": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "x-organization-id",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "teamName": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "出場追加依頼作成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "edition": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "year": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": ["id", "name", "year"]
+                        },
+                        "university": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["id", "name"]
+                        },
+                        "teamName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["pending", "approved", "rejected"]
+                        },
+                        "requestedBy": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedBy": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "format": "date-time"
+                        },
+                        "createdParticipationId": {
+                          "type": "string",
+                          "nullable": true,
+                          "format": "uuid"
+                        },
+                        "adminNote": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "edition",
+                        "university",
+                        "teamName",
+                        "message",
+                        "status",
+                        "requestedBy",
+                        "reviewedBy",
+                        "reviewedAt",
+                        "createdParticipationId",
+                        "adminNote",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力または組織指定不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "anyOf": [
+                        {
+                          "nullable": true
+                        },
+                        {
+                          "type": "string",
+                          "enum": ["x-organization-id is required"]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "組織コンテキスト不正",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Invalid organization context"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "大会未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Not found"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/series": {
       "post": {
         "requestBody": {
@@ -4383,13 +5130,22 @@
                           }
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "name", "description", "externalLinks"]
+                      "required": [
+                        "id",
+                        "name",
+                        "description",
+                        "externalLinks",
+                        "createdAt",
+                        "updatedAt"
+                      ]
                     }
                   },
                   "required": ["data"]
@@ -4503,13 +5259,22 @@
                           }
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "name", "description", "externalLinks"]
+                      "required": [
+                        "id",
+                        "name",
+                        "description",
+                        "externalLinks",
+                        "createdAt",
+                        "updatedAt"
+                      ]
                     }
                   },
                   "required": ["data"]
@@ -4693,10 +5458,12 @@
                           }
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -4707,7 +5474,9 @@
                         "description",
                         "ruleDocuments",
                         "sharingStatus",
-                        "externalLinks"
+                        "externalLinks",
+                        "createdAt",
+                        "updatedAt"
                       ]
                     }
                   },
@@ -4868,10 +5637,12 @@
                           }
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -4882,7 +5653,9 @@
                         "description",
                         "ruleDocuments",
                         "sharingStatus",
-                        "externalLinks"
+                        "externalLinks",
+                        "createdAt",
+                        "updatedAt"
                       ]
                     }
                   },
@@ -5047,10 +5820,12 @@
                           }
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -5061,7 +5836,9 @@
                         "description",
                         "ruleDocuments",
                         "sharingStatus",
-                        "externalLinks"
+                        "externalLinks",
+                        "createdAt",
+                        "updatedAt"
                       ]
                     }
                   },
@@ -5305,10 +6082,12 @@
                           }
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -5319,7 +6098,9 @@
                         "description",
                         "ruleDocuments",
                         "sharingStatus",
-                        "externalLinks"
+                        "externalLinks",
+                        "createdAt",
+                        "updatedAt"
                       ]
                     }
                   },
@@ -5447,7 +6228,8 @@
                             "nullable": true
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -5455,7 +6237,8 @@
                           "editionId",
                           "universityId",
                           "universityName",
-                          "teamName"
+                          "teamName",
+                          "createdAt"
                         ]
                       }
                     },
@@ -5588,13 +6371,11 @@
                           "nullable": true
                         },
                         "createdAt": {
-                          "nullable": true
-                        },
-                        "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "editionId", "universityId", "teamName"]
+                      "required": ["id", "editionId", "universityId", "teamName", "createdAt"]
                     }
                   },
                   "required": ["data"]
@@ -5675,13 +6456,11 @@
                           "nullable": true
                         },
                         "createdAt": {
-                          "nullable": true
-                        },
-                        "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "editionId", "universityId", "teamName"]
+                      "required": ["id", "editionId", "universityId", "teamName", "createdAt"]
                     }
                   },
                   "required": ["data"]
@@ -5738,6 +6517,1014 @@
         "responses": {
           "204": {
             "description": "参加チーム削除"
+          }
+        }
+      }
+    },
+    "/api/admin/university-requests": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "大学追加依頼一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "universityName": {
+                            "type": "string"
+                          },
+                          "representativeEmail": {
+                            "type": "string",
+                            "format": "email"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["pending", "approved", "rejected"]
+                          },
+                          "requestedBy": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string",
+                                "format": "email"
+                              }
+                            },
+                            "required": ["id", "name", "email"]
+                          },
+                          "reviewedBy": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string",
+                                "format": "email"
+                              }
+                            },
+                            "required": ["id", "name", "email"]
+                          },
+                          "reviewedAt": {
+                            "type": "string",
+                            "nullable": true,
+                            "format": "date-time"
+                          },
+                          "createdOrganizationId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdInvitationId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "adminNote": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "universityName",
+                          "representativeEmail",
+                          "message",
+                          "status",
+                          "requestedBy",
+                          "reviewedBy",
+                          "reviewedAt",
+                          "createdOrganizationId",
+                          "createdInvitationId",
+                          "adminNote",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/university-requests/{id}/approve": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "大学追加依頼承認",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "universityName": {
+                          "type": "string"
+                        },
+                        "representativeEmail": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["pending", "approved", "rejected"]
+                        },
+                        "requestedBy": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedBy": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "format": "date-time"
+                        },
+                        "createdOrganizationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdInvitationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "adminNote": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "universityName",
+                        "representativeEmail",
+                        "message",
+                        "status",
+                        "requestedBy",
+                        "reviewedBy",
+                        "reviewedAt",
+                        "createdOrganizationId",
+                        "createdInvitationId",
+                        "adminNote",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Not found"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "処理済み",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Already reviewed"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/university-requests/{id}/reject": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "adminNote": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "大学追加依頼却下",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "universityName": {
+                          "type": "string"
+                        },
+                        "representativeEmail": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["pending", "approved", "rejected"]
+                        },
+                        "requestedBy": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedBy": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "format": "date-time"
+                        },
+                        "createdOrganizationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdInvitationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "adminNote": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "universityName",
+                        "representativeEmail",
+                        "message",
+                        "status",
+                        "requestedBy",
+                        "reviewedBy",
+                        "reviewedAt",
+                        "createdOrganizationId",
+                        "createdInvitationId",
+                        "adminNote",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Not found"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "処理済み",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Already reviewed"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/participation-requests": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "出場追加依頼一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "edition": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "year": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": ["id", "name", "year"]
+                          },
+                          "university": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "name"]
+                          },
+                          "teamName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["pending", "approved", "rejected"]
+                          },
+                          "requestedBy": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string",
+                                "format": "email"
+                              }
+                            },
+                            "required": ["id", "name", "email"]
+                          },
+                          "reviewedBy": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string",
+                                "format": "email"
+                              }
+                            },
+                            "required": ["id", "name", "email"]
+                          },
+                          "reviewedAt": {
+                            "type": "string",
+                            "nullable": true,
+                            "format": "date-time"
+                          },
+                          "createdParticipationId": {
+                            "type": "string",
+                            "nullable": true,
+                            "format": "uuid"
+                          },
+                          "adminNote": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "edition",
+                          "university",
+                          "teamName",
+                          "message",
+                          "status",
+                          "requestedBy",
+                          "reviewedBy",
+                          "reviewedAt",
+                          "createdParticipationId",
+                          "adminNote",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/participation-requests/{id}/approve": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "出場追加依頼承認",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "edition": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "year": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": ["id", "name", "year"]
+                        },
+                        "university": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["id", "name"]
+                        },
+                        "teamName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["pending", "approved", "rejected"]
+                        },
+                        "requestedBy": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedBy": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "format": "date-time"
+                        },
+                        "createdParticipationId": {
+                          "type": "string",
+                          "nullable": true,
+                          "format": "uuid"
+                        },
+                        "adminNote": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "edition",
+                        "university",
+                        "teamName",
+                        "message",
+                        "status",
+                        "requestedBy",
+                        "reviewedBy",
+                        "reviewedAt",
+                        "createdParticipationId",
+                        "adminNote",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Not found"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "処理済みまたは重複",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": ["Already reviewed"]
+                        },
+                        {
+                          "type": "string",
+                          "enum": ["Participation already exists"]
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/participation-requests/{id}/reject": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "adminNote": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "出場追加依頼却下",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "edition": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "year": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": ["id", "name", "year"]
+                        },
+                        "university": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["id", "name"]
+                        },
+                        "teamName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["pending", "approved", "rejected"]
+                        },
+                        "requestedBy": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedBy": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "required": ["id", "name", "email"]
+                        },
+                        "reviewedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "format": "date-time"
+                        },
+                        "createdParticipationId": {
+                          "type": "string",
+                          "nullable": true,
+                          "format": "uuid"
+                        },
+                        "adminNote": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "edition",
+                        "university",
+                        "teamName",
+                        "message",
+                        "status",
+                        "requestedBy",
+                        "reviewedBy",
+                        "reviewedAt",
+                        "createdParticipationId",
+                        "adminNote",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正入力",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未検出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Not found"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "処理済み",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["Already reviewed"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
           }
         }
       }
@@ -5852,10 +7639,8 @@
                           "type": "integer"
                         },
                         "createdAt": {
-                          "nullable": true
-                        },
-                        "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -5868,7 +7653,8 @@
                         "urlPattern",
                         "maxFileSizeMb",
                         "isRequired",
-                        "sortOrder"
+                        "sortOrder",
+                        "createdAt"
                       ]
                     }
                   },
@@ -6005,10 +7791,8 @@
                           "type": "integer"
                         },
                         "createdAt": {
-                          "nullable": true
-                        },
-                        "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -6021,7 +7805,8 @@
                         "urlPattern",
                         "maxFileSizeMb",
                         "isRequired",
-                        "sortOrder"
+                        "sortOrder",
+                        "createdAt"
                       ]
                     }
                   },
@@ -6158,10 +7943,8 @@
                             "type": "integer"
                           },
                           "createdAt": {
-                            "nullable": true
-                          },
-                          "updatedAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -6174,7 +7957,8 @@
                           "urlPattern",
                           "maxFileSizeMb",
                           "isRequired",
-                          "sortOrder"
+                          "sortOrder",
+                          "createdAt"
                         ]
                       }
                     }
@@ -6234,13 +8018,15 @@
                           "type": "string"
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "name", "slug"]
+                      "required": ["id", "name", "slug", "createdAt", "updatedAt"]
                     }
                   },
                   "required": ["data"]
@@ -6339,13 +8125,15 @@
                             "type": "string"
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
-                        "required": ["id", "name", "slug"]
+                        "required": ["id", "name", "slug", "createdAt", "updatedAt"]
                       }
                     },
                     "pagination": {
@@ -6499,13 +8287,21 @@
                             "type": "boolean"
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "organizationCount": {
                             "type": "number"
                           }
                         },
-                        "required": ["id", "name", "email", "isAdmin", "organizationCount"]
+                        "required": [
+                          "id",
+                          "name",
+                          "email",
+                          "isAdmin",
+                          "createdAt",
+                          "organizationCount"
+                        ]
                       }
                     },
                     "pagination": {
@@ -6622,7 +8418,8 @@
                             "enum": ["owner", "member"]
                           },
                           "createdAt": {
-                            "nullable": true
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -6630,7 +8427,8 @@
                           "organizationId",
                           "organizationName",
                           "organizationSlug",
-                          "role"
+                          "role",
+                          "createdAt"
                         ]
                       }
                     }
@@ -6715,10 +8513,11 @@
                           "enum": ["owner", "member"]
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "userId", "organizationId", "role"]
+                      "required": ["id", "userId", "organizationId", "role", "createdAt"]
                     }
                   },
                   "required": ["data"]
@@ -6831,10 +8630,11 @@
                           "enum": ["owner", "member"]
                         },
                         "createdAt": {
-                          "nullable": true
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
-                      "required": ["id", "userId", "organizationId", "role"]
+                      "required": ["id", "userId", "organizationId", "role", "createdAt"]
                     }
                   },
                   "required": ["data"]

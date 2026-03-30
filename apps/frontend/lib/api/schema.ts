@@ -82,8 +82,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               }[];
               pagination: {
                 page: number;
@@ -167,8 +169,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -256,8 +260,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               }[];
               pagination: {
                 page: number;
@@ -355,8 +361,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -498,7 +506,8 @@ export interface paths {
                 maxFileSizeMb: number;
                 isRequired: boolean;
                 sortOrder: number;
-                createdAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               }[];
               pagination: {
                 page: number;
@@ -588,8 +597,10 @@ export interface paths {
                 fileSizeBytes: number | null;
                 fileMimeType: string | null;
                 url: string | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               }[];
               organizationId: string;
               pagination: {
@@ -669,7 +680,8 @@ export interface paths {
                 universityId: string;
                 universityName: string;
                 teamName: string | null;
-                createdAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               }[];
             };
           };
@@ -768,7 +780,8 @@ export interface paths {
                     version: number;
                     fileName: string | null;
                     url: string | null;
-                    updatedAt?: unknown;
+                    /** Format: date-time */
+                    updatedAt: string;
                   } | null;
                 }[];
               };
@@ -854,7 +867,8 @@ export interface paths {
                 universityId: string;
                 universityName: string;
                 teamName: string | null;
-                createdAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               };
             };
           };
@@ -939,7 +953,8 @@ export interface paths {
                       version: number;
                       fileName: string | null;
                       url: string | null;
-                      updatedAt?: unknown;
+                      /** Format: date-time */
+                      updatedAt: string;
                     };
                   }
                 | {
@@ -952,7 +967,8 @@ export interface paths {
                       /** @enum {string} */
                       acceptType: 'file' | 'url';
                     };
-                    updatedAt?: unknown;
+                    /** Format: date-time */
+                    updatedAt: string;
                   }
               )[];
               pagination: {
@@ -1077,8 +1093,10 @@ export interface paths {
                 fileSizeBytes: number | null;
                 fileMimeType: string | null;
                 url: string | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -1163,8 +1181,10 @@ export interface paths {
                 fileSizeBytes: number | null;
                 fileMimeType: string | null;
                 url: string | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -1294,8 +1314,10 @@ export interface paths {
                   fileSizeBytes: number | null;
                   fileMimeType: string | null;
                   url: string | null;
-                  createdAt?: unknown;
-                  updatedAt?: unknown;
+                  /** Format: date-time */
+                  createdAt: string;
+                  /** Format: date-time */
+                  updatedAt: string;
                 };
                 participation: {
                   /** Format: uuid */
@@ -1305,7 +1327,8 @@ export interface paths {
                   universityId: string;
                   universityName: string;
                   teamName: string | null;
-                  createdAt?: unknown;
+                  /** Format: date-time */
+                  createdAt: string;
                 };
               }[];
               pagination: {
@@ -1418,7 +1441,8 @@ export interface paths {
                   universityId: string;
                   universityName: string;
                   teamName: string | null;
-                  createdAt?: unknown;
+                  /** Format: date-time */
+                  createdAt: string;
                 };
                 cells: (
                   | {
@@ -1445,8 +1469,10 @@ export interface paths {
                         fileSizeBytes: number | null;
                         fileMimeType: string | null;
                         url: string | null;
-                        createdAt?: unknown;
-                        updatedAt?: unknown;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        updatedAt: string;
                       };
                     }
                 )[];
@@ -1632,7 +1658,8 @@ export interface paths {
                 fileSizeBytes: number | null;
                 fileMimeType: string | null;
                 url: string | null;
-                createdAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               }[];
               pagination: {
                 page: number;
@@ -1820,8 +1847,10 @@ export interface paths {
                 /** Format: uuid */
                 editionId: string;
                 body: string;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
                 author: {
                   id: string;
                   name: string;
@@ -1916,9 +1945,12 @@ export interface paths {
                 authorUniversityName: string | null;
                 authorTeamName: string | null;
                 body: string;
-                createdAt?: unknown;
-                updatedAt?: unknown;
-                deletedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                /** Format: date-time */
+                deletedAt: string | null;
               };
             };
           };
@@ -2009,9 +2041,12 @@ export interface paths {
                 authorUniversityName: string | null;
                 authorTeamName: string | null;
                 body: string;
-                createdAt?: unknown;
-                updatedAt?: unknown;
-                deletedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                /** Format: date-time */
+                deletedAt: string | null;
               };
             };
           };
@@ -2337,8 +2372,10 @@ export interface paths {
                 /** @enum {string} */
                 role: 'owner' | 'member';
                 inviterId: string;
-                expiresAt?: unknown;
-                createdAt?: unknown;
+                /** Format: date-time */
+                expiresAt: string;
+                /** Format: date-time */
+                createdAt: string;
               };
             };
           };
@@ -2425,7 +2462,7 @@ export interface paths {
           };
           content: {
             'application/json': {
-              error?: 'x-organization-id is required' | unknown | unknown;
+              error?: 'x-organization-id is required' | unknown;
             };
           };
         };
@@ -2547,6 +2584,340 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/university-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 自分の大学追加依頼一覧 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                universityName: string;
+                /** Format: email */
+                representativeEmail: string;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                createdOrganizationId: string | null;
+                createdInvitationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          'application/json': {
+            universityName: string;
+            /** Format: email */
+            representativeEmail: string;
+            message: string;
+          };
+        };
+      };
+      responses: {
+        /** @description 大学追加依頼作成 */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                universityName: string;
+                /** Format: email */
+                representativeEmail: string;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                createdOrganizationId: string | null;
+                createdInvitationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              };
+            };
+          };
+        };
+        /** @description 不正入力 */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              error?: unknown;
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/participation-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 自分の出場追加依頼一覧 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                edition: {
+                  /** Format: uuid */
+                  id: string;
+                  name: string;
+                  year: number;
+                };
+                university: {
+                  id: string;
+                  name: string;
+                };
+                teamName: string | null;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                /** Format: uuid */
+                createdParticipationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/editions/{id}/participation-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          'x-organization-id': string;
+        };
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          'application/json': {
+            teamName?: string;
+            message: string;
+          };
+        };
+      };
+      responses: {
+        /** @description 出場追加依頼作成 */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                edition: {
+                  /** Format: uuid */
+                  id: string;
+                  name: string;
+                  year: number;
+                };
+                university: {
+                  id: string;
+                  name: string;
+                };
+                teamName: string | null;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                /** Format: uuid */
+                createdParticipationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              };
+            };
+          };
+        };
+        /** @description 不正入力または組織指定不足 */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              error?: unknown | 'x-organization-id is required';
+            };
+          };
+        };
+        /** @description 組織コンテキスト不正 */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Invalid organization context';
+            };
+          };
+        };
+        /** @description 大会未検出 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Not found';
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/admin/series': {
     parameters: {
       query?: never;
@@ -2596,8 +2967,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -2671,8 +3044,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -2799,8 +3174,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -2896,8 +3273,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -3012,8 +3391,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -3174,8 +3555,10 @@ export interface paths {
                       url: string;
                     }[]
                   | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -3255,7 +3638,8 @@ export interface paths {
                 universityId: string;
                 universityName: string;
                 teamName: string | null;
-                createdAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               }[];
               pagination: {
                 page: number;
@@ -3327,8 +3711,8 @@ export interface paths {
                 editionId: string;
                 universityId: string;
                 teamName: string | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               };
             };
           };
@@ -3391,8 +3775,8 @@ export interface paths {
                 editionId: string;
                 universityId: string;
                 teamName: string | null;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               };
             };
           };
@@ -3443,6 +3827,569 @@ export interface paths {
         };
       };
     };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/university-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 大学追加依頼一覧 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                universityName: string;
+                /** Format: email */
+                representativeEmail: string;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                createdOrganizationId: string | null;
+                createdInvitationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/university-requests/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 大学追加依頼承認 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                universityName: string;
+                /** Format: email */
+                representativeEmail: string;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                createdOrganizationId: string | null;
+                createdInvitationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              };
+            };
+          };
+        };
+        /** @description 未検出 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Not found';
+            };
+          };
+        };
+        /** @description 処理済み */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Already reviewed';
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/university-requests/{id}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          'application/json': {
+            adminNote?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description 大学追加依頼却下 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                universityName: string;
+                /** Format: email */
+                representativeEmail: string;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                createdOrganizationId: string | null;
+                createdInvitationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              };
+            };
+          };
+        };
+        /** @description 不正入力 */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              error?: unknown;
+            };
+          };
+        };
+        /** @description 未検出 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Not found';
+            };
+          };
+        };
+        /** @description 処理済み */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Already reviewed';
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/participation-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 出場追加依頼一覧 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                edition: {
+                  /** Format: uuid */
+                  id: string;
+                  name: string;
+                  year: number;
+                };
+                university: {
+                  id: string;
+                  name: string;
+                };
+                teamName: string | null;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                /** Format: uuid */
+                createdParticipationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/participation-requests/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 出場追加依頼承認 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                edition: {
+                  /** Format: uuid */
+                  id: string;
+                  name: string;
+                  year: number;
+                };
+                university: {
+                  id: string;
+                  name: string;
+                };
+                teamName: string | null;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                /** Format: uuid */
+                createdParticipationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              };
+            };
+          };
+        };
+        /** @description 未検出 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Not found';
+            };
+          };
+        };
+        /** @description 処理済みまたは重複 */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              error: 'Already reviewed' | 'Participation already exists';
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/participation-requests/{id}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          'application/json': {
+            adminNote?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description 出場追加依頼却下 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              data: {
+                /** Format: uuid */
+                id: string;
+                edition: {
+                  /** Format: uuid */
+                  id: string;
+                  name: string;
+                  year: number;
+                };
+                university: {
+                  id: string;
+                  name: string;
+                };
+                teamName: string | null;
+                message: string;
+                /** @enum {string} */
+                status: 'pending' | 'approved' | 'rejected';
+                requestedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                };
+                reviewedBy: {
+                  id: string;
+                  name: string;
+                  /** Format: email */
+                  email: string;
+                } | null;
+                /** Format: date-time */
+                reviewedAt: string | null;
+                /** Format: uuid */
+                createdParticipationId: string | null;
+                adminNote: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+              };
+            };
+          };
+        };
+        /** @description 不正入力 */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              error?: unknown;
+            };
+          };
+        };
+        /** @description 未検出 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Not found';
+            };
+          };
+        };
+        /** @description 処理済み */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              /** @enum {string} */
+              error: 'Already reviewed';
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -3506,8 +4453,8 @@ export interface paths {
                 maxFileSizeMb: number;
                 isRequired: boolean;
                 sortOrder: number;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               };
             };
           };
@@ -3588,8 +4535,8 @@ export interface paths {
                 maxFileSizeMb: number;
                 isRequired: boolean;
                 sortOrder: number;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               };
             };
           };
@@ -3687,8 +4634,8 @@ export interface paths {
                 maxFileSizeMb: number;
                 isRequired: boolean;
                 sortOrder: number;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               }[];
             };
           };
@@ -3739,8 +4686,10 @@ export interface paths {
                 id: string;
                 name: string;
                 slug: string;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               }[];
               pagination: {
                 page: number;
@@ -3809,8 +4758,10 @@ export interface paths {
                 id: string;
                 name: string;
                 slug: string;
-                createdAt?: unknown;
-                updatedAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
               };
             };
           };
@@ -3874,7 +4825,8 @@ export interface paths {
                 /** Format: email */
                 email: string;
                 isAdmin: boolean;
-                createdAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
                 organizationCount: number;
               }[];
               pagination: {
@@ -3954,7 +4906,8 @@ export interface paths {
                 organizationSlug: string;
                 /** @enum {string} */
                 role: 'owner' | 'member';
-                createdAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               }[];
             };
           };
@@ -4006,7 +4959,8 @@ export interface paths {
                 organizationId: string;
                 /** @enum {string} */
                 role: 'owner' | 'member';
-                createdAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               };
             };
           };
@@ -4093,7 +5047,8 @@ export interface paths {
                 organizationId: string;
                 /** @enum {string} */
                 role: 'owner' | 'member';
-                createdAt?: unknown;
+                /** Format: date-time */
+                createdAt: string;
               };
             };
           };

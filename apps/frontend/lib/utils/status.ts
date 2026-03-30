@@ -16,3 +16,9 @@ export const ROLE_LABELS: Record<string, string> = {
   owner: 'オーナー',
   member: 'メンバー',
 };
+
+export const REQUEST_STATUS_LABELS: Record<string, string> = {
+  pending: '審査待ち',
+  approved: '承認済み',
+  rejected: '却下',
+};

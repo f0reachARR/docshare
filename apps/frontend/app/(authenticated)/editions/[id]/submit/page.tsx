@@ -13,12 +13,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import {
   type StatusItem,
   type TemplateItem,
   useSubmitPageData,
   useTemplateSubmissionMutations,
 } from '@/features/editions/submit/hooks';
+import { useParticipationRequestsSection } from '@/features/requests/hooks';
+import { REQUEST_STATUS_LABELS } from '@/lib/utils/status';
 
 export default function SubmitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -38,6 +41,13 @@ export default function SubmitPage({ params }: { params: Promise<{ id: string }>
     activeParticipationId,
     canDelete,
   } = useSubmitPageData(id);
+  const {
+    data: participationRequests,
+    isLoading: isParticipationRequestsLoading,
+    form: participationRequestForm,
+    createMutation: createParticipationRequestMutation,
+    validators: participationRequestValidators,
+  } = useParticipationRequestsSection(id, organizationId);
 
   if (isLoading || isEditionLoading) {
     return (
@@ -85,6 +95,104 @@ export default function SubmitPage({ params }: { params: Promise<{ id: string }>
           この大会回は締め切られています。提出・変更はできません。
         </div>
       )}
+
+      <Card>
+        <CardHeader className='space-y-2'>
+          <CardTitle className='text-base'>出場追加依頼</CardTitle>
+          <p className='text-sm text-muted-foreground'>
+            追加チームの出場登録が必要な場合は、ここから管理者に依頼できます。
+          </p>
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              participationRequestForm.handleSubmit();
+            }}
+            className='space-y-4'
+          >
+            <participationRequestForm.Field name='teamName'>
+              {(field) => (
+                <div className='space-y-1'>
+                  <label htmlFor={field.name} className='text-sm font-medium'>
+                    チーム名義
+                  </label>
+                  <Input
+                    id={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder='Team A'
+                  />
+                </div>
+              )}
+            </participationRequestForm.Field>
+            <participationRequestForm.Field
+              name='message'
+              validators={{ onChange: participationRequestValidators.message }}
+            >
+              {(field) => (
+                <div className='space-y-1'>
+                  <label htmlFor={field.name} className='text-sm font-medium'>
+                    メッセージ
+                  </label>
+                  <Textarea
+                    id={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                  {field.state.meta.errors[0] && (
+                    <p className='text-sm text-destructive'>{field.state.meta.errors[0].message}</p>
+                  )}
+                </div>
+              )}
+            </participationRequestForm.Field>
+            <div className='flex justify-end'>
+              <Button
+                type='submit'
+                disabled={createParticipationRequestMutation.isPending || isClosed}
+              >
+                依頼を送信
+              </Button>
+            </div>
+          </form>
+
+          <div className='space-y-3'>
+            <h2 className='text-sm font-medium'>この大会回の依頼状況</h2>
+            {isParticipationRequestsLoading ? (
+              <Skeleton className='h-24 w-full' />
+            ) : participationRequests.length === 0 ? (
+              <div className='rounded-lg border border-dashed px-4 py-6 text-sm text-muted-foreground'>
+                まだ依頼はありません。
+              </div>
+            ) : (
+              participationRequests.map((request) => (
+                <div key={request.id} className='rounded-lg border px-4 py-3 space-y-2'>
+                  <div className='flex items-center justify-between gap-3 flex-wrap'>
+                    <div className='font-medium'>{request.teamName ?? '(チーム名なし)'}</div>
+                    <Badge
+                      variant={
+                        request.status === 'approved'
+                          ? 'default'
+                          : request.status === 'rejected'
+                            ? 'destructive'
+                            : 'secondary'
+                      }
+                    >
+                      {REQUEST_STATUS_LABELS[request.status] ?? request.status}
+                    </Badge>
+                  </div>
+                  <p className='text-sm'>{request.message}</p>
+                  <p className='text-xs text-muted-foreground'>
+                    申請日時: <DateTimeDisplay value={request.createdAt} />
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Team selection */}
       {participations.length > 1 ? (
