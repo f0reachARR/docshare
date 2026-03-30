@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const editionRow = {
-  id: '00000000-0000-0000-0000-000000000010',
-  seriesId: '00000000-0000-0000-0000-000000000020',
+  id: '00000000-0000-4000-8000-000000000010',
+  seriesId: '00000000-0000-4000-8000-000000000020',
   year: 2026,
   name: 'Robocon 2026',
   description: 'edition description',
   ruleDocuments: [
     {
       label: 'Rulebook',
-      s3_key: 'rules/00000000-0000-0000-0000-000000000010/rulebook.pdf',
+      s3_key: 'rules/00000000-0000-4000-8000-000000000010/rulebook.pdf',
       mime_type: 'application/pdf',
     },
   ],

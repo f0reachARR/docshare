@@ -3,10 +3,10 @@ import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const statusEditionIds = {
-  draft: '00000000-0000-0000-0000-000000000001',
-  accepting: '00000000-0000-0000-0000-000000000002',
-  sharing: '00000000-0000-0000-0000-000000000003',
-  closed: '00000000-0000-0000-0000-000000000004',
+  draft: '00000000-0000-4000-8000-000000000001',
+  accepting: '00000000-0000-4000-8000-000000000002',
+  sharing: '00000000-0000-4000-8000-000000000003',
+  closed: '00000000-0000-4000-8000-000000000004',
 } as const;
 
 type MatrixParticipationRow = {
@@ -290,7 +290,7 @@ describe('authorization integration (app.request)', () => {
     mockCountRows.mockResolvedValue([{ total: 0 }]);
     mockDeleteWhere.mockResolvedValue(undefined);
     mockSubmissionParticipationRows.mockResolvedValue([
-      { participationId: '00000000-0000-0000-0000-000000000011' },
+      { participationId: '00000000-0000-4000-8000-000000000011' },
     ]);
     mockAdminRows.mockResolvedValue([{ isAdmin: true }]);
   });
@@ -383,7 +383,7 @@ describe('authorization integration (app.request)', () => {
     mockMatrixParticipationRows.mockResolvedValue([
       {
         participation: {
-          id: '10000000-0000-0000-0000-000000000001',
+          id: '10000000-0000-4000-8000-000000000001',
           editionId: statusEditionIds.sharing,
           universityId: 'org-1',
           universityName: 'Org One',
@@ -393,7 +393,7 @@ describe('authorization integration (app.request)', () => {
       },
       {
         participation: {
-          id: '10000000-0000-0000-0000-000000000002',
+          id: '10000000-0000-4000-8000-000000000002',
           editionId: statusEditionIds.sharing,
           universityId: 'org-2',
           universityName: 'Org Two',
@@ -405,7 +405,7 @@ describe('authorization integration (app.request)', () => {
     mockMatrixTemplateRows.mockResolvedValue([
       {
         template: {
-          id: '20000000-0000-0000-0000-000000000001',
+          id: '20000000-0000-4000-8000-000000000001',
           name: 'Design PDF',
           acceptType: 'file',
           sortOrder: 1,
@@ -413,7 +413,7 @@ describe('authorization integration (app.request)', () => {
       },
       {
         template: {
-          id: '20000000-0000-0000-0000-000000000002',
+          id: '20000000-0000-4000-8000-000000000002',
           name: 'Demo URL',
           acceptType: 'url',
           sortOrder: 2,
@@ -422,9 +422,9 @@ describe('authorization integration (app.request)', () => {
     ]);
     mockMatrixSubmissionRows.mockResolvedValue([
       {
-        id: '30000000-0000-0000-0000-000000000001',
-        templateId: '20000000-0000-0000-0000-000000000001',
-        participationId: '10000000-0000-0000-0000-000000000001',
+        id: '30000000-0000-4000-8000-000000000001',
+        templateId: '20000000-0000-4000-8000-000000000001',
+        participationId: '10000000-0000-4000-8000-000000000001',
         submittedBy: 'member-user',
         version: 2,
         fileS3Key: 'secret/internal/path.pdf',
@@ -436,9 +436,9 @@ describe('authorization integration (app.request)', () => {
         updatedAt: '2026-03-20T02:05:00.000Z',
       },
       {
-        id: '30000000-0000-0000-0000-000000000002',
-        templateId: '20000000-0000-0000-0000-000000000002',
-        participationId: '10000000-0000-0000-0000-000000000002',
+        id: '30000000-0000-4000-8000-000000000002',
+        templateId: '20000000-0000-4000-8000-000000000002',
+        participationId: '10000000-0000-4000-8000-000000000002',
         submittedBy: 'member-user',
         version: 1,
         fileS3Key: null,
@@ -475,10 +475,10 @@ describe('authorization integration (app.request)', () => {
     }
 
     const row1 = json.rows.find(
-      (row) => row.participation.id === '10000000-0000-0000-0000-000000000001',
+      (row) => row.participation.id === '10000000-0000-4000-8000-000000000001',
     );
     const row2 = json.rows.find(
-      (row) => row.participation.id === '10000000-0000-0000-0000-000000000002',
+      (row) => row.participation.id === '10000000-0000-4000-8000-000000000002',
     );
 
     expect(row1).toBeDefined();
@@ -489,9 +489,9 @@ describe('authorization integration (app.request)', () => {
     expect(row1?.cells[0]).toMatchObject({
       state: 'viewable',
       submission: {
-        id: '30000000-0000-0000-0000-000000000001',
-        templateId: '20000000-0000-0000-0000-000000000001',
-        participationId: '10000000-0000-0000-0000-000000000001',
+        id: '30000000-0000-4000-8000-000000000001',
+        templateId: '20000000-0000-4000-8000-000000000001',
+        participationId: '10000000-0000-4000-8000-000000000001',
         submittedBy: 'member-user',
         version: 2,
         fileName: 'design.pdf',
@@ -568,11 +568,11 @@ describe('authorization integration (app.request)', () => {
         headers: undefined,
       },
       {
-        path: '/api/editions/00000000-0000-0000-0000-000000000010/templates',
+        path: '/api/editions/00000000-0000-4000-8000-000000000010/templates',
         headers: { 'x-role': 'member' },
       },
       {
-        path: '/api/editions/00000000-0000-0000-0000-000000000010/my-submissions',
+        path: '/api/editions/00000000-0000-4000-8000-000000000010/my-submissions',
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
       {
@@ -584,11 +584,11 @@ describe('authorization integration (app.request)', () => {
         headers: { 'x-role': 'member' },
       },
       {
-        path: '/api/participations/00000000-0000-0000-0000-000000000011/comments',
+        path: '/api/participations/00000000-0000-4000-8000-000000000011/comments',
         headers: { 'x-role': 'member' },
       },
       {
-        path: '/api/submissions/00000000-0000-0000-0000-000000000012/history',
+        path: '/api/submissions/00000000-0000-4000-8000-000000000012/history',
         headers: { 'x-role': 'member' },
       },
       {
@@ -600,11 +600,11 @@ describe('authorization integration (app.request)', () => {
         headers: { 'x-role': 'admin' },
       },
       {
-        path: '/api/participations/00000000-0000-0000-0000-000000000011/submissions',
+        path: '/api/participations/00000000-0000-4000-8000-000000000011/submissions',
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
       {
-        path: '/api/admin/editions/00000000-0000-0000-0000-000000000010/participations',
+        path: '/api/admin/editions/00000000-0000-4000-8000-000000000010/participations',
         headers: { 'x-role': 'admin' },
       },
       {
@@ -633,11 +633,11 @@ describe('authorization integration (app.request)', () => {
         headers: undefined,
       },
       {
-        path: '/api/editions/00000000-0000-0000-0000-000000000010/templates',
+        path: '/api/editions/00000000-0000-4000-8000-000000000010/templates',
         headers: { 'x-role': 'member' },
       },
       {
-        path: '/api/editions/00000000-0000-0000-0000-000000000010/my-submissions',
+        path: '/api/editions/00000000-0000-4000-8000-000000000010/my-submissions',
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
       {
@@ -649,11 +649,11 @@ describe('authorization integration (app.request)', () => {
         headers: { 'x-role': 'member' },
       },
       {
-        path: '/api/participations/00000000-0000-0000-0000-000000000011/comments',
+        path: '/api/participations/00000000-0000-4000-8000-000000000011/comments',
         headers: { 'x-role': 'member' },
       },
       {
-        path: '/api/submissions/00000000-0000-0000-0000-000000000012/history',
+        path: '/api/submissions/00000000-0000-4000-8000-000000000012/history',
         headers: { 'x-role': 'member' },
       },
       {
@@ -665,11 +665,11 @@ describe('authorization integration (app.request)', () => {
         headers: { 'x-role': 'admin' },
       },
       {
-        path: '/api/participations/00000000-0000-0000-0000-000000000011/submissions',
+        path: '/api/participations/00000000-0000-4000-8000-000000000011/submissions',
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
       {
-        path: '/api/admin/editions/00000000-0000-0000-0000-000000000010/participations',
+        path: '/api/admin/editions/00000000-0000-4000-8000-000000000010/participations',
         headers: { 'x-role': 'admin' },
       },
       {

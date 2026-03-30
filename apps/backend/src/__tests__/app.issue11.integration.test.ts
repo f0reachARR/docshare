@@ -145,7 +145,7 @@ const mockGetParticipationAccess = vi.fn(async () => ({
   canViewAllSubmissions: true,
   viewableTemplateIds: new Set<string>(),
   participationUniversityId: 'org-1',
-  editionId: '00000000-0000-0000-0000-000000000001',
+  editionId: '00000000-0000-4000-8000-000000000001',
 }));
 const mockGetObjectMetadata = vi.fn(async () => ({
   contentLength: 1024,
@@ -246,7 +246,7 @@ describe('issue #11 api integration', () => {
     const app = createApp();
 
     const noOrgRes = await app.request(
-      '/api/editions/00000000-0000-0000-0000-000000000001/my-participations',
+      '/api/editions/00000000-0000-4000-8000-000000000001/my-participations',
       {
         headers: { 'x-role': 'member' },
       },
@@ -255,8 +255,8 @@ describe('issue #11 api integration', () => {
 
     enqueueDb([
       {
-        id: '10000000-0000-0000-0000-000000000001',
-        editionId: '00000000-0000-0000-0000-000000000001',
+        id: '10000000-0000-4000-8000-000000000001',
+        editionId: '00000000-0000-4000-8000-000000000001',
         universityId: 'org-1',
         universityName: 'Org One',
         teamName: 'Team A',
@@ -265,7 +265,7 @@ describe('issue #11 api integration', () => {
     ]);
 
     const okRes = await app.request(
-      '/api/editions/00000000-0000-0000-0000-000000000001/my-participations',
+      '/api/editions/00000000-0000-4000-8000-000000000001/my-participations',
       {
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
@@ -275,8 +275,8 @@ describe('issue #11 api integration', () => {
     expect(await okRes.json()).toEqual({
       data: [
         {
-          id: '10000000-0000-0000-0000-000000000001',
-          editionId: '00000000-0000-0000-0000-000000000001',
+          id: '10000000-0000-4000-8000-000000000001',
+          editionId: '00000000-0000-4000-8000-000000000001',
           universityId: 'org-1',
           universityName: 'Org One',
           teamName: 'Team A',
@@ -318,7 +318,7 @@ describe('issue #11 api integration', () => {
     );
 
     const res = await app.request(
-      '/api/editions/00000000-0000-0000-0000-000000000001/my-submission-status',
+      '/api/editions/00000000-0000-4000-8000-000000000001/my-submission-status',
       {
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
@@ -376,7 +376,7 @@ describe('issue #11 api integration', () => {
     ]);
 
     const detailRes = await app.request(
-      '/api/participations/10000000-0000-0000-0000-000000000001',
+      '/api/participations/10000000-0000-4000-8000-000000000001',
       {
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
@@ -401,7 +401,7 @@ describe('issue #11 api integration', () => {
     );
 
     const submissionsRes = await app.request(
-      '/api/participations/10000000-0000-0000-0000-000000000001/submissions',
+      '/api/participations/10000000-0000-4000-8000-000000000001/submissions',
       {
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
@@ -451,7 +451,7 @@ describe('issue #11 api integration', () => {
     ]);
 
     const adminRes = await app.request(
-      '/api/admin/editions/00000000-0000-0000-0000-000000000001/participations',
+      '/api/admin/editions/00000000-0000-4000-8000-000000000001/participations',
       {
         headers: { 'x-role': 'admin' },
       },
@@ -726,7 +726,7 @@ describe('issue #11 api integration', () => {
     );
 
     const res = await app.request(
-      '/api/editions/00000000-0000-0000-0000-000000000001/submissions',
+      '/api/editions/00000000-0000-4000-8000-000000000001/submissions',
       {
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
@@ -743,12 +743,12 @@ describe('issue #11 api integration', () => {
     const app = createApp();
 
     enqueueDb(
-      [{ participationId: '10000000-0000-0000-0000-000000000001' }],
+      [{ participationId: '10000000-0000-4000-8000-000000000001' }],
       [{ total: 1 }],
       [
         {
-          id: '30000000-0000-0000-0000-000000000001',
-          submissionId: '20000000-0000-0000-0000-000000000001',
+          id: '30000000-0000-4000-8000-000000000001',
+          submissionId: '20000000-0000-4000-8000-000000000001',
           version: 1,
           submittedBy: 'user-1',
           submittedByUser: {
@@ -765,7 +765,7 @@ describe('issue #11 api integration', () => {
       ],
     );
 
-    const res = await app.request('/api/submissions/20000000-0000-0000-0000-000000000001/history', {
+    const res = await app.request('/api/submissions/20000000-0000-4000-8000-000000000001/history', {
       headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
     });
 
@@ -790,9 +790,9 @@ describe('issue #11 api integration', () => {
       [{ total: 1 }],
       [
         {
-          id: '40000000-0000-0000-0000-000000000001',
-          participationId: '10000000-0000-0000-0000-000000000001',
-          editionId: '00000000-0000-0000-0000-000000000001',
+          id: '40000000-0000-4000-8000-000000000001',
+          participationId: '10000000-0000-4000-8000-000000000001',
+          editionId: '00000000-0000-4000-8000-000000000001',
           body: 'Looks good',
           createdAt: '2026-03-20T00:00:00.000Z',
           updatedAt: '2026-03-20T00:00:00.000Z',
@@ -806,7 +806,7 @@ describe('issue #11 api integration', () => {
     );
 
     const res = await app.request(
-      '/api/participations/10000000-0000-0000-0000-000000000001/comments',
+      '/api/participations/10000000-0000-4000-8000-000000000001/comments',
       {
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
@@ -837,12 +837,12 @@ describe('issue #11 api integration', () => {
     const app = createApp();
 
     enqueueDb(
-      [{ id: '10000000-0000-0000-0000-000000000001' }],
+      [{ id: '10000000-0000-4000-8000-000000000001' }],
       [{ total: 1 }],
       [
         {
-          id: '30000000-0000-0000-0000-000000000001',
-          templateId: '20000000-0000-0000-0000-000000000001',
+          id: '30000000-0000-4000-8000-000000000001',
+          templateId: '20000000-0000-4000-8000-000000000001',
           templateName: 'Concept',
           templateAcceptType: 'file',
           version: 2,
@@ -854,7 +854,7 @@ describe('issue #11 api integration', () => {
     );
 
     const res = await app.request(
-      '/api/participations/10000000-0000-0000-0000-000000000001/submissions?page=1&pageSize=10',
+      '/api/participations/10000000-0000-4000-8000-000000000001/submissions?page=1&pageSize=10',
       {
         headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       },
@@ -866,9 +866,9 @@ describe('issue #11 api integration', () => {
         {
           state: 'viewable',
           submission: {
-            id: '30000000-0000-0000-0000-000000000001',
+            id: '30000000-0000-4000-8000-000000000001',
             template: {
-              id: '20000000-0000-0000-0000-000000000001',
+              id: '20000000-0000-4000-8000-000000000001',
               name: 'Concept',
               acceptType: 'file',
             },
@@ -897,8 +897,8 @@ describe('issue #11 api integration', () => {
       [{ total: 1 }],
       [
         {
-          id: '10000000-0000-0000-0000-000000000001',
-          editionId: '00000000-0000-0000-0000-000000000001',
+          id: '10000000-0000-4000-8000-000000000001',
+          editionId: '00000000-0000-4000-8000-000000000001',
           universityId: 'org-1',
           universityName: 'Org One',
           teamName: 'Team A',
@@ -908,7 +908,7 @@ describe('issue #11 api integration', () => {
     );
 
     const res = await app.request(
-      '/api/admin/editions/00000000-0000-0000-0000-000000000001/participations?page=1&pageSize=10',
+      '/api/admin/editions/00000000-0000-4000-8000-000000000001/participations?page=1&pageSize=10',
       {
         headers: { 'x-role': 'admin' },
       },
@@ -918,8 +918,8 @@ describe('issue #11 api integration', () => {
     expect(await res.json()).toEqual({
       data: [
         {
-          id: '10000000-0000-0000-0000-000000000001',
-          editionId: '00000000-0000-0000-0000-000000000001',
+          id: '10000000-0000-4000-8000-000000000001',
+          editionId: '00000000-0000-4000-8000-000000000001',
           universityId: 'org-1',
           universityName: 'Org One',
           teamName: 'Team A',
@@ -941,22 +941,22 @@ describe('issue #11 api integration', () => {
     const app = createApp();
 
     enqueueDb(
-      [{ id: '10000000-0000-0000-0000-000000000001' }],
+      [{ id: '10000000-0000-4000-8000-000000000001' }],
       [
         {
           template: {
-            id: '20000000-0000-0000-0000-000000000001',
-            editionId: '30000000-0000-0000-0000-000000000001',
+            id: '20000000-0000-4000-8000-000000000001',
+            editionId: '30000000-0000-4000-8000-000000000001',
             acceptType: 'file',
             allowedExtensions: ['pdf'],
             maxFileSizeMb: 5,
             urlPattern: null,
           },
           edition: {
-            id: '30000000-0000-0000-0000-000000000001',
+            id: '30000000-0000-4000-8000-000000000001',
             sharingStatus: 'accepting',
           },
-          participationId: '10000000-0000-0000-0000-000000000001',
+          participationId: '10000000-0000-4000-8000-000000000001',
         },
       ],
       [],
@@ -966,10 +966,10 @@ describe('issue #11 api integration', () => {
       method: 'POST',
       headers: { 'x-role': 'member', 'x-organization-id': 'org-1' },
       body: JSON.stringify({
-        templateId: '20000000-0000-0000-0000-000000000001',
-        participationId: '10000000-0000-0000-0000-000000000001',
+        templateId: '20000000-0000-4000-8000-000000000001',
+        participationId: '10000000-0000-4000-8000-000000000001',
         s3Key:
-          'submissions/30000000-0000-0000-0000-000000000001/another-participation/20000000-0000-0000-0000-000000000001/v1_123e4567-e89b-12d3-a456-426614174000_concept.pdf',
+          'submissions/30000000-0000-4000-8000-000000000001/another-participation/20000000-0000-4000-8000-000000000001/v1_123e4567-e89b-12d3-a456-426614174000_concept.pdf',
         fileName: 'concept.pdf',
         fileSizeBytes: 1024,
         mimeType: 'application/pdf',
@@ -988,7 +988,7 @@ describe('issue #11 api integration', () => {
     enqueueDb(
       [
         {
-          editionId: '00000000-0000-0000-0000-000000000001',
+          editionId: '00000000-0000-4000-8000-000000000001',
           universityId: 'org-1',
         },
       ],
@@ -996,9 +996,9 @@ describe('issue #11 api integration', () => {
       [{ teamName: 'Team A' }],
       [
         {
-          id: '40000000-0000-0000-0000-000000000001',
-          participationId: '10000000-0000-0000-0000-000000000001',
-          editionId: '00000000-0000-0000-0000-000000000001',
+          id: '40000000-0000-4000-8000-000000000001',
+          participationId: '10000000-0000-4000-8000-000000000001',
+          editionId: '00000000-0000-4000-8000-000000000001',
           authorId: 'member-user',
           authorUniversityName: 'Org One',
           authorTeamName: 'Team A',
@@ -1011,7 +1011,7 @@ describe('issue #11 api integration', () => {
     );
 
     const res = await app.request(
-      '/api/participations/10000000-0000-0000-0000-000000000001/comments',
+      '/api/participations/10000000-0000-4000-8000-000000000001/comments',
       {
         method: 'POST',
         headers: {
@@ -1026,9 +1026,9 @@ describe('issue #11 api integration', () => {
     expect(res.status).toBe(201);
     expect(await res.json()).toEqual({
       data: {
-        id: '40000000-0000-0000-0000-000000000001',
-        participationId: '10000000-0000-0000-0000-000000000001',
-        editionId: '00000000-0000-0000-0000-000000000001',
+        id: '40000000-0000-4000-8000-000000000001',
+        participationId: '10000000-0000-4000-8000-000000000001',
+        editionId: '00000000-0000-4000-8000-000000000001',
         authorId: 'member-user',
         authorUniversityName: 'Org One',
         authorTeamName: 'Team A',
@@ -1045,8 +1045,8 @@ describe('issue #11 api integration', () => {
         }
       | undefined;
     expect(insertBuilder?.values).toHaveBeenCalledWith({
-      participationId: '10000000-0000-0000-0000-000000000001',
-      editionId: '00000000-0000-0000-0000-000000000001',
+      participationId: '10000000-0000-4000-8000-000000000001',
+      editionId: '00000000-0000-4000-8000-000000000001',
       authorId: 'member-user',
       authorUniversityName: 'Org One',
       authorTeamName: 'Team A',
@@ -1059,7 +1059,7 @@ describe('issue #11 api integration', () => {
 
     enqueueDb([
       {
-        id: '50000000-0000-0000-0000-000000000001',
+        id: '50000000-0000-4000-8000-000000000001',
         requestedByUserId: 'member-user',
         universityName: 'Robocon University',
         representativeEmail: 'owner@robocon.example',
@@ -1090,7 +1090,7 @@ describe('issue #11 api integration', () => {
     expect(createRes.status).toBe(201);
     expect(await createRes.json()).toEqual({
       data: {
-        id: '50000000-0000-0000-0000-000000000001',
+        id: '50000000-0000-4000-8000-000000000001',
         universityName: 'Robocon University',
         representativeEmail: 'owner@robocon.example',
         message: 'Please add us',
@@ -1112,7 +1112,7 @@ describe('issue #11 api integration', () => {
 
     enqueueDb([
       {
-        id: '50000000-0000-0000-0000-000000000001',
+        id: '50000000-0000-4000-8000-000000000001',
         universityName: 'Robocon University',
         representativeEmail: 'owner@robocon.example',
         message: 'Please add us',
@@ -1137,7 +1137,7 @@ describe('issue #11 api integration', () => {
     expect(await listRes.json()).toEqual({
       data: [
         {
-          id: '50000000-0000-0000-0000-000000000001',
+          id: '50000000-0000-4000-8000-000000000001',
           universityName: 'Robocon University',
           representativeEmail: 'owner@robocon.example',
           message: 'Please add us',
@@ -1165,7 +1165,7 @@ describe('issue #11 api integration', () => {
     enqueueDb(
       [
         {
-          id: '50000000-0000-0000-0000-000000000002',
+          id: '50000000-0000-4000-8000-000000000002',
           requestedByUserId: 'member-user',
           universityName: 'Approve University',
           representativeEmail: 'owner@approve.example',
@@ -1179,7 +1179,7 @@ describe('issue #11 api integration', () => {
       [],
       [
         {
-          id: '50000000-0000-0000-0000-000000000002',
+          id: '50000000-0000-4000-8000-000000000002',
           universityName: 'Approve University',
           representativeEmail: 'owner@approve.example',
           message: 'Approve this',
@@ -1200,7 +1200,7 @@ describe('issue #11 api integration', () => {
     );
 
     const approveRes = await app.request(
-      '/api/admin/university-requests/50000000-0000-0000-0000-000000000002/approve',
+      '/api/admin/university-requests/50000000-0000-4000-8000-000000000002/approve',
       {
         method: 'POST',
         headers: { 'x-role': 'admin' },
@@ -1211,7 +1211,9 @@ describe('issue #11 api integration', () => {
     expect(mockSendEmail).toHaveBeenCalledWith({
       to: 'owner@approve.example',
       subject: 'Approve University の代表者招待',
-      html: '招待リンク: invitation:invite-new',
+      html: expect.stringMatching(
+        /^招待リンク: invitation:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      ),
     });
     const approveJson = (await approveRes.json()) as {
       data: { status: string; createdOrganizationId: string };
@@ -1222,7 +1224,7 @@ describe('issue #11 api integration', () => {
     enqueueDb(
       [
         {
-          id: '50000000-0000-0000-0000-000000000003',
+          id: '50000000-0000-4000-8000-000000000003',
           requestedByUserId: 'member-user',
           universityName: 'Reject University',
           representativeEmail: 'owner@reject.example',
@@ -1233,7 +1235,7 @@ describe('issue #11 api integration', () => {
       [],
       [
         {
-          id: '50000000-0000-0000-0000-000000000003',
+          id: '50000000-0000-4000-8000-000000000003',
           universityName: 'Reject University',
           representativeEmail: 'owner@reject.example',
           message: 'Reject this',
@@ -1254,7 +1256,7 @@ describe('issue #11 api integration', () => {
     );
 
     const rejectRes = await app.request(
-      '/api/admin/university-requests/50000000-0000-0000-0000-000000000003/reject',
+      '/api/admin/university-requests/50000000-0000-4000-8000-000000000003/reject',
       {
         method: 'POST',
         headers: {
@@ -1277,7 +1279,7 @@ describe('issue #11 api integration', () => {
     enqueueDb(
       [
         {
-          id: '00000000-0000-0000-0000-000000000050',
+          id: '00000000-0000-4000-8000-000000000050',
           name: '2026 Main Edition',
           year: 2026,
         },
@@ -1285,8 +1287,8 @@ describe('issue #11 api integration', () => {
       [{ id: 'org-1', name: 'Org One' }],
       [
         {
-          id: '60000000-0000-0000-0000-000000000001',
-          editionId: '00000000-0000-0000-0000-000000000050',
+          id: '60000000-0000-4000-8000-000000000001',
+          editionId: '00000000-0000-4000-8000-000000000050',
           universityId: 'org-1',
           requestedByUserId: 'owner-user',
           teamName: 'Team Rocket',
@@ -1302,7 +1304,7 @@ describe('issue #11 api integration', () => {
     );
 
     const createRes = await app.request(
-      '/api/editions/00000000-0000-0000-0000-000000000050/participation-requests',
+      '/api/editions/00000000-0000-4000-8000-000000000050/participation-requests',
       {
         method: 'POST',
         headers: {
@@ -1323,7 +1325,7 @@ describe('issue #11 api integration', () => {
     ).toBe('Org One');
 
     const missingOrgRes = await app.request(
-      '/api/editions/00000000-0000-0000-0000-000000000050/participation-requests',
+      '/api/editions/00000000-0000-4000-8000-000000000050/participation-requests',
       {
         method: 'POST',
         headers: {
@@ -1341,8 +1343,8 @@ describe('issue #11 api integration', () => {
     enqueueDb(
       [
         {
-          id: '60000000-0000-0000-0000-000000000001',
-          editionId: '00000000-0000-0000-0000-000000000050',
+          id: '60000000-0000-4000-8000-000000000001',
+          editionId: '00000000-0000-4000-8000-000000000050',
           universityId: 'org-1',
           requestedByUserId: 'owner-user',
           teamName: 'Team Rocket',
@@ -1353,14 +1355,14 @@ describe('issue #11 api integration', () => {
       [],
       [
         {
-          id: '10000000-0000-0000-0000-000000000099',
+          id: '10000000-0000-4000-8000-000000000099',
         },
       ],
       [],
       [
         {
-          id: '60000000-0000-0000-0000-000000000001',
-          editionId: '00000000-0000-0000-0000-000000000050',
+          id: '60000000-0000-4000-8000-000000000001',
+          editionId: '00000000-0000-4000-8000-000000000050',
           editionName: '2026 Main Edition',
           editionYear: 2026,
           universityId: 'org-1',
@@ -1373,7 +1375,7 @@ describe('issue #11 api integration', () => {
           requestedByEmail: 'owner@example.com',
           reviewedByUserId: 'admin-user',
           reviewedAt: '2026-03-20T00:00:00.000Z',
-          createdParticipationId: '10000000-0000-0000-0000-000000000099',
+          createdParticipationId: '10000000-0000-4000-8000-000000000099',
           adminNote: null,
           createdAt: '2026-03-20T00:00:00.000Z',
           updatedAt: '2026-03-20T00:00:00.000Z',
@@ -1383,7 +1385,7 @@ describe('issue #11 api integration', () => {
     );
 
     const approveRes = await app.request(
-      '/api/admin/participation-requests/60000000-0000-0000-0000-000000000001/approve',
+      '/api/admin/participation-requests/60000000-0000-4000-8000-000000000001/approve',
       {
         method: 'POST',
         headers: { 'x-role': 'admin' },
@@ -1394,13 +1396,13 @@ describe('issue #11 api integration', () => {
     expect(
       ((await approveRes.json()) as { data: { createdParticipationId: string } }).data
         .createdParticipationId,
-    ).toBe('10000000-0000-0000-0000-000000000099');
+    ).toBe('10000000-0000-4000-8000-000000000099');
 
     enqueueDb(
       [
         {
-          id: '60000000-0000-0000-0000-000000000002',
-          editionId: '00000000-0000-0000-0000-000000000050',
+          id: '60000000-0000-4000-8000-000000000002',
+          editionId: '00000000-0000-4000-8000-000000000050',
           universityId: 'org-1',
           requestedByUserId: 'owner-user',
           teamName: 'Team Rocket',
@@ -1408,11 +1410,11 @@ describe('issue #11 api integration', () => {
           status: 'pending',
         },
       ],
-      [{ id: '10000000-0000-0000-0000-000000000099' }],
+      [{ id: '10000000-0000-4000-8000-000000000099' }],
     );
 
     const duplicateApproveRes = await app.request(
-      '/api/admin/participation-requests/60000000-0000-0000-0000-000000000002/approve',
+      '/api/admin/participation-requests/60000000-0000-4000-8000-000000000002/approve',
       {
         method: 'POST',
         headers: { 'x-role': 'admin' },
