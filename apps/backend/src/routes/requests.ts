@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
   competitionEditions,
@@ -131,6 +131,9 @@ const createUniversityRequestRoute = createRoute({
 const listParticipationRequestsRoute = createRoute({
   method: 'get',
   path: '/participation-requests',
+  request: {
+    headers: orgHeaderSchema.partial(),
+  },
   responses: {
     200: {
       description: '自分の出場追加依頼一覧',
@@ -293,6 +296,7 @@ requestRoutes.openapi(createUniversityRequestRoute, async (c) => {
 
 requestRoutes.openapi(listParticipationRequestsRoute, async (c) => {
   const user = c.get('currentUser');
+  const organizationId = c.get('organizationId');
   const rows = await db
     .select({
       id: participationRequests.id,
@@ -317,7 +321,14 @@ requestRoutes.openapi(listParticipationRequestsRoute, async (c) => {
     .innerJoin(users, eq(users.id, participationRequests.requestedByUserId))
     .innerJoin(competitionEditions, eq(competitionEditions.id, participationRequests.editionId))
     .innerJoin(organizations, eq(organizations.id, participationRequests.universityId))
-    .where(eq(participationRequests.requestedByUserId, user.id))
+    .where(
+      organizationId
+        ? and(
+            eq(participationRequests.requestedByUserId, user.id),
+            eq(participationRequests.universityId, organizationId),
+          )
+        : eq(participationRequests.requestedByUserId, user.id),
+    )
     .orderBy(desc(participationRequests.createdAt));
 
   return c.json(

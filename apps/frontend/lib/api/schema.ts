@@ -2732,7 +2732,9 @@ export interface paths {
     get: {
       parameters: {
         query?: never;
-        header?: never;
+        header?: {
+          'x-organization-id'?: string;
+        };
         path?: never;
         cookie?: never;
       };

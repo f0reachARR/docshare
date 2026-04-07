@@ -1,7 +1,13 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from './keys';
 
-const ORG_SCOPED_QUERY_ROOTS = new Set(['editions', 'participations', 'submissions', 'university']);
+const ORG_SCOPED_QUERY_ROOTS = new Set([
+  'editions',
+  'participations',
+  'submissions',
+  'university',
+  'requests',
+]);
 
 const isOrganizationScopedQuery = (
   queryKey: ReadonlyArray<unknown>,

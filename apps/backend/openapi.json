@@ -4683,6 +4683,16 @@
     },
     "/api/participation-requests": {
       "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "x-organization-id",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "自分の出場追加依頼一覧",

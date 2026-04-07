@@ -62,7 +62,7 @@ export const queryKeys = {
     universityPrefix: () => ['requests', 'university'] as const,
     university: () => ['requests', 'university'] as const,
     participationPrefix: () => ['requests', 'participation'] as const,
-    participation: () => ['requests', 'participation'] as const,
+    participation: (orgId: string | null) => ['requests', 'participation', orgId] as const,
   },
 
   admin: {

@@ -98,9 +98,13 @@ export function useParticipationRequestsSection(editionId: string, organizationI
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: queryKeys.requests.participation(),
+    queryKey: queryKeys.requests.participation(organizationId),
     queryFn: async () => {
-      const result = await apiClient.GET('/api/participation-requests');
+      const result = await apiClient.GET('/api/participation-requests', {
+        params: {
+          header: organizationId ? { 'x-organization-id': organizationId } : {},
+        },
+      });
       return throwIfError(result);
     },
   });

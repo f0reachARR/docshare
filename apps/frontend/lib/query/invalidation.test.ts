@@ -73,6 +73,7 @@ describe('query invalidation helpers', () => {
 
     expect(predicate({ queryKey: ['editions', 'x', 'my-submissions', 'org-1', {}] })).toBe(true);
     expect(predicate({ queryKey: ['participations', 'p1', 'org-2'] })).toBe(true);
+    expect(predicate({ queryKey: ['requests', 'participation', 'org-2'] })).toBe(true);
     expect(predicate({ queryKey: ['series', {}] })).toBe(false);
   });
   it('previousOrganizationId が null のとき org ID を含まないクエリは再取得しない', async () => {

@@ -1426,6 +1426,50 @@ describe('issue #11 api integration', () => {
     expect(duplicateApproveRes.status).toBe(409);
   });
 
+  it('filters participation requests by selected organization', async () => {
+    const app = createApp();
+
+    enqueueDb([
+      {
+        id: '60000000-0000-4000-8000-000000000001',
+        editionId: '00000000-0000-4000-8000-000000000050',
+        editionName: '2026 Main Edition',
+        editionYear: 2026,
+        universityId: 'org-1',
+        universityName: 'Org One',
+        teamName: 'Team Rocket',
+        message: 'Please add another team',
+        status: 'pending',
+        requestedById: 'member-user',
+        requestedByName: 'member',
+        requestedByEmail: 'member@example.com',
+        reviewedAt: null,
+        createdParticipationId: null,
+        adminNote: null,
+        createdAt: '2026-03-20T00:00:00.000Z',
+        updatedAt: '2026-03-20T00:00:00.000Z',
+      },
+    ]);
+
+    const res = await app.request('/api/participation-requests', {
+      headers: {
+        'x-role': 'member',
+        'x-organization-id': 'org-1',
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockDb.select).toHaveBeenCalledTimes(1);
+
+    const builder = mockDb.select.mock.results[0]?.value as { where: ReturnType<typeof vi.fn> };
+    expect(builder.where).toHaveBeenCalledTimes(1);
+    expect(((await res.json()) as { data: Array<{ university: { id: string } }> }).data).toEqual([
+      expect.objectContaining({
+        university: { id: 'org-1', name: 'Org One' },
+      }),
+    ]);
+  });
+
   it('blocks non-admin access to admin request APIs', async () => {
     const app = createApp();
     const res = await app.request('/api/admin/university-requests', {
