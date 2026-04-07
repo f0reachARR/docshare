@@ -3,12 +3,6 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
-  createPaginatedResponseSchema,
-  createPaginationMeta,
-  createPagingQuerySchema,
-  parsePagingParams,
-} from '../../lib/pagination.js';
-import {
   competitionEditions,
   invitations,
   organizations,
@@ -17,6 +11,12 @@ import {
   universityCreationRequests,
   users,
 } from '../../db/schema.js';
+import {
+  createPaginatedResponseSchema,
+  createPaginationMeta,
+  createPagingQuerySchema,
+  parsePagingParams,
+} from '../../lib/pagination.js';
 import type { AppVariables } from '../../middleware/auth.js';
 import { emailService } from '../../services/email/index.js';
 

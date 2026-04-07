@@ -86,5 +86,4 @@ describe('query invalidation helpers', () => {
 
     expect(predicate({ queryKey: ['editions', { page: 1 }] })).toBe(false);
   });
-
 });
