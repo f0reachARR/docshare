@@ -4,6 +4,7 @@ import { organization } from 'better-auth/plugins';
 import { db } from './db/index.js';
 import * as schema from './db/schema.js';
 import { env } from './lib/config.js';
+import { verifyPassword } from './lib/password.js';
 import { emailService } from './services/email/index.js';
 
 export const auth = betterAuth({
@@ -26,6 +27,9 @@ export const auth = betterAuth({
   trustedOrigins: env.CORS_ALLOWED_ORIGINS,
   emailAndPassword: {
     enabled: true,
+    password: {
+      verify: verifyPassword,
+    },
   },
   plugins: [
     organization({

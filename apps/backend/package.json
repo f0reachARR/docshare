@@ -12,6 +12,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:runtime": "node dist/db/migrate.js",
+    "legacy:migrate": "tsx src/scripts/migrate-legacy-docshare.ts",
     "test": "vitest run"
   },
   "dependencies": {
