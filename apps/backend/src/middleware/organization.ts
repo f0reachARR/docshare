@@ -36,12 +36,6 @@ export const resolveOrganization: MiddlewareHandler<{
     )
     .limit(1);
 
-  if (rows.length === 0 && !user.isAdmin) {
-    throw new HTTPException(403, {
-      message: 'User does not belong to the organization',
-    });
-  }
-
   if (!organizationId && rows.length > 0) {
     await auth.api.setActiveOrganization({
       body: {
