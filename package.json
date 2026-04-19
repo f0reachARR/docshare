@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "ci": "pnpm check && pnpm typecheck && pnpm test"
+    "ci": "pnpm check && pnpm typecheck && pnpm test",
+    "legacy:migrate": "dotenv -- pnpm --filter backend legacy:migrate"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.9",

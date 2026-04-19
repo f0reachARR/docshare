@@ -5,6 +5,7 @@ import { basename, dirname, extname, join, resolve } from 'node:path';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getDbClient } from '../db/index.js';
 import { env } from '../lib/config.js';
+import { buildVersionedSubmissionKey } from '../services/storage.js';
 
 type LegacyUser = {
   id: number;
@@ -49,6 +50,21 @@ type LegacyData = {
   users: LegacyUser[];
   competitions: LegacyCompetition[];
   documents: LegacyDocument[];
+};
+
+type SubmissionPayload = {
+  fileS3Key: string | null;
+  fileName: string | null;
+  fileSizeBytes: number | null;
+  fileMimeType: string | null;
+  url: string | null;
+};
+
+type UploadJob = {
+  localPath: string;
+  key: string;
+  contentType: string;
+  contentLength: number;
 };
 
 const findMigrationSourceRoot = (): string => {
@@ -375,30 +391,65 @@ const contentTypeByPath = (path: string): string => {
   return contentTypes.get(extension) ?? 'application/octet-stream';
 };
 
-const uploadLegacyFile = async (
-  legacyPath: string,
-): Promise<{ key: string; fileName: string; size: number; mimeType: string }> => {
-  const localPath = join(documentsRoot, legacyPath);
-  const metadata = await stat(localPath);
-  const key = `legacy/documents/${legacyPath}`;
-  const mimeType = contentTypeByPath(legacyPath);
+const toSubmissionPayloadValues = (payload: SubmissionPayload): unknown[] => {
+  return [
+    payload.fileS3Key,
+    payload.fileName,
+    payload.fileSizeBytes,
+    payload.fileMimeType,
+    payload.url,
+  ];
+};
 
+const prepareLegacyFilePayload = async (params: {
+  legacyPath: string;
+  editionId: string;
+  participationId: string;
+  templateId: string;
+  version: number;
+  uploadJobs: UploadJob[];
+  skipFiles: boolean;
+}): Promise<SubmissionPayload> => {
+  const localPath = join(documentsRoot, params.legacyPath);
+  const metadata = await stat(localPath);
+  const fileName = basename(params.legacyPath);
+  const key = buildVersionedSubmissionKey({
+    editionId: params.editionId,
+    participationId: params.participationId,
+    templateId: params.templateId,
+    version: params.version,
+    fileName,
+  });
+  const mimeType = contentTypeByPath(params.legacyPath);
+
+  if (!params.skipFiles) {
+    params.uploadJobs.push({
+      localPath,
+      key,
+      contentType: mimeType,
+      contentLength: metadata.size,
+    });
+  }
+
+  return {
+    fileS3Key: key,
+    fileName,
+    fileSizeBytes: metadata.size,
+    fileMimeType: mimeType,
+    url: null,
+  };
+};
+
+const uploadPreparedFile = async (job: UploadJob): Promise<void> => {
   await s3.send(
     new PutObjectCommand({
       Bucket: env.S3_BUCKET_SUBMISSIONS,
-      Key: key,
-      Body: createReadStream(localPath),
-      ContentType: mimeType,
-      ContentLength: metadata.size,
+      Key: job.key,
+      Body: createReadStream(job.localPath),
+      ContentType: job.contentType,
+      ContentLength: job.contentLength,
     }),
   );
-
-  return {
-    key,
-    fileName: basename(legacyPath),
-    size: metadata.size,
-    mimeType,
-  };
 };
 
 const run = async (): Promise<void> => {
@@ -443,12 +494,15 @@ const run = async (): Promise<void> => {
   const participationIdByKey = new Map(
     [...documentsByParticipation.keys()].map((key) => [key, randomUUID()]),
   );
+  const uploadJobs: UploadJob[] = [];
 
   for (const competition of data.competitions) {
     for (const template of templates) {
       templateIdByCompetitionAndField.set(`${competition.id}:${template.key}`, randomUUID());
     }
   }
+
+  let committed = false;
 
   try {
     await client.query('BEGIN');
@@ -607,30 +661,41 @@ const run = async (): Promise<void> => {
         const submissionId = randomUUID();
         const submittedBy = requireMapValue(userIdByLegacyUser, userId, 'Submitted user ID');
         const latestVersion = revisions.length;
-        const latest = revisions[revisions.length - 1];
 
-        if (!latest) {
+        const preparedRevisions = await Promise.all(
+          revisions.map(async (revision, index) => {
+            const version = index + 1;
+            const payload: SubmissionPayload =
+              template.acceptType === 'url'
+                ? {
+                    fileS3Key: null,
+                    fileName: null,
+                    fileSizeBytes: null,
+                    fileMimeType: null,
+                    url: toPublicUrl(revision.value),
+                  }
+                : await prepareLegacyFilePayload({
+                    legacyPath: revision.value,
+                    editionId,
+                    participationId,
+                    templateId,
+                    version,
+                    uploadJobs,
+                    skipFiles,
+                  });
+
+            return {
+              document: revision.document,
+              payload,
+              version,
+            };
+          }),
+        );
+        const latestPrepared = preparedRevisions[preparedRevisions.length - 1];
+
+        if (!latestPrepared) {
           continue;
         }
-
-        const buildSubmissionPayload = async (value: string): Promise<unknown[]> => {
-          if (template.acceptType === 'url') {
-            return [null, null, null, null, toPublicUrl(value)];
-          }
-
-          if (skipFiles) {
-            return [
-              `legacy/documents/${value}`,
-              basename(value),
-              null,
-              contentTypeByPath(value),
-              null,
-            ];
-          }
-
-          const uploaded = await uploadLegacyFile(value);
-          return [uploaded.key, uploaded.fileName, uploaded.size, uploaded.mimeType, null];
-        };
 
         await client.query(
           `
@@ -654,12 +719,11 @@ const run = async (): Promise<void> => {
             participationId,
             submittedBy,
             latestVersion,
-            ...(await buildSubmissionPayload(latest.value)),
+            ...toSubmissionPayloadValues(latestPrepared.payload),
           ],
         );
 
-        let version = 1;
-        for (const revision of revisions) {
+        for (const revision of preparedRevisions) {
           await client.query(
             `
               INSERT INTO submission_history (
@@ -678,20 +742,30 @@ const run = async (): Promise<void> => {
             [
               randomUUID(),
               submissionId,
-              version,
+              revision.version,
               user ? requireMapValue(userIdByLegacyUser, user.id, 'History user ID') : submittedBy,
-              ...(await buildSubmissionPayload(revision.value)),
+              ...toSubmissionPayloadValues(revision.payload),
             ],
           );
-          version += 1;
         }
       }
     }
 
     await client.query('COMMIT');
+    committed = true;
+
+    if (uploadJobs.length > 0) {
+      console.info(`Uploading ${uploadJobs.length} legacy files after database commit...`);
+      for (const job of uploadJobs) {
+        await uploadPreparedFile(job);
+      }
+    }
+
     console.info('Legacy docshare migration completed.');
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (!committed) {
+      await client.query('ROLLBACK');
+    }
     throw error;
   } finally {
     client.release();
