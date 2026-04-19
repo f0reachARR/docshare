@@ -20,29 +20,26 @@ export default function TopPage() {
         <p className='text-xl text-muted-foreground max-w-2xl mx-auto'>
           資料を共有してロボコンをより強く、より楽しく。製本企画はロボコン出場チームがお互いに資料を共有し合うためのプラットフォームです。
         </p>
-        <div className='flex gap-3 justify-center flex-wrap'>
-          {!isLoading &&
-            (isAuthenticated ? (
-              <Button size='lg' render={<Link href='/dashboard' />}>
-                ダッシュボードへ
-                <ArrowRightIcon className='ml-2 h-4 w-4' />
-              </Button>
-            ) : (
-              <>
+        <div className='text-center space-y-2'>
+          <div className='flex gap-3 justify-center flex-wrap'>
+            {!isLoading &&
+              (isAuthenticated ? (
+                <Button size='lg' render={<Link href='/dashboard' />}>
+                  ダッシュボードへ
+                  <ArrowRightIcon className='ml-2 h-4 w-4' />
+                </Button>
+              ) : (
                 <Button size='lg' render={<Link href='/auth/login' />}>
                   ログイン
                 </Button>
-                <Button size='lg' variant='outline' render={<Link href='/auth/register' />}>
-                  アカウント作成
-                </Button>
-              </>
-            ))}
-          <Button size='lg' variant='outline' render={<Link href='/competitions' />}>
-            大会一覧を見る
-          </Button>
-          <Button size='lg' variant='outline' render={<Link href={universityRequestHref} />}>
+              ))}
+            <Button size='lg' variant='outline' render={<Link href='/competitions' />}>
+              大会一覧を見る
+            </Button>
+          </div>
+          <Link className='text-sm hover:underline px-3.5 py-1.5' href={universityRequestHref}>
             大学追加を依頼する
-          </Button>
+          </Link>
         </div>
       </section>
 
@@ -104,6 +101,25 @@ export default function TopPage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      {/* Supported by */}
+      <section className='space-y-2 max-w-2xl mx-auto'>
+        <h2 className='text-2xl font-semibold text-center'>サービス提供者</h2>
+        <p className='text-muted-foreground'>
+          このサービスは
+          <a href='https://www.fortefibre.net' className='hover:underline'>
+            京都工芸繊維大学ロボコン挑戦プロジェクト ForteFibre
+          </a>
+          により開発されています
+        </p>
+        <p className='text-muted-foreground'>
+          このサービスの提供は、
+          <a href='https://www.sakura.ad.jp' className='hover:underline'>
+            さくらインターネット株式会社
+          </a>
+          の協力により行われています
+        </p>
       </section>
     </div>
   );
