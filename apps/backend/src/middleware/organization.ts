@@ -36,15 +36,23 @@ export const resolveOrganization: MiddlewareHandler<{
     )
     .limit(1);
 
-  if (!organizationId && rows.length > 0) {
+  if (organizationId && rows.length === 0) {
+    throw new HTTPException(403, {
+      message: 'Invalid organization context',
+    });
+  }
+
+  const fallbackOrganizationId = rows[0]?.organizationId ?? null;
+
+  if (!organizationId && fallbackOrganizationId && auth.api.setActiveOrganization) {
     await auth.api.setActiveOrganization({
       body: {
-        organizationId: rows[0].organizationId,
+        organizationId: fallbackOrganizationId,
       },
       headers: c.req.raw.headers,
     });
   }
 
-  c.set('organizationId', organizationId ?? rows[0]?.organizationId ?? null);
+  c.set('organizationId', organizationId ?? fallbackOrganizationId);
   await next();
 };

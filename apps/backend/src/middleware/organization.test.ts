@@ -2,7 +2,7 @@ import type { Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockLimit = vi.fn<() => Promise<Array<{ id: string }>>>(async () => []);
+const mockLimit = vi.fn<() => Promise<Array<{ organizationId: string }>>>(async () => []);
 
 vi.mock('../db/index.js', () => ({
   db: {
@@ -33,7 +33,7 @@ const createContext = (params: {
 }): TestContext => {
   const vars = new Map<string, unknown>();
   vars.set('currentUser', params.user);
-  vars.set('sessionActiveOrganizationId', params.sessionActiveOrganizationId ?? null);
+  vars.set('session', { activeOrganizationId: params.sessionActiveOrganizationId ?? null });
 
   return {
     req: {
@@ -63,7 +63,7 @@ describe('resolveOrganization', () => {
       headerOrganizationId: 'org-1',
       sessionActiveOrganizationId: 'org-1',
     });
-    mockLimit.mockResolvedValue([{ id: 'm-1' }]);
+    mockLimit.mockResolvedValue([{ organizationId: 'org-1' }]);
 
     await resolveOrganization(c as never, vi.fn(async () => undefined) as Next);
 
@@ -76,7 +76,7 @@ describe('resolveOrganization', () => {
       headerOrganizationId: 'org-header',
       sessionActiveOrganizationId: null,
     });
-    mockLimit.mockResolvedValue([{ id: 'm-1' }]);
+    mockLimit.mockResolvedValue([{ organizationId: 'org-header' }]);
 
     await resolveOrganization(c as never, vi.fn(async () => undefined) as Next);
 
@@ -99,7 +99,7 @@ describe('resolveOrganization', () => {
     const c = createContext({
       user: { id: 'user-1', isAdmin: false },
       headerOrganizationId: 'org-x',
-      sessionActiveOrganizationId: 'org-1',
+      sessionActiveOrganizationId: null,
     });
 
     await expect(
