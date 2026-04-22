@@ -613,8 +613,11 @@ adminRequestRoutes.openapi(approveUniversityRequestRoute, async (c) => {
 
   await emailService.sendEmail({
     to: request.representativeEmail,
-    subject: `${request.universityName} の代表者招待`,
-    html: `招待リンク: invitation:${invitationId}`,
+    template: 'university-owner-invitation-link',
+    payload: {
+      universityName: request.universityName,
+      invitationLink: `invitation:${invitationId}`,
+    },
   });
 
   await db

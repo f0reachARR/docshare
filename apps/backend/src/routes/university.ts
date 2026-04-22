@@ -381,8 +381,11 @@ universityRoutes.openapi(inviteUniversityRoute, async (c) => {
 
   await emailService.sendEmail({
     to: body.data.email,
-    subject: `${inviter[0]?.orgName ?? organizationId} への招待`,
-    html: `招待リンク: invitation:${invitationId}`,
+    template: 'organization-member-invitation-link',
+    payload: {
+      organizationName: inviter[0]?.orgName ?? organizationId,
+      invitationLink: `invitation:${invitationId}`,
+    },
   });
 
   return c.json({ data: inserted[0] }, 201);

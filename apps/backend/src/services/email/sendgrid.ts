@@ -1,5 +1,6 @@
 import sendgridMail from '@sendgrid/mail';
 import type { EmailService, SendEmailParams, SendEmailResult } from './interface.js';
+import { resolveSendEmailParams } from './templates.js';
 
 export class SendGridEmailService implements EmailService {
   constructor(
@@ -10,12 +11,13 @@ export class SendGridEmailService implements EmailService {
   }
 
   async sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
+    const resolved = resolveSendEmailParams(params);
     const [res] = await sendgridMail.send({
-      to: params.to,
+      to: resolved.to,
       from: this.fromAddress,
-      subject: params.subject,
-      html: params.html,
-      text: params.text,
+      subject: resolved.subject,
+      html: resolved.html,
+      text: resolved.text,
     });
 
     return {

@@ -37,8 +37,12 @@ export const auth = betterAuth({
         const inviteLink = `${env.APP_URL}/invite/${data.id}`;
         await emailService.sendEmail({
           to: data.email,
-          subject: `${data.organization.name} への招待`,
-          html: `${data.inviter.user.name} さんが ${data.organization.name} へ招待しました: ${inviteLink}`,
+          template: 'organization-invitation',
+          payload: {
+            organizationName: data.organization.name,
+            inviterName: data.inviter.user.name,
+            inviteLink,
+          },
         });
       },
     }),

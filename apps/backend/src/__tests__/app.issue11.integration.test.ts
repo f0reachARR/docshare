@@ -1211,10 +1211,13 @@ describe('issue #11 api integration', () => {
     expect(approveRes.status).toBe(200);
     expect(mockSendEmail).toHaveBeenCalledWith({
       to: 'owner@approve.example',
-      subject: 'Approve University の代表者招待',
-      html: expect.stringMatching(
-        /^招待リンク: invitation:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
-      ),
+      template: 'university-owner-invitation-link',
+      payload: {
+        universityName: 'Approve University',
+        invitationLink: expect.stringMatching(
+          /^invitation:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+        ),
+      },
     });
     const approveJson = (await approveRes.json()) as {
       data: { status: string; createdOrganizationId: string };
