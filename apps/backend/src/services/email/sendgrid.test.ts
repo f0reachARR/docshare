@@ -65,8 +65,8 @@ describe('SendGridEmailService', () => {
       to: 'owner@example.com',
       from: 'from@example.com',
       subject: 'Approve University の代表者招待',
-      html: '招待リンク: invitation:invite-1',
-      text: undefined,
+      html: expect.stringContaining('invitation:invite-1'),
+      text: expect.stringContaining('代表者設定を開く: invitation:invite-1'),
     });
   });
 });

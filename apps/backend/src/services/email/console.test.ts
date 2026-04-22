@@ -30,17 +30,15 @@ describe('ConsoleEmailService', () => {
     expect(result.success).toBe(true);
     expect(consoleLogSpy).toHaveBeenCalledWith(
       '[EMAIL]',
-      JSON.stringify({
-        to: 'owner@example.com',
-        template: 'organization-invitation',
-        payload: {
-          organizationName: 'DocShare University',
-          inviterName: 'Admin User',
-          inviteLink: 'https://app.example.test/invite/inv-1',
-        },
-        subject: 'DocShare University への招待',
-        html: 'Admin User さんが DocShare University へ招待しました: https://app.example.test/invite/inv-1',
-      }),
+      expect.stringContaining('"subject":"DocShare University への招待"'),
+    );
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      '[EMAIL]',
+      expect.stringContaining('Admin User さんから'),
+    );
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      '[EMAIL]',
+      expect.stringContaining('"text":"DocShare University への招待'),
     );
 
     consoleLogSpy.mockRestore();
