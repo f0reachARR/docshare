@@ -1215,7 +1215,7 @@ describe('issue #11 api integration', () => {
       payload: {
         universityName: 'Approve University',
         invitationLink: expect.stringMatching(
-          /^invitation:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+          /^http:\/\/localhost:3000\/invite\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
         ),
       },
     });

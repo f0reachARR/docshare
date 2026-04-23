@@ -57,7 +57,7 @@ describe('SendGridEmailService', () => {
       template: 'university-owner-invitation-link',
       payload: {
         universityName: 'Approve University',
-        invitationLink: 'invitation:invite-1',
+        invitationLink: 'https://app.example.test/invite/invite-1',
       },
     });
 
@@ -65,8 +65,8 @@ describe('SendGridEmailService', () => {
       to: 'owner@example.com',
       from: 'from@example.com',
       subject: 'Approve University の代表者招待',
-      html: expect.stringContaining('invitation:invite-1'),
-      text: expect.stringContaining('代表者設定を開く: invitation:invite-1'),
+      html: expect.stringContaining('https://app.example.test/invite/invite-1'),
+      text: expect.stringContaining('代表者設定を開く: https://app.example.test/invite/invite-1'),
     });
   });
 });

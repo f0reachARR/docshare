@@ -4,6 +4,7 @@ import { organization } from 'better-auth/plugins';
 import { db } from './db/index.js';
 import * as schema from './db/schema.js';
 import { env } from './lib/config.js';
+import { buildInvitationLink } from './lib/invitation-link.js';
 import { verifyPassword } from './lib/password.js';
 import { emailService } from './services/email/index.js';
 
@@ -34,7 +35,7 @@ export const auth = betterAuth({
   plugins: [
     organization({
       async sendInvitationEmail(data) {
-        const inviteLink = `${env.APP_URL}/invite/${data.id}`;
+        const inviteLink = buildInvitationLink(data.id);
         await emailService.sendEmail({
           to: data.email,
           template: 'organization-invitation',

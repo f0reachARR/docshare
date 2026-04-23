@@ -20,27 +20,27 @@ describe('resolveEmailTemplate', () => {
   it('renders invitation link-based owner emails', () => {
     const email = resolveEmailTemplate('university-owner-invitation-link', {
       universityName: 'Approve University',
-      invitationLink: 'invitation:1234',
+      invitationLink: 'https://app.example.test/invite/1234',
     });
 
     expect(email.subject).toBe('Approve University の代表者招待');
     expect(email.html).toContain('代表者アカウントを設定するための招待リンク');
-    expect(email.html).toContain('invitation:1234');
+    expect(email.html).toContain('https://app.example.test/invite/1234');
     expect(email.text).toContain('代表者アカウントを設定するための招待リンク');
-    expect(email.text).toContain('代表者設定を開く: invitation:1234');
+    expect(email.text).toContain('代表者設定を開く: https://app.example.test/invite/1234');
   });
 
   it('renders member invitation emails', () => {
     const email = resolveEmailTemplate('organization-member-invitation-link', {
       organizationName: 'Engineering Org',
-      invitationLink: 'invitation:5678',
+      invitationLink: 'https://app.example.test/invite/5678',
     });
 
     expect(email.subject).toBe('Engineering Org への招待');
     expect(email.html).toContain('メンバーとして参加するための招待リンク');
-    expect(email.html).toContain('invitation:5678');
+    expect(email.html).toContain('https://app.example.test/invite/5678');
     expect(email.text).toContain('メンバーとして参加するための招待リンク');
-    expect(email.text).toContain('メンバー招待を開く: invitation:5678');
+    expect(email.text).toContain('メンバー招待を開く: https://app.example.test/invite/5678');
   });
 
   it('escapes dynamic values in html output', () => {

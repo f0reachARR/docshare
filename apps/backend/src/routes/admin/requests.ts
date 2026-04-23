@@ -11,6 +11,7 @@ import {
   universityCreationRequests,
   users,
 } from '../../db/schema.js';
+import { buildInvitationLink } from '../../lib/invitation-link.js';
 import {
   createPaginatedResponseSchema,
   createPaginationMeta,
@@ -616,7 +617,7 @@ adminRequestRoutes.openapi(approveUniversityRequestRoute, async (c) => {
     template: 'university-owner-invitation-link',
     payload: {
       universityName: request.universityName,
-      invitationLink: `invitation:${invitationId}`,
+      invitationLink: buildInvitationLink(invitationId),
     },
   });
 
