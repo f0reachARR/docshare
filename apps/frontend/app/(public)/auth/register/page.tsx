@@ -1,19 +1,36 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useRegisterForm } from '@/features/public/auth/register/hooks';
+import { appendCallbackUrl, normalizeCallbackUrl } from '@/lib/auth/callback-url';
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterPageContent />
+    </Suspense>
+  );
+}
+
+function RegisterPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawCallbackUrl = searchParams.get('callbackUrl');
+  const callbackUrl = normalizeCallbackUrl(rawCallbackUrl);
+  const hasCallbackUrl = rawCallbackUrl !== null;
+  const loginHref = hasCallbackUrl ? appendCallbackUrl('/auth/login', callbackUrl) : '/auth/login';
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
-  const { form, error, validators } = useRegisterForm((email) => {
-    setRegisteredEmail(email);
-  });
+  const { form, error, validators } = useRegisterForm(
+    (email) => {
+      setRegisteredEmail(email);
+    },
+    hasCallbackUrl ? callbackUrl : undefined,
+  );
 
   if (registeredEmail) {
     return (
@@ -27,7 +44,7 @@ export default function RegisterPage() {
             <p className='text-sm text-muted-foreground'>
               メール内のリンクを開くとアカウント作成が完了します。
             </p>
-            <Button type='button' className='w-full' onClick={() => router.push('/auth/login')}>
+            <Button type='button' className='w-full' onClick={() => router.push(loginHref)}>
               ログインへ
             </Button>
           </CardContent>
@@ -146,7 +163,7 @@ export default function RegisterPage() {
           </form>
           <p className='text-sm text-center text-muted-foreground mt-4'>
             すでにアカウントをお持ちの方は{' '}
-            <Link href='/auth/login' className='text-primary hover:underline'>
+            <Link href={loginHref} className='text-primary hover:underline'>
               ログイン
             </Link>
           </p>

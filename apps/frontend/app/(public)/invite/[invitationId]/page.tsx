@@ -15,6 +15,9 @@ export default function InvitePage({ params }: { params: Promise<{ invitationId:
   const router = useRouter();
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const inviteCallbackUrl = `/invite/${encodeURIComponent(invitationId)}`;
+  const loginHref = `/auth/login?callbackUrl=${encodeURIComponent(inviteCallbackUrl)}`;
+  const registerHref = `/auth/register?callbackUrl=${encodeURIComponent(inviteCallbackUrl)}`;
 
   const handleAccept = async () => {
     setStatus('loading');
@@ -55,13 +58,8 @@ export default function InvitePage({ params }: { params: Promise<{ invitationId:
             <CardDescription>ログインまたはアカウントを作成してから承認できます</CardDescription>
           </CardHeader>
           <CardContent className='flex flex-col gap-3'>
-            <Button render={<Link href={`/auth/login?callbackUrl=/invite/${invitationId}`} />}>
-              ログイン
-            </Button>
-            <Button
-              variant='outline'
-              render={<Link href={`/auth/register?callbackUrl=/invite/${invitationId}`} />}
-            >
+            <Button render={<Link href={loginHref} />}>ログイン</Button>
+            <Button variant='outline' render={<Link href={registerHref} />}>
               アカウントを作成
             </Button>
           </CardContent>

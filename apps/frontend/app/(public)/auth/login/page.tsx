@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useLoginForm } from '@/features/public/auth/login/hooks';
+import { appendCallbackUrl, normalizeCallbackUrl } from '@/lib/auth/callback-url';
 
 export default function LoginPage() {
   return (
@@ -19,7 +20,8 @@ export default function LoginPage() {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard';
+  const callbackUrl = normalizeCallbackUrl(searchParams.get('callbackUrl'));
+  const registerHref = appendCallbackUrl('/auth/register', callbackUrl);
   const { form, error, validators } = useLoginForm(() => {
     router.push(callbackUrl);
   });
@@ -90,7 +92,7 @@ function LoginPageContent() {
           </p>
           <p className='text-sm text-center text-muted-foreground mt-4'>
             アカウントをお持ちでない方は{' '}
-            <Link href='/auth/register' className='text-primary hover:underline'>
+            <Link href={registerHref} className='text-primary hover:underline'>
               新規登録
             </Link>
           </p>

@@ -4,7 +4,10 @@ import { z } from 'zod';
 import { useInvalidateMe } from '@/contexts/AuthContext';
 import { authClient } from '@/lib/auth/client';
 
-export function useRegisterForm(onSuccess: (email: string) => void) {
+export function useRegisterForm(
+  onSuccess: (email: string) => void,
+  verificationCallbackUrl?: string,
+) {
   const invalidateMe = useInvalidateMe();
   const [error, setError] = useState<string | null>(null);
 
@@ -16,7 +19,9 @@ export function useRegisterForm(onSuccess: (email: string) => void) {
         name: value.name,
         email: value.email,
         password: value.password,
-        callbackURL: `${window.location.origin}/auth/verify-email`,
+        callbackURL: verificationCallbackUrl
+          ? new URL(verificationCallbackUrl, window.location.origin).toString()
+          : `${window.location.origin}/auth/verify-email`,
       });
 
       if (result.error) {
