@@ -38,7 +38,7 @@ export default function NotFound() {
               </Button>
             </div>
 
-            <div className='relative mx-auto aspect-[4/3] w-full max-w-md'>
+            <div className='relative mx-auto aspect-[4/3] w-full max-w-md' aria-hidden='true'>
               <div className='absolute inset-x-8 bottom-6 h-5 rounded-full bg-foreground/10 blur-xl' />
 
               <div className='absolute left-8 top-12 h-52 w-36 -rotate-6 rounded-lg border bg-card p-4 shadow-md'>
