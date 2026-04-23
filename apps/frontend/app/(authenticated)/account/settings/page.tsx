@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { useAccountSettingsForms } from '@/features/account/settings/hooks';
 export default function AccountSettingsPage() {
   const {
     user,
+    currentOrganization,
     profileForm,
     passwordForm,
     updateProfileMutation,
@@ -56,6 +58,23 @@ export default function AccountSettingsPage() {
           </form>
         </CardContent>
       </Card>
+
+      {currentOrganization && (
+        <Card>
+          <CardHeader>
+            <CardTitle className='text-base'>所属大学</CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-4'>
+            <div>
+              <p className='text-sm font-medium'>{currentOrganization.name}</p>
+              <p className='text-sm text-muted-foreground'>大学のメンバーと招待を管理できます。</p>
+            </div>
+            <Button variant='outline' render={<Link href='/university/settings' />}>
+              大学設定を開く
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

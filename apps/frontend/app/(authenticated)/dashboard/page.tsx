@@ -41,9 +41,16 @@ export default function DashboardPage() {
 
   return (
     <div className='space-y-6'>
-      <div>
-        <h1 className='text-2xl font-bold'>ダッシュボード</h1>
-        {currentOrg && <p className='text-muted-foreground mt-1'>{currentOrg.name}</p>}
+      <div className='flex flex-wrap items-start justify-between gap-3'>
+        <div>
+          <h1 className='text-2xl font-bold'>ダッシュボード</h1>
+          {currentOrg && <p className='text-muted-foreground mt-1'>{currentOrg.name}</p>}
+        </div>
+        {currentOrg && (
+          <Button size='sm' variant='outline' render={<Link href='/university/settings' />}>
+            大学設定
+          </Button>
+        )}
       </div>
 
       {isLoading ? (

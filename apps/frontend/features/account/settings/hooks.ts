@@ -6,8 +6,10 @@ import { useAuth, useInvalidateMe } from '@/contexts/AuthContext';
 import { authClient } from '@/lib/auth/client';
 
 export function useAccountSettingsForms() {
-  const { user } = useAuth();
+  const { user, organizations, activeOrganizationId } = useAuth();
   const invalidateMe = useInvalidateMe();
+  const currentOrganization =
+    organizations.find((org) => org.id === activeOrganizationId) ?? organizations[0] ?? null;
 
   const updateProfileMutation = useMutation({
     mutationFn: async (values: { name: string }) => {
@@ -61,6 +63,7 @@ export function useAccountSettingsForms() {
 
   return {
     user,
+    currentOrganization,
     profileForm,
     passwordForm,
     updateProfileMutation,
