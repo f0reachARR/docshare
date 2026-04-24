@@ -1,9 +1,9 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { CheckIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { CheckIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 import { use } from 'react';
-import { UniversitySelect } from '@/components/admin/UniversitySelect';
+import { UniversityMultiSelect } from '@/components/admin/UniversityMultiSelect';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
@@ -16,17 +16,17 @@ import {
 export default function AdminParticipationsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: editionId } = use(params);
   const {
-    selectedUniversityId,
-    setSelectedUniversityId,
-    teamName,
-    setTeamName,
+    draftRows,
+    addDraftRows,
+    updateDraftTeamName,
+    removeDraftRow,
     editingId,
     setEditingId,
     editingTeamName,
     setEditingTeamName,
     data,
     isLoading,
-    createMutation,
+    createManyMutation,
     updateMutation,
     deleteMutation,
   } = useAdminParticipationsPage(editionId);
@@ -92,35 +92,60 @@ export default function AdminParticipationsPage({ params }: { params: Promise<{ 
     <div className='space-y-6'>
       <h1 className='text-2xl font-bold'>出場登録管理</h1>
 
-      {/* Add participation */}
-      <div className='flex gap-3 items-end flex-wrap'>
-        <div className='space-y-1'>
-          <span className='text-sm font-medium'>大学</span>
-          <UniversitySelect
-            value={selectedUniversityId}
-            onValueChange={(id) => setSelectedUniversityId(id)}
-          />
+      <section className='space-y-3'>
+        <div className='flex flex-wrap items-end gap-3'>
+          <div className='space-y-1'>
+            <span className='text-sm font-medium'>大学</span>
+            <UniversityMultiSelect onAdd={addDraftRows} disabled={createManyMutation.isPending} />
+          </div>
+          <Button
+            onClick={() => createManyMutation.mutate()}
+            disabled={draftRows.length === 0 || createManyMutation.isPending}
+          >
+            登録
+          </Button>
         </div>
-        <div className='space-y-1'>
-          <label htmlFor='team-name-input' className='text-sm font-medium'>
-            チーム名（任意）
-          </label>
-          <Input
-            id='team-name-input'
-            placeholder='チーム名'
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-            className='w-40'
-          />
+
+        <div className='overflow-hidden rounded-lg border'>
+          {draftRows.length === 0 ? (
+            <div className='px-4 py-6 text-sm text-muted-foreground'>
+              登録する大学を選択してください
+            </div>
+          ) : (
+            <div className='divide-y'>
+              <div className='hidden grid-cols-[minmax(0,1fr)_minmax(12rem,18rem)_2.5rem] gap-3 bg-muted/40 px-3 py-2 text-sm font-medium sm:grid'>
+                <span>大学名</span>
+                <span>チーム名（任意）</span>
+                <span className='sr-only'>操作</span>
+              </div>
+              {draftRows.map((row) => (
+                <div
+                  key={row.id}
+                  className='grid grid-cols-1 items-center gap-3 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,18rem)_2.5rem]'
+                >
+                  <div className='min-w-0 truncate text-sm font-medium'>{row.universityName}</div>
+                  <Input
+                    placeholder='チーム名'
+                    value={row.teamName}
+                    onChange={(e) => updateDraftTeamName(row.id, e.target.value)}
+                    disabled={createManyMutation.isPending}
+                  />
+                  <Button
+                    variant='ghost'
+                    size='icon-sm'
+                    className='text-destructive hover:text-destructive'
+                    onClick={() => removeDraftRow(row.id)}
+                    disabled={createManyMutation.isPending}
+                    aria-label={`${row.universityName} を候補から削除`}
+                  >
+                    <Trash2Icon className='h-4 w-4' />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <Button
-          onClick={() => createMutation.mutate()}
-          disabled={!selectedUniversityId || createMutation.isPending}
-        >
-          <PlusIcon className='h-4 w-4 mr-1' />
-          登録
-        </Button>
-      </div>
+      </section>
 
       <DataTable
         columns={columns}
