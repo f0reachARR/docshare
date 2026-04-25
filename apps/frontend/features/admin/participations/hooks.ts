@@ -155,7 +155,7 @@ export function useAdminParticipationsPage(editionId: string) {
 
   const addDraftRows = (
     universities: Array<{ id: string; name: string }>,
-    createId: () => string = crypto.randomUUID,
+    createId: () => string = () => crypto.randomUUID(),
   ) => {
     setDraftRows((current) => [
       ...current,
