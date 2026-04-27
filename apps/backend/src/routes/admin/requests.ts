@@ -684,7 +684,7 @@ adminRequestRoutes.openapi(approveUniversityRequestRoute, async (c) => {
       .where(
         and(
           eq(invitations.organizationId, organizationId),
-          eq(invitations.email, request.representativeEmail),
+          eq(invitations.email, requesterUser.email),
           eq(invitations.role, 'owner'),
           eq(invitations.status, 'pending'),
         ),
