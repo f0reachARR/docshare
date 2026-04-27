@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   GetObjectCommand,
   HeadObjectCommand,
+  type HeadObjectCommandOutput,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -33,6 +34,18 @@ type PresignUploadByKeyInput = {
   contentType: string;
   contentLength?: number;
   expiresIn?: number;
+};
+
+type ObjectMetadata = {
+  contentLength: number | null;
+  contentType: string | null;
+};
+
+type GetObjectMetadataOptions = {
+  maxAttempts?: number;
+  retryDelayMs?: number;
+  sleep?: (ms: number) => Promise<void>;
+  fetchMetadata?: (bucket: string, key: string) => Promise<ObjectMetadata>;
 };
 
 const encodeName = (name: string): string => {
@@ -129,19 +142,74 @@ export const presignDownload = async (
   return { presignedUrl, expiresIn };
 };
 
-export const getObjectMetadata = async (
-  bucket: string,
-  key: string,
-): Promise<{ contentLength: number | null; contentType: string | null }> => {
-  const response = await s3.send(
+const sleep = async (ms: number): Promise<void> => {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+const headObject = async (bucket: string, key: string): Promise<HeadObjectCommandOutput> => {
+  return await s3.send(
     new HeadObjectCommand({
       Bucket: bucket,
       Key: key,
     }),
   );
+};
 
+const toObjectMetadata = (response: HeadObjectCommandOutput): ObjectMetadata => {
   return {
     contentLength: response.ContentLength ?? null,
     contentType: response.ContentType ?? null,
   };
+};
+
+const hasCompleteObjectMetadata = (metadata: ObjectMetadata): boolean => {
+  return metadata.contentLength !== null && metadata.contentType !== null;
+};
+
+const isRetryableMetadataLookupError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const metadata = (error as Error & { $metadata?: { httpStatusCode?: number } }).$metadata;
+  const statusCode = metadata?.httpStatusCode;
+  return statusCode === 404 || error.name === 'NotFound' || error.name === 'NoSuchKey';
+};
+
+export const getObjectMetadata = async (
+  bucket: string,
+  key: string,
+  options: GetObjectMetadataOptions = {},
+): Promise<ObjectMetadata> => {
+  const maxAttempts = options.maxAttempts ?? 5;
+  const retryDelayMs = options.retryDelayMs ?? 1000;
+  const wait = options.sleep ?? sleep;
+  const fetchMetadata =
+    options.fetchMetadata ??
+    (async (innerBucket: string, innerKey: string): Promise<ObjectMetadata> => {
+      return toObjectMetadata(await headObject(innerBucket, innerKey));
+    });
+
+  let lastIncompleteMetadata: ObjectMetadata | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const metadata = await fetchMetadata(bucket, key);
+      if (hasCompleteObjectMetadata(metadata)) {
+        return metadata;
+      }
+
+      lastIncompleteMetadata = metadata;
+    } catch (error) {
+      if (!isRetryableMetadataLookupError(error) || attempt === maxAttempts) {
+        throw error;
+      }
+    }
+
+    if (attempt < maxAttempts) {
+      await wait(retryDelayMs);
+    }
+  }
+
+  return lastIncompleteMetadata ?? { contentLength: null, contentType: null };
 };
